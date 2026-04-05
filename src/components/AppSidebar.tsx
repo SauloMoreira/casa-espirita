@@ -47,7 +47,7 @@ const navItems: NavItem[] = [
   { title: "Agendamento de Entrevistas", url: "/entrevistas", icon: BookOpen, roles: ["admin", "entrevistador"] },
   { title: "Fazer Entrevista", url: "/fazer-entrevista", icon: ClipboardCheck, roles: ["admin", "entrevistador"] },
   { title: "Agenda", url: "/agenda", icon: Calendar, roles: ["admin", "entrevistador"] },
-  { title: "Presença", url: "/presenca", icon: ClipboardCheck, roles: ["admin", "tarefeiro"] },
+  { title: "Presença", url: "/presenca", icon: Heart, roles: ["admin", "tarefeiro"] },
   { title: "Meus Tratamentos", url: "/meus-tratamentos", icon: Heart, roles: ["assistido"] },
   { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar, roles: ["assistido"] },
   { title: "Relatórios", url: "/relatorios", icon: FileText, roles: ["admin"] },
