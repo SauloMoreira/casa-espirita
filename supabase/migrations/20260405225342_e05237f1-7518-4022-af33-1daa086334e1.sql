@@ -1,0 +1,2 @@
+ALTER TABLE public.assistido_tratamentos DROP CONSTRAINT assistido_tratamentos_status_check;
+ALTER TABLE public.assistido_tratamentos ADD CONSTRAINT assistido_tratamentos_status_check CHECK (status = ANY (ARRAY['aguardando_inicio'::text, 'aguardando_liberacao'::text, 'aguardando_agendamento'::text, 'liberado'::text, 'em_andamento'::text, 'concluido'::text, 'suspenso'::text, 'cancelado'::text]));
