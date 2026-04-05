@@ -404,16 +404,21 @@ export default function FazerEntrevista() {
 
     const entrevistaDate = new Date(dataEntrevista + "T12:00:00");
 
-    // Separate treatments:
-    // Group A: ALL non-libre treatments (follow sequential order, may block or wait)
-    // Group B: Only tratamento_livre = true (run in parallel)
+    // Separate treatments into 3 groups based on modo_agendamento:
+    // Group A: sequencial_bloqueante (follow sequential order, may block or wait)
+    // Group B: livre_concomitante (run in parallel from interview date)
+    // Group C: agendado_por_data_inicial (run in parallel from manually chosen start date)
     const groupA: typeof validDesignacoes = [];
     const groupB: typeof validDesignacoes = [];
+    const groupC: typeof validDesignacoes = [];
 
     for (const d of validDesignacoes) {
       const trat = tratamentoMap[d.tratamento_id];
       if (!trat) continue;
-      if (trat.tratamento_livre) {
+      const modo = (trat as any).modo_agendamento || (trat.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
+      if (modo === "agendado_por_data_inicial") {
+        groupC.push(d);
+      } else if (modo === "livre_concomitante") {
         groupB.push(d);
       } else {
         groupA.push(d);
