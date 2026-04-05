@@ -85,6 +85,7 @@ export default function Tratamentos() {
       tratamento_livre: form.modo_agendamento === "livre_concomitante",
       bloqueia_proximo_tratamento: form.modo_agendamento === "sequencial_bloqueante",
       modo_agendamento: form.modo_agendamento,
+      coordenador_responsavel_id: form.coordenador_responsavel_id || null,
     };
 
     let error;
