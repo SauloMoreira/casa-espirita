@@ -14,16 +14,466 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assistido_tratamentos: {
+        Row: {
+          assistido_id: string
+          created_at: string
+          created_by: string
+          data_inicio: string | null
+          entrevista_id: string | null
+          id: string
+          observacoes: string | null
+          quantidade_faltante: number | null
+          quantidade_realizada: number
+          quantidade_total: number
+          status: string
+          tratamento_id: string
+          updated_at: string
+        }
+        Insert: {
+          assistido_id: string
+          created_at?: string
+          created_by: string
+          data_inicio?: string | null
+          entrevista_id?: string | null
+          id?: string
+          observacoes?: string | null
+          quantidade_faltante?: number | null
+          quantidade_realizada?: number
+          quantidade_total?: number
+          status?: string
+          tratamento_id: string
+          updated_at?: string
+        }
+        Update: {
+          assistido_id?: string
+          created_at?: string
+          created_by?: string
+          data_inicio?: string | null
+          entrevista_id?: string | null
+          id?: string
+          observacoes?: string | null
+          quantidade_faltante?: number | null
+          quantidade_realizada?: number
+          quantidade_total?: number
+          status?: string
+          tratamento_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistido_tratamentos_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistido_tratamentos_entrevista_id_fkey"
+            columns: ["entrevista_id"]
+            isOneToOne: false
+            referencedRelation: "entrevistas_fraternas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistido_tratamentos_tratamento_id_fkey"
+            columns: ["tratamento_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_tratamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistidos: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_nascimento: string | null
+          deleted_at: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data_nascimento?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_nascimento?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          ip: string | null
+          registro_id: string | null
+          tabela: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          ip?: string | null
+          registro_id?: string | null
+          tabela: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          ip?: string | null
+          registro_id?: string | null
+          tabela?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      configuracoes_gerais: {
+        Row: {
+          chave: string
+          descricao: string | null
+          id: string
+          updated_at: string
+          updated_by: string | null
+          valor: string
+        }
+        Insert: {
+          chave: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor: string
+        }
+        Update: {
+          chave?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor?: string
+        }
+        Relationships: []
+      }
+      entrevistas_fraternas: {
+        Row: {
+          assistido_id: string
+          created_at: string
+          data: string
+          decisoes: string | null
+          entrevistador_id: string
+          id: string
+          observacoes: string | null
+          status: string
+          tipo_entrevista: string
+          updated_at: string
+        }
+        Insert: {
+          assistido_id: string
+          created_at?: string
+          data: string
+          decisoes?: string | null
+          entrevistador_id: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          tipo_entrevista?: string
+          updated_at?: string
+        }
+        Update: {
+          assistido_id?: string
+          created_at?: string
+          data?: string
+          decisoes?: string | null
+          entrevistador_id?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          tipo_entrevista?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrevistas_fraternas_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orientacoes_assistido: {
+        Row: {
+          assistido_id: string
+          conteudo: string
+          created_at: string
+          created_by: string
+          id: string
+          titulo: string
+          visivel_assistido: boolean
+        }
+        Insert: {
+          assistido_id: string
+          conteudo: string
+          created_at?: string
+          created_by: string
+          id?: string
+          titulo: string
+          visivel_assistido?: boolean
+        }
+        Update: {
+          assistido_id?: string
+          conteudo?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          titulo?: string
+          visivel_assistido?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orientacoes_assistido_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      palestras: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          id: string
+          observacoes: string | null
+          tema: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data: string
+          id?: string
+          observacoes?: string | null
+          tema?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          id?: string
+          observacoes?: string | null
+          tema?: string | null
+        }
+        Relationships: []
+      }
+      presencas_palestras: {
+        Row: {
+          assistido_id: string
+          created_at: string
+          id: string
+          palestra_id: string
+          presente: boolean
+          registrado_por: string | null
+        }
+        Insert: {
+          assistido_id: string
+          created_at?: string
+          id?: string
+          palestra_id: string
+          presente?: boolean
+          registrado_por?: string | null
+        }
+        Update: {
+          assistido_id?: string
+          created_at?: string
+          id?: string
+          palestra_id?: string
+          presente?: boolean
+          registrado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_palestras_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_palestras_palestra_id_fkey"
+            columns: ["palestra_id"]
+            isOneToOne: false
+            referencedRelation: "palestras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presencas_tratamentos: {
+        Row: {
+          assistido_tratamento_id: string
+          created_at: string
+          data: string
+          id: string
+          observacao: string | null
+          registrado_por: string
+          status_presenca: string
+        }
+        Insert: {
+          assistido_tratamento_id: string
+          created_at?: string
+          data: string
+          id?: string
+          observacao?: string | null
+          registrado_por: string
+          status_presenca?: string
+        }
+        Update: {
+          assistido_tratamento_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          observacao?: string | null
+          registrado_por?: string
+          status_presenca?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_tratamentos_assistido_tratamento_id_fkey"
+            columns: ["assistido_tratamento_id"]
+            isOneToOne: false
+            referencedRelation: "assistido_tratamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipos_tratamento: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          dia_semana: number | null
+          frequencia_unidade: string | null
+          frequencia_valor: number | null
+          horario: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          dia_semana?: number | null
+          frequencia_unidade?: string | null
+          frequencia_valor?: number | null
+          horario?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          dia_semana?: number | null
+          frequencia_unidade?: string | null
+          frequencia_valor?: number | null
+          horario?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "entrevistador" | "tarefeiro" | "assistido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +600,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "entrevistador", "tarefeiro", "assistido"],
+    },
   },
 } as const
