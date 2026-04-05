@@ -3,6 +3,7 @@ import AdminDashboard from "./dashboard/AdminDashboard";
 import EntrevistadorDashboard from "./dashboard/EntrevistadorDashboard";
 import TarefeiroDashboard from "./dashboard/TarefeiroDashboard";
 import AssistidoDashboard from "./dashboard/AssistidoDashboard";
+import CoordenadorDashboard from "./dashboard/CoordenadorDashboard";
 
 export default function Dashboard() {
   const { role } = useAuth();
@@ -16,6 +17,8 @@ export default function Dashboard() {
       return <TarefeiroDashboard />;
     case "assistido":
       return <AssistidoDashboard />;
+    case "coordenador_de_tratamento":
+      return <CoordenadorDashboard />;
     default:
       return <AssistidoDashboard />;
   }
