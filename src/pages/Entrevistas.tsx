@@ -127,7 +127,7 @@ export default function Entrevistas() {
     const [{ data: ent }, { data: assist }, { data: trat }, { data: config }] = await Promise.all([
       supabase.from("entrevistas_fraternas").select("*").order("data", { ascending: false }),
       supabase.from("assistidos").select("id, nome, quantidade_palestras, status").is("deleted_at", null).order("nome"),
-      supabase.from("tipos_tratamento").select("id, nome, tipo, status, dia_semana, horario, frequencia_valor, frequencia_unidade, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento").eq("status", "ativo"),
+      supabase.from("tipos_tratamento").select("id, nome, tipo, status, dia_semana, horario, frequencia_valor, frequencia_unidade, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento, modo_agendamento").eq("status", "ativo"),
       supabase.from("configuracoes_gerais").select("chave, valor"),
     ]);
     if (assist) {
