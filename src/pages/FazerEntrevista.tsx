@@ -275,7 +275,9 @@ export default function FazerEntrevista() {
       toast({ title: "Informe a data da entrevista", variant: "destructive" });
       return;
     }
-    const validDesignacoes = designacoes.filter((d) => d.tratamento_id && d.quantidade_total > 0);
+    const validDesignacoes = Object.entries(quantidades)
+      .filter(([_, qty]) => qty > 0)
+      .map(([tratamento_id, quantidade_total]) => ({ tratamento_id, quantidade_total }));
 
     setSaving(true);
 
