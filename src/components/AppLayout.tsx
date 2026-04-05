@@ -1,8 +1,24 @@
+import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout() {
+  const [nomeFantasia, setNomeFantasia] = useState<string | null>(null);
+
+  const fetchInst = () => {
+    supabase.from("instituicao_config").select("nome_fantasia").limit(1).then(({ data }) => {
+      if (data && data.length > 0) setNomeFantasia((data[0] as any).nome_fantasia);
+    });
+  };
+
+  useEffect(() => {
+    fetchInst();
+    window.addEventListener("instituicao-updated", fetchInst);
+    return () => window.removeEventListener("instituicao-updated", fetchInst);
+  }, []);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -10,8 +26,8 @@ export function AppLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center border-b bg-card px-4 shrink-0">
             <SidebarTrigger className="mr-4" />
-            <h1 className="text-sm font-medium text-foreground">
-              Casa Espírita — Sistema de Gestão de Tratamentos
+            <h1 className="text-sm font-medium text-foreground truncate">
+              {nomeFantasia || "Casa Espírita"} — Sistema de Gestão
             </h1>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6">

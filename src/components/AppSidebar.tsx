@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -65,6 +67,24 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { role, user, profile, signOut } = useAuth();
+  const [inst, setInst] = useState<{ logo_url: string | null; nome_fantasia: string | null } | null>(null);
+
+  useEffect(() => {
+    supabase.from("instituicao_config").select("logo_url, nome_fantasia").limit(1).then(({ data }) => {
+      if (data && data.length > 0) setInst(data[0] as any);
+    });
+  }, []);
+
+  // Listen for institutional data changes
+  useEffect(() => {
+    const handleStorage = () => {
+      supabase.from("instituicao_config").select("logo_url, nome_fantasia").limit(1).then(({ data }) => {
+        if (data && data.length > 0) setInst(data[0] as any);
+      });
+    };
+    window.addEventListener("instituicao-updated", handleStorage);
+    return () => window.removeEventListener("instituicao-updated", handleStorage);
+  }, []);
 
   const filteredItems = navItems.filter((item) => role && item.roles.includes(role));
 
@@ -73,18 +93,31 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           {!collapsed && (
-            <div className="px-4 py-5">
-              <h2 className="text-lg font-display font-semibold text-sidebar-foreground">
-                Casa Espírita
-              </h2>
-              <p className="text-xs text-sidebar-foreground/60 mt-0.5">
-                Sistema de Gestão
-              </p>
+            <div className="px-4 py-5 flex items-center gap-3">
+              {inst?.logo_url ? (
+                <img src={inst.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+              ) : (
+                <div className="h-10 w-10 rounded-lg bg-sidebar-accent flex items-center justify-center shrink-0">
+                  <Heart className="h-5 w-5 text-sidebar-foreground" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h2 className="text-sm font-display font-semibold text-sidebar-foreground truncate">
+                  {inst?.nome_fantasia || "Casa Espírita"}
+                </h2>
+                <p className="text-[10px] text-sidebar-foreground/60 mt-0.5">
+                  Sistema de Gestão
+                </p>
+              </div>
             </div>
           )}
           {collapsed && (
             <div className="flex items-center justify-center py-4">
-              <Heart className="h-6 w-6 text-sidebar-foreground" />
+              {inst?.logo_url ? (
+                <img src={inst.logo_url} alt="" className="h-7 w-7 rounded-md object-cover" />
+              ) : (
+                <Heart className="h-6 w-6 text-sidebar-foreground" />
+              )}
             </div>
           )}
         </SidebarGroup>
