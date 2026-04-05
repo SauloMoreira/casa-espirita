@@ -551,7 +551,7 @@ export default function FazerEntrevista() {
             <div className="flex justify-center">
               <PhotoUpload
                 currentUrl={assistidoForm.foto_url}
-                onUpload={(url) => setAssistidoForm({ ...assistidoForm, foto_url: url })}
+                onUrlChange={(url) => setAssistidoForm({ ...assistidoForm, foto_url: url })}
                 folder="assistidos"
               />
             </div>
