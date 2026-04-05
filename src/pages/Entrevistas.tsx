@@ -46,6 +46,7 @@ interface Tratamento {
   ordem_tratamento: number | null;
   tratamento_livre: boolean;
   bloqueia_proximo_tratamento: boolean;
+  modo_agendamento: string;
 }
 
 function generateSessionDates(
