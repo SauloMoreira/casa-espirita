@@ -7,10 +7,10 @@ import {
   BookOpen,
   Settings,
   Shield,
-  UserCheck,
   HandHeart,
   FileText,
   LogOut,
+  User,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
