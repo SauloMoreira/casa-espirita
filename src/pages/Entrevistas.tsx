@@ -240,11 +240,15 @@ export default function Entrevistas() {
 
     const groupA: typeof validDesignacoes = [];
     const groupB: typeof validDesignacoes = [];
+    const groupC: typeof validDesignacoes = [];
 
     for (const d of validDesignacoes) {
       const trat = tratamentoMap[d.tratamento_id];
       if (!trat) continue;
-      if (trat.tratamento_livre) {
+      const modo = trat.modo_agendamento || (trat.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
+      if (modo === "agendado_por_data_inicial") {
+        groupC.push(d);
+      } else if (modo === "livre_concomitante") {
         groupB.push(d);
       } else {
         groupA.push(d);
