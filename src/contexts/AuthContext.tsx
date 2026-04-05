@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AppRole = "admin" | "entrevistador" | "tarefeiro" | "assistido";
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -28,25 +30,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string) => {
+  const fetchRole = async (userId: string, accessToken: string) => {
     try {
-      // Using raw rpc/fetch since table types may not be generated yet
-      const { data, error } = await supabase.rpc("get_user_role" as any, { _user_id: userId });
-      if (error || !data) {
-        // Fallback: direct query
-        const res = await fetch(
-          `${(supabase as any).supabaseUrl}/rest/v1/user_roles?user_id=eq.${userId}&select=role`,
-          {
-            headers: {
-              apikey: (supabase as any).supabaseKey,
-              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-            },
-          }
-        );
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role&limit=1`,
+        {
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      if (res.ok) {
         const rows = await res.json();
-        setRole(rows?.[0]?.role as AppRole ?? "assistido");
+        setRole((rows?.[0]?.role as AppRole) ?? "assistido");
       } else {
-        setRole((data as string as AppRole) ?? "assistido");
+        setRole("assistido");
       }
     } catch {
       setRole("assistido");
@@ -58,8 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchRole(session.user.id);
+        if (session?.user && session.access_token) {
+          await fetchRole(session.user.id, session.access_token);
         } else {
           setRole(null);
         }
@@ -70,8 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRole(session.user.id);
+      if (session?.user && session.access_token) {
+        fetchRole(session.user.id, session.access_token);
       } else {
         setLoading(false);
       }
