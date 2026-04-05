@@ -290,7 +290,7 @@ export default function FazerEntrevista() {
         .gte("data_sessao", today);
 
       // 3. If no sessions were ever realized, remove the vinculo entirely
-      if (vinculo.quantidade_realizada === 0 && (vinculo.status === "aguardando_inicio" || vinculo.status === "aguardando_liberacao")) {
+      if (vinculo.quantidade_realizada === 0 && (vinculo.status === "aguardando_inicio" || vinculo.status === "aguardando_liberacao" || vinculo.status === "aguardando_agendamento")) {
         // Also remove any remaining agenda (shouldn't be any past if never started)
         await supabase
           .from("agenda_tratamentos_assistido")
