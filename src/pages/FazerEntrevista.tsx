@@ -247,13 +247,16 @@ export default function FazerEntrevista() {
       estado: assistidoForm.estado.trim().toUpperCase() || null,
       foto_url: assistidoForm.foto_url || null,
       observacoes: assistidoForm.observacoes || null,
-      status: "aguardando_palestras",
+      status: "ativo",
       created_by: user!.id,
     };
 
     const { data: newAssist, error } = await supabase.from("assistidos").insert(payload as any).select("id, nome, cpf, celular, email, status, quantidade_palestras").single();
     if (error) {
-      toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
+      const msg = error.message.includes("violates") 
+        ? "Não foi possível cadastrar o assistido. Verifique os dados e tente novamente."
+        : error.message;
+      toast({ title: "Erro ao cadastrar", description: msg, variant: "destructive" });
     } else if (newAssist) {
       const newA = newAssist as Assistido;
       setAssistidos((prev) => [...prev, newA].sort((a, b) => a.nome.localeCompare(b.nome)));
