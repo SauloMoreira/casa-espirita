@@ -46,6 +46,7 @@ interface Tratamento {
   ordem_tratamento: number | null;
   tratamento_livre: boolean;
   bloqueia_proximo_tratamento: boolean;
+  modo_agendamento: string;
 }
 
 function generateSessionDates(
@@ -126,7 +127,7 @@ export default function Entrevistas() {
     const [{ data: ent }, { data: assist }, { data: trat }, { data: config }] = await Promise.all([
       supabase.from("entrevistas_fraternas").select("*").order("data", { ascending: false }),
       supabase.from("assistidos").select("id, nome, quantidade_palestras, status").is("deleted_at", null).order("nome"),
-      supabase.from("tipos_tratamento").select("id, nome, tipo, status, dia_semana, horario, frequencia_valor, frequencia_unidade, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento").eq("status", "ativo"),
+      supabase.from("tipos_tratamento").select("id, nome, tipo, status, dia_semana, horario, frequencia_valor, frequencia_unidade, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento, modo_agendamento").eq("status", "ativo"),
       supabase.from("configuracoes_gerais").select("chave, valor"),
     ]);
     if (assist) {
@@ -239,11 +240,15 @@ export default function Entrevistas() {
 
     const groupA: typeof validDesignacoes = [];
     const groupB: typeof validDesignacoes = [];
+    const groupC: typeof validDesignacoes = [];
 
     for (const d of validDesignacoes) {
       const trat = tratamentoMap[d.tratamento_id];
       if (!trat) continue;
-      if (trat.tratamento_livre) {
+      const modo = trat.modo_agendamento || (trat.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
+      if (modo === "agendado_por_data_inicial") {
+        groupC.push(d);
+      } else if (modo === "livre_concomitante") {
         groupB.push(d);
       } else {
         groupA.push(d);
@@ -298,6 +303,9 @@ export default function Entrevistas() {
 
     // Group B (libre): all start from interview date
     for (const d of groupB) await createSchedule(d, entrevistaDate);
+
+    // Group C (agendado_por_data_inicial): start from interview date (in edit mode, no manual date available)
+    for (const d of groupC) await createSchedule(d, entrevistaDate);
 
     // Group A (sequential): only first gets agenda, rest get aguardando_liberacao
     if (groupA.length > 0) {

@@ -40,6 +40,7 @@ interface TipoTratamento {
   ordem_tratamento: number | null;
   tratamento_livre: boolean;
   bloqueia_proximo_tratamento: boolean;
+  modo_agendamento: string;
 }
 
 // quantidades map: tratamento_id -> quantidade (0 = not assigned)
@@ -131,6 +132,7 @@ export default function FazerEntrevista() {
   const [tipoEntrevista, setTipoEntrevista] = useState<"regular" | "livre">("regular");
   const [observacoes, setObservacoes] = useState("");
   const [quantidades, setQuantidades] = useState<Record<string, number>>({});
+  const [datasIniciais, setDatasIniciais] = useState<Record<string, string>>({});
 
   const [novoAssistidoOpen, setNovoAssistidoOpen] = useState(false);
   const [assistidoForm, setAssistidoForm] = useState(emptyAssistidoForm);
@@ -145,7 +147,7 @@ export default function FazerEntrevista() {
     const fetchData = async () => {
       const [{ data: assist }, { data: trat }, { data: config }] = await Promise.all([
         supabase.from("assistidos").select("id, nome, cpf, celular, email, status, quantidade_palestras").is("deleted_at", null).order("nome"),
-        supabase.from("tipos_tratamento").select("id, nome, tipo, dia_semana, horario, frequencia_valor, frequencia_unidade, status, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento").eq("status", "ativo"),
+        supabase.from("tipos_tratamento").select("id, nome, tipo, dia_semana, horario, frequencia_valor, frequencia_unidade, status, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento, modo_agendamento").eq("status", "ativo"),
         supabase.from("configuracoes_gerais").select("chave, valor"),
       ]);
       if (assist) setAssistidos(assist as Assistido[]);
@@ -183,6 +185,7 @@ export default function FazerEntrevista() {
   const clearSelection = () => {
     setSelectedAssistido(null);
     setQuantidades({});
+    setDatasIniciais({});
     setObservacoes("");
     setTipoEntrevista("regular");
     setDataEntrevista(new Date().toISOString().split("T")[0]);
@@ -320,6 +323,23 @@ export default function FazerEntrevista() {
       .filter(([_, qty]) => qty > 0)
       .map(([tratamento_id, quantidade_total]) => ({ tratamento_id, quantidade_total }));
 
+    // Validate: treatments with modo_agendamento = agendado_por_data_inicial must have a start date
+    for (const d of validDesignacoes) {
+      const trat = tratamentoMap[d.tratamento_id];
+      if (trat && (trat.modo_agendamento === "agendado_por_data_inicial") && !datasIniciais[d.tratamento_id]) {
+        toast({ title: "Data inicial obrigatória", description: `Informe a data da primeira sessão para "${trat.nome}"`, variant: "destructive" });
+        return;
+      }
+      // Validate weekday compatibility
+      if (trat && trat.modo_agendamento === "agendado_por_data_inicial" && datasIniciais[d.tratamento_id] && trat.dia_semana !== null) {
+        const selectedDate = new Date(datasIniciais[d.tratamento_id] + "T12:00:00");
+        if (getDay(selectedDate) !== trat.dia_semana) {
+          toast({ title: "Data incompatível", description: `A data informada para "${trat.nome}" não é ${DIAS_SEMANA[trat.dia_semana]}`, variant: "destructive" });
+          return;
+        }
+      }
+    }
+
     setSaving(true);
 
     // Check if there's already a realized interview for this assistido — reconcile if so
@@ -384,16 +404,21 @@ export default function FazerEntrevista() {
 
     const entrevistaDate = new Date(dataEntrevista + "T12:00:00");
 
-    // Separate treatments:
-    // Group A: ALL non-libre treatments (follow sequential order, may block or wait)
-    // Group B: Only tratamento_livre = true (run in parallel)
+    // Separate treatments into 3 groups based on modo_agendamento:
+    // Group A: sequencial_bloqueante (follow sequential order, may block or wait)
+    // Group B: livre_concomitante (run in parallel from interview date)
+    // Group C: agendado_por_data_inicial (run in parallel from manually chosen start date)
     const groupA: typeof validDesignacoes = [];
     const groupB: typeof validDesignacoes = [];
+    const groupC: typeof validDesignacoes = [];
 
     for (const d of validDesignacoes) {
       const trat = tratamentoMap[d.tratamento_id];
       if (!trat) continue;
-      if (trat.tratamento_livre) {
+      const modo = (trat as any).modo_agendamento || (trat.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
+      if (modo === "agendado_por_data_inicial") {
+        groupC.push(d);
+      } else if (modo === "livre_concomitante") {
         groupB.push(d);
       } else {
         groupA.push(d);
@@ -509,6 +534,13 @@ export default function FazerEntrevista() {
     // Process Group B (free treatments) — all start from interview date
     for (const d of groupB) {
       await createTratamentoSchedule(d, entrevistaDate);
+    }
+
+    // Process Group C (agendado_por_data_inicial) — start from manually chosen date
+    for (const d of groupC) {
+      const startDateStr = datasIniciais[d.tratamento_id];
+      const startDate = startDateStr ? new Date(startDateStr + "T12:00:00") : entrevistaDate;
+      await createTratamentoSchedule(d, startDate);
     }
 
     // Process Group A (sequential blocking) — only first gets agenda, rest await release
@@ -698,37 +730,58 @@ export default function FazerEntrevista() {
                     {items.map((t) => {
                       const qty = quantidades[t.id] || 0;
                       const isActive = qty > 0;
+                      const needsStartDate = (t as any).modo_agendamento === "agendado_por_data_inicial";
+                      const startDateVal = datasIniciais[t.id] || "";
                       return (
                         <div
                           key={t.id}
-                          className={`rounded-lg border p-3 flex items-center gap-3 transition-colors ${isActive ? "border-primary/40 bg-primary/5" : ""}`}
+                          className={`rounded-lg border p-3 space-y-2 transition-colors ${isActive ? "border-primary/40 bg-primary/5" : ""}`}
                         >
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium truncate ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                              {t.nome}
-                            </p>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                                {t.nome}
+                              </p>
+                              {needsStartDate && (
+                                <p className="text-[10px] text-muted-foreground">Agendado por data inicial</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Input
+                                type="number"
+                                min={0}
+                                value={qty || ""}
+                                placeholder="0"
+                                onChange={(e) => setQtd(t.id, parseInt(e.target.value) || 0)}
+                                className="w-16 h-8 text-center text-sm"
+                              />
+                              {isActive && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => clearQtd(t.id)}
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  title="Limpar"
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <Input
-                              type="number"
-                              min={0}
-                              value={qty || ""}
-                              placeholder="0"
-                              onChange={(e) => setQtd(t.id, parseInt(e.target.value) || 0)}
-                              className="w-16 h-8 text-center text-sm"
-                            />
-                            {isActive && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => clearQtd(t.id)}
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                title="Limpar"
-                              >
-                                <RotateCcw className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                          </div>
+                          {needsStartDate && isActive && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">1ª sessão {t.dia_semana !== null ? `(${DIAS_SEMANA[t.dia_semana]})` : ""}</Label>
+                              <Input
+                                type="date"
+                                value={startDateVal}
+                                onChange={(e) => setDatasIniciais((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                                className="h-8 text-sm"
+                              />
+                              {startDateVal && t.dia_semana !== null && getDay(new Date(startDateVal + "T12:00:00")) !== t.dia_semana && (
+                                <p className="text-xs text-destructive">A data deve ser {DIAS_SEMANA[t.dia_semana]}</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

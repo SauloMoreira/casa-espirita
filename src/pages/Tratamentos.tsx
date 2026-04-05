@@ -38,6 +38,7 @@ const emptyForm = {
   nome: "", tipo: "espiritual", descricao: "", dia_semana: "", horario: "",
   frequencia_valor: "1", frequencia_unidade: "semanas", status: "ativo", observacoes: "", tarefeiro_id: "",
   ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
+  modo_agendamento: "sequencial_bloqueante",
 };
 
 export default function Tratamentos() {
@@ -81,8 +82,9 @@ export default function Tratamentos() {
       observacoes: form.observacoes || null,
       tarefeiro_id: form.tarefeiro_id || null,
       ordem_tratamento: form.ordem_tratamento ? parseInt(form.ordem_tratamento as string) : null,
-      tratamento_livre: form.tratamento_livre,
-      bloqueia_proximo_tratamento: form.bloqueia_proximo_tratamento,
+      tratamento_livre: form.modo_agendamento === "livre_concomitante",
+      bloqueia_proximo_tratamento: form.modo_agendamento === "sequencial_bloqueante",
+      modo_agendamento: form.modo_agendamento,
     };
 
     let error;
@@ -114,6 +116,7 @@ export default function Tratamentos() {
       ordem_tratamento: t.ordem_tratamento?.toString() || "",
       tratamento_livre: t.tratamento_livre,
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
+      modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
     });
     setOpen(true);
   };
@@ -208,18 +211,26 @@ export default function Tratamentos() {
                 <Label>Observações</Label>
                 <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2} />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Modo de Agendamento *</Label>
+                  <Select value={form.modo_agendamento} onValueChange={(v) => setForm({ ...form, modo_agendamento: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="livre_concomitante">Livre / Concomitante</SelectItem>
+                      <SelectItem value="sequencial_bloqueante">Sequencial Bloqueante</SelectItem>
+                      <SelectItem value="agendado_por_data_inicial">Agendado por Data Inicial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {form.modo_agendamento === "livre_concomitante" && "Ocorre em paralelo, sem depender de outros tratamentos"}
+                    {form.modo_agendamento === "sequencial_bloqueante" && "Segue ordem sequencial, bloqueia o próximo até conclusão"}
+                    {form.modo_agendamento === "agendado_por_data_inicial" && "Concomitante, mas agenda inicia a partir de data informada na entrevista"}
+                  </p>
+                </div>
                 <div className="space-y-2">
                   <Label>Ordem do Tratamento</Label>
                   <Input type="number" min={1} value={form.ordem_tratamento} onChange={(e) => setForm({ ...form, ordem_tratamento: e.target.value })} placeholder="Ex: 1, 2, 3..." />
-                </div>
-                <div className="flex items-center gap-3 pt-6">
-                  <Switch checked={form.tratamento_livre} onCheckedChange={(v) => setForm({ ...form, tratamento_livre: v })} id="trat_livre" />
-                  <Label htmlFor="trat_livre" className="text-sm cursor-pointer">Tratamento Livre</Label>
-                </div>
-                <div className="flex items-center gap-3 pt-6">
-                  <Switch checked={form.bloqueia_proximo_tratamento} onCheckedChange={(v) => setForm({ ...form, bloqueia_proximo_tratamento: v })} id="bloqueia" />
-                  <Label htmlFor="bloqueia" className="text-sm cursor-pointer">Bloqueia Próximo</Label>
                 </div>
               </div>
               <Button onClick={handleSave} disabled={loading} className="w-full">
