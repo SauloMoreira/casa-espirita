@@ -62,7 +62,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { role, user, signOut } = useAuth();
+  const { role, user, profile, signOut } = useAuth();
 
   const filteredItems = navItems.filter((item) => role && item.roles.includes(role));
 
