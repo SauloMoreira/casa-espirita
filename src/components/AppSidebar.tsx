@@ -40,7 +40,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["admin", "entrevistador", "tarefeiro", "assistido"] },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["admin", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin"] },
   { title: "Tratamentos", url: "/tratamentos", icon: Heart, roles: ["admin"] },
   { title: "Assistidos", url: "/assistidos", icon: HandHeart, roles: ["admin", "entrevistador"] },
@@ -50,6 +50,9 @@ const navItems: NavItem[] = [
   { title: "Presença", url: "/presenca", icon: Heart, roles: ["admin", "tarefeiro"] },
   { title: "Meus Tratamentos", url: "/meus-tratamentos", icon: Heart, roles: ["assistido"] },
   { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar, roles: ["assistido"] },
+  { title: "Lista de Espera", url: "/lista-espera", icon: ClipboardCheck, roles: ["coordenador_de_tratamento"] },
+  { title: "Meus Tratamentos", url: "/coordenador-tratamentos", icon: Heart, roles: ["coordenador_de_tratamento"] },
+  { title: "Agenda do Tratamento", url: "/coordenador-agenda", icon: Calendar, roles: ["coordenador_de_tratamento"] },
   { title: "Relatórios", url: "/relatorios", icon: FileText, roles: ["admin"] },
   { title: "Instituição", url: "/instituicao", icon: Building2, roles: ["admin"] },
   { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
@@ -61,6 +64,7 @@ const roleLabels: Record<AppRole, string> = {
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
+  coordenador_de_tratamento: "Coordenador",
 };
 
 export function AppSidebar() {

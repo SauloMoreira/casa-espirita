@@ -38,7 +38,7 @@ const emptyForm = {
   nome: "", tipo: "espiritual", descricao: "", dia_semana: "", horario: "",
   frequencia_valor: "1", frequencia_unidade: "semanas", status: "ativo", observacoes: "", tarefeiro_id: "",
   ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
-  modo_agendamento: "sequencial_bloqueante",
+  modo_agendamento: "sequencial_bloqueante", coordenador_responsavel_id: "",
 };
 
 export default function Tratamentos() {
@@ -50,6 +50,7 @@ export default function Tratamentos() {
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [tarefeiros, setTarefeiros] = useState<{ id: string; email: string }[]>([]);
+  const [coordenadores, setCoordenadores] = useState<{ id: string; nome: string }[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -65,7 +66,16 @@ export default function Tratamentos() {
     }
   };
 
-  useEffect(() => { fetchTratamentos(); fetchTarefeiros(); }, []);
+  useEffect(() => { fetchTratamentos(); fetchTarefeiros(); fetchCoordenadores(); }, []);
+
+  const fetchCoordenadores = async () => {
+    const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "coordenador_de_tratamento");
+    if (roles && roles.length > 0) {
+      const userIds = roles.map((r: any) => r.user_id);
+      const { data: profiles } = await supabase.from("profiles").select("user_id, nome_completo").in("user_id", userIds);
+      setCoordenadores((profiles || []).map((p: any) => ({ id: p.user_id, nome: p.nome_completo || p.user_id })));
+    }
+  };
 
   const handleSave = async () => {
     if (!form.nome.trim()) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; }
@@ -85,6 +95,7 @@ export default function Tratamentos() {
       tratamento_livre: form.modo_agendamento === "livre_concomitante",
       bloqueia_proximo_tratamento: form.modo_agendamento === "sequencial_bloqueante",
       modo_agendamento: form.modo_agendamento,
+      coordenador_responsavel_id: form.coordenador_responsavel_id || null,
     };
 
     let error;
@@ -117,6 +128,7 @@ export default function Tratamentos() {
       tratamento_livre: t.tratamento_livre,
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
       modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
+      coordenador_responsavel_id: (t as any).coordenador_responsavel_id || "",
     });
     setOpen(true);
   };
@@ -233,6 +245,18 @@ export default function Tratamentos() {
                   <Input type="number" min={1} value={form.ordem_tratamento} onChange={(e) => setForm({ ...form, ordem_tratamento: e.target.value })} placeholder="Ex: 1, 2, 3..." />
                 </div>
               </div>
+              {coordenadores.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Coordenador Responsável</Label>
+                  <Select value={form.coordenador_responsavel_id} onValueChange={(v) => setForm({ ...form, coordenador_responsavel_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {coordenadores.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button onClick={handleSave} disabled={loading} className="w-full">
                 {loading ? "Salvando..." : editId ? "Atualizar" : "Cadastrar"}
               </Button>

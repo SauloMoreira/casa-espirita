@@ -1,0 +1,134 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar, Search } from "lucide-react";
+import { format, addDays } from "date-fns";
+
+const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+interface AgendaItem {
+  id: string;
+  assistido_nome: string;
+  tratamento_nome: string;
+  data_sessao: string;
+  horario: string | null;
+  status: string;
+}
+
+export default function CoordenadorAgenda() {
+  const { user } = useAuth();
+  const [items, setItems] = useState<AgendaItem[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    const fetch = async () => {
+      const { data: meusTrat } = await supabase
+        .from("tipos_tratamento")
+        .select("id, nome")
+        .eq("coordenador_responsavel_id", user.id);
+
+      if (!meusTrat || meusTrat.length === 0) { setItems([]); return; }
+      const tratMap = Object.fromEntries(meusTrat.map((t: any) => [t.id, t.nome]));
+      const tratIds = meusTrat.map((t: any) => t.id);
+
+      const today = format(new Date(), "yyyy-MM-dd");
+      const limit30 = format(addDays(new Date(), 30), "yyyy-MM-dd");
+
+      const { data: agendas } = await supabase
+        .from("agenda_tratamentos_assistido")
+        .select("id, assistido_id, tratamento_id, data_sessao, horario, status")
+        .in("tratamento_id", tratIds)
+        .gte("data_sessao", today)
+        .lte("data_sessao", limit30)
+        .order("data_sessao", { ascending: true });
+
+      if (!agendas || agendas.length === 0) { setItems([]); return; }
+
+      const assistidoIds = [...new Set(agendas.map((a: any) => a.assistido_id))];
+      const { data: assistidos } = await supabase.from("assistidos").select("id, nome").in("id", assistidoIds);
+      const assistMap = Object.fromEntries((assistidos || []).map((a: any) => [a.id, a.nome]));
+
+      setItems(agendas.map((a: any) => ({
+        id: a.id,
+        assistido_nome: assistMap[a.assistido_id] || "—",
+        tratamento_nome: tratMap[a.tratamento_id] || "—",
+        data_sessao: a.data_sessao,
+        horario: a.horario,
+        status: a.status,
+      })));
+    };
+    fetch();
+  }, [user]);
+
+  const filtered = items.filter((i) =>
+    i.assistido_nome.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+          <Calendar className="h-6 w-6 text-primary" />
+          Agenda do Tratamento
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">Próximas sessões dos tratamentos sob sua coordenação (30 dias)</p>
+      </div>
+
+      <Card className="glass-card">
+        <CardHeader className="pb-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar assistido..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Calendar className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm font-medium">Nenhuma sessão agendada</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Dia</TableHead>
+                    <TableHead className="hidden md:table-cell">Horário</TableHead>
+                    <TableHead>Assistido</TableHead>
+                    <TableHead>Tratamento</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((item) => {
+                    const d = new Date(item.data_sessao + "T12:00:00");
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{format(d, "dd/MM/yyyy")}</TableCell>
+                        <TableCell>{DIAS_SEMANA[d.getDay()]}</TableCell>
+                        <TableCell className="hidden md:table-cell">{item.horario || "—"}</TableCell>
+                        <TableCell>{item.assistido_nome}</TableCell>
+                        <TableCell>{item.tratamento_nome}</TableCell>
+                        <TableCell>
+                          <Badge variant={item.status === "agendado" ? "outline" : "default"} className="text-xs">
+                            {item.status === "agendado" ? "Agendado" : item.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
