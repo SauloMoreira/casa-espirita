@@ -584,7 +584,7 @@ export default function FazerEntrevista() {
               </div>
             </div>
             <AddressFields
-              values={{ cep: assistidoForm.cep, logradouro: assistidoForm.logradouro, numero: assistidoForm.numero, complemento: assistidoForm.complemento, bairro: assistidoForm.bairro, cidade: assistidoForm.cidade, estado: assistidoForm.estado }}
+              data={{ cep: assistidoForm.cep, logradouro: assistidoForm.logradouro, numero: assistidoForm.numero, complemento: assistidoForm.complemento, bairro: assistidoForm.bairro, cidade: assistidoForm.cidade, estado: assistidoForm.estado }}
               onChange={(fields) => setAssistidoForm({ ...assistidoForm, ...fields })}
               errors={assistidoErrors}
             />
