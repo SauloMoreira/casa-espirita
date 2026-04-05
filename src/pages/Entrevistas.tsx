@@ -39,6 +39,56 @@ interface Tratamento {
   nome: string;
   tipo: string;
   status: string;
+  dia_semana: number | null;
+  horario: string | null;
+  frequencia_valor: number | null;
+  frequencia_unidade: string | null;
+  ordem_tratamento: number | null;
+  tratamento_livre: boolean;
+  bloqueia_proximo_tratamento: boolean;
+}
+
+function generateSessionDates(
+  startDate: Date,
+  diaSemana: number | null,
+  horario: string | null,
+  freqValor: number,
+  freqUnidade: string,
+  quantidade: number
+): { data_sessao: string; horario: string | null }[] {
+  const sessions: { data_sessao: string; horario: string | null }[] = [];
+  let cursor: Date;
+
+  if (diaSemana !== null) {
+    const entDay = getDay(startDate);
+    if (entDay === diaSemana) {
+      cursor = startOfDay(startDate);
+      if (horario) {
+        const [h, m] = horario.split(":").map(Number);
+        const treatmentTime = new Date(startDate);
+        treatmentTime.setHours(h, m, 0, 0);
+        if (startDate > treatmentTime) {
+          if (freqUnidade === "semanas") cursor = addWeeks(cursor, freqValor);
+          else if (freqUnidade === "meses") cursor = addMonths(cursor, freqValor);
+          else cursor = addDays(cursor, freqValor);
+        }
+      }
+    } else {
+      let diff = diaSemana - entDay;
+      if (diff <= 0) diff += 7;
+      cursor = addDays(startOfDay(startDate), diff);
+    }
+  } else {
+    cursor = addDays(startOfDay(startDate), 1);
+  }
+
+  for (let i = 0; i < quantidade; i++) {
+    sessions.push({ data_sessao: format(cursor, "yyyy-MM-dd"), horario: horario || null });
+    if (freqUnidade === "semanas") cursor = addWeeks(cursor, freqValor);
+    else if (freqUnidade === "meses") cursor = addMonths(cursor, freqValor);
+    else cursor = addDays(cursor, freqValor);
+  }
+  return sessions;
 }
 
 interface DesignacaoItem {
