@@ -117,6 +117,7 @@ export default function Tratamentos() {
       tratamento_livre: t.tratamento_livre,
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
       modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
+      coordenador_responsavel_id: (t as any).coordenador_responsavel_id || "",
     });
     setOpen(true);
   };
