@@ -22,7 +22,7 @@ export default function TarefeiroDashboard() {
 
       const tratIds = tratamentos.map((t) => t.id);
       const { data: vinculos } = await supabase.from("assistido_tratamentos")
-        .select("id").in("tratamento_id", tratIds).in("status", ["aguardando_inicio", "em_andamento"]);
+        .select("id").in("tratamento_id", tratIds).in("status", ["aguardando_inicio", "em_andamento", "liberado"]);
 
       const vinculoIds = (vinculos || []).map((v) => v.id);
       const { count: registradas } = await supabase.from("presencas_tratamentos")
