@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Calendar, BookOpen, Eye, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
 
 interface Entrevista {
   id: string;
