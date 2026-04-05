@@ -287,7 +287,7 @@ export default function FazerEntrevista() {
         .gte("data_sessao", today);
 
       // 3. If no sessions were ever realized, remove the vinculo entirely
-      if (vinculo.quantidade_realizada === 0 && vinculo.status === "aguardando_inicio") {
+      if (vinculo.quantidade_realizada === 0 && (vinculo.status === "aguardando_inicio" || vinculo.status === "aguardando_liberacao")) {
         // Also remove any remaining agenda (shouldn't be any past if never started)
         await supabase
           .from("agenda_tratamentos_assistido")
@@ -353,7 +353,7 @@ export default function FazerEntrevista() {
           .eq("status", "agendado")
           .gte("data_sessao", today);
 
-        if (vinculo.quantidade_realizada === 0 && vinculo.status === "aguardando_inicio") {
+        if (vinculo.quantidade_realizada === 0 && (vinculo.status === "aguardando_inicio" || vinculo.status === "aguardando_liberacao")) {
           await supabase
             .from("agenda_tratamentos_assistido")
             .delete()
@@ -509,10 +509,37 @@ export default function FazerEntrevista() {
       await createTratamentoSchedule(d, entrevistaDate);
     }
 
-    // Process Group A (sequential blocking) — chain start dates
-    let sequentialStart = entrevistaDate;
-    for (const d of groupA) {
-      sequentialStart = await createTratamentoSchedule(d, sequentialStart);
+    // Process Group A (sequential blocking) — only first gets agenda, rest await release
+    if (groupA.length > 0) {
+      // First blocking treatment: create with aguardando_inicio + generate agenda
+      await createTratamentoSchedule(groupA[0], entrevistaDate);
+
+      // Remaining blocking treatments: create with aguardando_liberacao, NO agenda
+      for (let i = 1; i < groupA.length; i++) {
+        const d = groupA[i];
+        const trat = tratamentoMap[d.tratamento_id];
+        if (!trat) continue;
+
+        const existingVinculo = await findExistingActiveVinculo(d.tratamento_id);
+        if (existingVinculo) {
+          const newTotal = Math.max(d.quantidade_total, existingVinculo.quantidade_realizada);
+          await supabase.from("assistido_tratamentos").update({
+            quantidade_total: newTotal,
+            entrevista_id: entrevista.id,
+            status: "aguardando_liberacao",
+          }).eq("id", existingVinculo.id);
+        } else {
+          await supabase.from("assistido_tratamentos").insert({
+            assistido_id: selectedAssistido!.id,
+            tratamento_id: d.tratamento_id,
+            quantidade_total: d.quantidade_total,
+            quantidade_realizada: 0,
+            status: "aguardando_liberacao",
+            entrevista_id: entrevista.id,
+            created_by: user!.id,
+          } as any);
+        }
+      }
     }
 
     // Update assistido status
