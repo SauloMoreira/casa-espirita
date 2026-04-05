@@ -24,6 +24,9 @@ import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import Auditoria from "./pages/Auditoria";
 import Instituicao from "./pages/Instituicao";
+import CoordenadorListaEspera from "./pages/CoordenadorListaEspera";
+import CoordenadorTratamentos from "./pages/CoordenadorTratamentos";
+import CoordenadorAgenda from "./pages/CoordenadorAgenda";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
