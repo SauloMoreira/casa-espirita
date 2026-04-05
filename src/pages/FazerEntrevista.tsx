@@ -39,10 +39,7 @@ interface TipoTratamento {
   status: string;
 }
 
-interface DesignacaoItem {
-  tratamento_id: string;
-  quantidade_total: number;
-}
+// quantidades map: tratamento_id -> quantidade (0 = not assigned)
 
 const STATUS_LABELS: Record<string, string> = {
   aguardando_palestras: "Aguardando Palestras",
