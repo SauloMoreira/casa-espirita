@@ -116,6 +116,7 @@ export default function Tratamentos() {
       ordem_tratamento: t.ordem_tratamento?.toString() || "",
       tratamento_livre: t.tratamento_livre,
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
+      modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
     });
     setOpen(true);
   };
