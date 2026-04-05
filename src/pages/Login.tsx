@@ -94,6 +94,11 @@ export default function Login() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
+              <div className="text-center">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  Esqueceu a senha?
+                </Link>
+              </div>
             </form>
           </CardContent>
         </Card>
