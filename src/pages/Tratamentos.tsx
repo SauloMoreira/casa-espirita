@@ -208,6 +208,20 @@ export default function Tratamentos() {
                 <Label>Observações</Label>
                 <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2} />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Ordem do Tratamento</Label>
+                  <Input type="number" min={1} value={form.ordem_tratamento} onChange={(e) => setForm({ ...form, ordem_tratamento: e.target.value })} placeholder="Ex: 1, 2, 3..." />
+                </div>
+                <div className="flex items-center gap-3 pt-6">
+                  <Switch checked={form.tratamento_livre} onCheckedChange={(v) => setForm({ ...form, tratamento_livre: v })} id="trat_livre" />
+                  <Label htmlFor="trat_livre" className="text-sm cursor-pointer">Tratamento Livre</Label>
+                </div>
+                <div className="flex items-center gap-3 pt-6">
+                  <Switch checked={form.bloqueia_proximo_tratamento} onCheckedChange={(v) => setForm({ ...form, bloqueia_proximo_tratamento: v })} id="bloqueia" />
+                  <Label htmlFor="bloqueia" className="text-sm cursor-pointer">Bloqueia Próximo</Label>
+                </div>
+              </div>
               <Button onClick={handleSave} disabled={loading} className="w-full">
                 {loading ? "Salvando..." : editId ? "Atualizar" : "Cadastrar"}
               </Button>
