@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Heart, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -28,11 +29,15 @@ interface Tratamento {
   status: string;
   observacoes: string | null;
   tarefeiro_id: string | null;
+  ordem_tratamento: number | null;
+  tratamento_livre: boolean;
+  bloqueia_proximo_tratamento: boolean;
 }
 
 const emptyForm = {
   nome: "", tipo: "espiritual", descricao: "", dia_semana: "", horario: "",
   frequencia_valor: "1", frequencia_unidade: "semanas", status: "ativo", observacoes: "", tarefeiro_id: "",
+  ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
 };
 
 export default function Tratamentos() {
@@ -75,6 +80,9 @@ export default function Tratamentos() {
       status: form.status,
       observacoes: form.observacoes || null,
       tarefeiro_id: form.tarefeiro_id || null,
+      ordem_tratamento: form.ordem_tratamento ? parseInt(form.ordem_tratamento as string) : null,
+      tratamento_livre: form.tratamento_livre,
+      bloqueia_proximo_tratamento: form.bloqueia_proximo_tratamento,
     };
 
     let error;
@@ -103,6 +111,9 @@ export default function Tratamentos() {
       horario: t.horario || "", frequencia_valor: t.frequencia_valor?.toString() || "1",
       frequencia_unidade: t.frequencia_unidade || "semanas", status: t.status,
       observacoes: t.observacoes || "", tarefeiro_id: (t as any).tarefeiro_id || "",
+      ordem_tratamento: t.ordem_tratamento?.toString() || "",
+      tratamento_livre: t.tratamento_livre,
+      bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
     });
     setOpen(true);
   };
@@ -196,6 +207,20 @@ export default function Tratamentos() {
               <div className="space-y-2">
                 <Label>Observações</Label>
                 <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Ordem do Tratamento</Label>
+                  <Input type="number" min={1} value={form.ordem_tratamento} onChange={(e) => setForm({ ...form, ordem_tratamento: e.target.value })} placeholder="Ex: 1, 2, 3..." />
+                </div>
+                <div className="flex items-center gap-3 pt-6">
+                  <Switch checked={form.tratamento_livre} onCheckedChange={(v) => setForm({ ...form, tratamento_livre: v })} id="trat_livre" />
+                  <Label htmlFor="trat_livre" className="text-sm cursor-pointer">Tratamento Livre</Label>
+                </div>
+                <div className="flex items-center gap-3 pt-6">
+                  <Switch checked={form.bloqueia_proximo_tratamento} onCheckedChange={(v) => setForm({ ...form, bloqueia_proximo_tratamento: v })} id="bloqueia" />
+                  <Label htmlFor="bloqueia" className="text-sm cursor-pointer">Bloqueia Próximo</Label>
+                </div>
               </div>
               <Button onClick={handleSave} disabled={loading} className="w-full">
                 {loading ? "Salvando..." : editId ? "Atualizar" : "Cadastrar"}
