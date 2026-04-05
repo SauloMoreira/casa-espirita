@@ -185,6 +185,7 @@ export default function FazerEntrevista() {
   const clearSelection = () => {
     setSelectedAssistido(null);
     setQuantidades({});
+    setDatasIniciais({});
     setObservacoes("");
     setTipoEntrevista("regular");
     setDataEntrevista(new Date().toISOString().split("T")[0]);
