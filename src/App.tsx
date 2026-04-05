@@ -22,6 +22,7 @@ import MinhaAgenda from "./pages/MinhaAgenda";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import Auditoria from "./pages/Auditoria";
+import Instituicao from "./pages/Instituicao";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
