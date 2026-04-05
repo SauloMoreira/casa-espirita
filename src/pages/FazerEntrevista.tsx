@@ -384,17 +384,19 @@ export default function FazerEntrevista() {
 
     const entrevistaDate = new Date(dataEntrevista + "T12:00:00");
 
-    // Separate treatments into Group A (blocking sequential) and Group B (free/non-blocking)
+    // Separate treatments:
+    // Group A: ALL non-libre treatments (follow sequential order, may block or wait)
+    // Group B: Only tratamento_livre = true (run in parallel)
     const groupA: typeof validDesignacoes = [];
     const groupB: typeof validDesignacoes = [];
 
     for (const d of validDesignacoes) {
       const trat = tratamentoMap[d.tratamento_id];
       if (!trat) continue;
-      if (trat.bloqueia_proximo_tratamento && !trat.tratamento_livre) {
-        groupA.push(d);
-      } else {
+      if (trat.tratamento_livre) {
         groupB.push(d);
+      } else {
+        groupA.push(d);
       }
     }
 
