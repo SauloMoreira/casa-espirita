@@ -53,7 +53,7 @@ const emptyForm = {
   nome: "", cpf: "", celular: "", email: "", data_nascimento: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "",
   foto_url: null as string | null,
-  observacoes: "", status: "aguardando_palestras", quantidade_palestras: "0",
+  observacoes: "", status: "ativo", quantidade_palestras: "0",
 };
 
 type FormErrors = Partial<Record<string, string>>;

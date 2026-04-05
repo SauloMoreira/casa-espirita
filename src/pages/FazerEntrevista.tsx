@@ -247,7 +247,7 @@ export default function FazerEntrevista() {
       estado: assistidoForm.estado.trim().toUpperCase() || null,
       foto_url: assistidoForm.foto_url || null,
       observacoes: assistidoForm.observacoes || null,
-      status: "aguardando_palestras",
+      status: "ativo",
       created_by: user!.id,
     };
 
