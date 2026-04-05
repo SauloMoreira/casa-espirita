@@ -37,6 +37,9 @@ interface TipoTratamento {
   frequencia_valor: number | null;
   frequencia_unidade: string | null;
   status: string;
+  ordem_tratamento: number | null;
+  tratamento_livre: boolean;
+  bloqueia_proximo_tratamento: boolean;
 }
 
 // quantidades map: tratamento_id -> quantidade (0 = not assigned)
