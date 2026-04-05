@@ -28,11 +28,15 @@ interface Tratamento {
   status: string;
   observacoes: string | null;
   tarefeiro_id: string | null;
+  ordem_tratamento: number | null;
+  tratamento_livre: boolean;
+  bloqueia_proximo_tratamento: boolean;
 }
 
 const emptyForm = {
   nome: "", tipo: "espiritual", descricao: "", dia_semana: "", horario: "",
   frequencia_valor: "1", frequencia_unidade: "semanas", status: "ativo", observacoes: "", tarefeiro_id: "",
+  ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
 };
 
 export default function Tratamentos() {
