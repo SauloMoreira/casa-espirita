@@ -11,6 +11,7 @@ import {
   FileText,
   LogOut,
   User,
+  Building2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
