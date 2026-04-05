@@ -110,6 +110,9 @@ export default function Tratamentos() {
       horario: t.horario || "", frequencia_valor: t.frequencia_valor?.toString() || "1",
       frequencia_unidade: t.frequencia_unidade || "semanas", status: t.status,
       observacoes: t.observacoes || "", tarefeiro_id: (t as any).tarefeiro_id || "",
+      ordem_tratamento: t.ordem_tratamento?.toString() || "",
+      tratamento_livre: t.tratamento_livre,
+      bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
     });
     setOpen(true);
   };
