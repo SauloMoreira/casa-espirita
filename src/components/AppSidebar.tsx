@@ -64,6 +64,7 @@ const roleLabels: Record<AppRole, string> = {
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
+  coordenador_de_tratamento: "Coordenador",
 };
 
 export function AppSidebar() {
