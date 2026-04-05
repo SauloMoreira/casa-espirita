@@ -372,7 +372,7 @@ export default function FazerEntrevista() {
           .eq("status", "agendado")
           .gte("data_sessao", today);
 
-        if (vinculo.quantidade_realizada === 0 && (vinculo.status === "aguardando_inicio" || vinculo.status === "aguardando_liberacao")) {
+        if (vinculo.quantidade_realizada === 0 && (vinculo.status === "aguardando_inicio" || vinculo.status === "aguardando_liberacao" || vinculo.status === "aguardando_agendamento")) {
           await supabase
             .from("agenda_tratamentos_assistido")
             .delete()
