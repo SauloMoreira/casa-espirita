@@ -77,6 +77,7 @@ export type Database = {
       }
       assistido_tratamentos: {
         Row: {
+          agendado_por: string | null
           assistido_id: string
           created_at: string
           created_by: string
@@ -92,6 +93,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agendado_por?: string | null
           assistido_id: string
           created_at?: string
           created_by: string
@@ -107,6 +109,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agendado_por?: string | null
           assistido_id?: string
           created_at?: string
           created_by?: string
@@ -607,6 +610,7 @@ export type Database = {
       tipos_tratamento: {
         Row: {
           bloqueia_proximo_tratamento: boolean
+          coordenador_responsavel_id: string | null
           created_at: string
           created_by: string | null
           descricao: string | null
@@ -627,6 +631,7 @@ export type Database = {
         }
         Insert: {
           bloqueia_proximo_tratamento?: boolean
+          coordenador_responsavel_id?: string | null
           created_at?: string
           created_by?: string | null
           descricao?: string | null
@@ -647,6 +652,7 @@ export type Database = {
         }
         Update: {
           bloqueia_proximo_tratamento?: boolean
+          coordenador_responsavel_id?: string | null
           created_at?: string
           created_by?: string | null
           descricao?: string | null
@@ -715,7 +721,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "entrevistador" | "tarefeiro" | "assistido"
+      app_role:
+        | "admin"
+        | "entrevistador"
+        | "tarefeiro"
+        | "assistido"
+        | "coordenador_de_tratamento"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -843,7 +854,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "entrevistador", "tarefeiro", "assistido"],
+      app_role: [
+        "admin",
+        "entrevistador",
+        "tarefeiro",
+        "assistido",
+        "coordenador_de_tratamento",
+      ],
     },
   },
 } as const
