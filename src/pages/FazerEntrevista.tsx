@@ -805,6 +805,9 @@ export default function FazerEntrevista() {
                               {startDateVal && t.dia_semana !== null && getDay(new Date(startDateVal + "T12:00:00")) !== t.dia_semana && (
                                 <p className="text-xs text-destructive">A data deve ser {DIAS_SEMANA[t.dia_semana]}</p>
                               )}
+                              {!startDateVal && (
+                                <p className="text-xs text-muted-foreground">Sem data → lista de espera do coordenador</p>
+                              )}
                             </div>
                           )}
                         </div>
