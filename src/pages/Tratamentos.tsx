@@ -79,6 +79,9 @@ export default function Tratamentos() {
       status: form.status,
       observacoes: form.observacoes || null,
       tarefeiro_id: form.tarefeiro_id || null,
+      ordem_tratamento: form.ordem_tratamento ? parseInt(form.ordem_tratamento as string) : null,
+      tratamento_livre: form.tratamento_livre,
+      bloqueia_proximo_tratamento: form.bloqueia_proximo_tratamento,
     };
 
     let error;
