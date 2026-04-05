@@ -606,6 +606,7 @@ export type Database = {
       }
       tipos_tratamento: {
         Row: {
+          bloqueia_proximo_tratamento: boolean
           created_at: string
           created_by: string | null
           descricao: string | null
@@ -616,12 +617,15 @@ export type Database = {
           id: string
           nome: string
           observacoes: string | null
+          ordem_tratamento: number | null
           status: string
           tarefeiro_id: string | null
           tipo: string
+          tratamento_livre: boolean
           updated_at: string
         }
         Insert: {
+          bloqueia_proximo_tratamento?: boolean
           created_at?: string
           created_by?: string | null
           descricao?: string | null
@@ -632,12 +636,15 @@ export type Database = {
           id?: string
           nome: string
           observacoes?: string | null
+          ordem_tratamento?: number | null
           status?: string
           tarefeiro_id?: string | null
           tipo: string
+          tratamento_livre?: boolean
           updated_at?: string
         }
         Update: {
+          bloqueia_proximo_tratamento?: boolean
           created_at?: string
           created_by?: string | null
           descricao?: string | null
@@ -648,9 +655,11 @@ export type Database = {
           id?: string
           nome?: string
           observacoes?: string | null
+          ordem_tratamento?: number | null
           status?: string
           tarefeiro_id?: string | null
           tipo?: string
+          tratamento_livre?: boolean
           updated_at?: string
         }
         Relationships: []
