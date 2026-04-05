@@ -302,13 +302,37 @@ export default function FazerEntrevista() {
 
     const entrevistaDate = new Date(dataEntrevista + "T12:00:00");
 
-    // Create treatment links and schedule
+    // Separate treatments into Group A (blocking sequential) and Group B (free/non-blocking)
+    const groupA: typeof validDesignacoes = []; // bloqueia_proximo_tratamento = true
+    const groupB: typeof validDesignacoes = []; // tratamento_livre = true OR bloqueia = false
+
     for (const d of validDesignacoes) {
       const trat = tratamentoMap[d.tratamento_id];
       if (!trat) continue;
+      if (trat.bloqueia_proximo_tratamento && !trat.tratamento_livre) {
+        groupA.push(d);
+      } else {
+        groupB.push(d);
+      }
+    }
+
+    // Sort Group A by ordem_tratamento ascending
+    groupA.sort((a, b) => {
+      const oa = tratamentoMap[a.tratamento_id]?.ordem_tratamento ?? 999;
+      const ob = tratamentoMap[b.tratamento_id]?.ordem_tratamento ?? 999;
+      return oa - ob;
+    });
+
+    // Helper to create treatment link + schedule
+    const createTratamentoSchedule = async (
+      d: { tratamento_id: string; quantidade_total: number },
+      startDate: Date
+    ): Promise<Date> => {
+      const trat = tratamentoMap[d.tratamento_id];
+      if (!trat) return startDate;
 
       const { data: vinculo, error: vErr } = await supabase.from("assistido_tratamentos").insert({
-        assistido_id: selectedAssistido.id,
+        assistido_id: selectedAssistido!.id,
         tratamento_id: d.tratamento_id,
         quantidade_total: d.quantidade_total,
         quantidade_realizada: 0,
@@ -317,11 +341,10 @@ export default function FazerEntrevista() {
         created_by: user!.id,
       }).select("id").single();
 
-      if (vErr || !vinculo) continue;
+      if (vErr || !vinculo) return startDate;
 
-      // Generate schedule
       const sessions = generateSessionDates(
-        entrevistaDate,
+        startDate,
         trat.dia_semana,
         trat.horario,
         trat.frequencia_valor || 1,
@@ -331,7 +354,7 @@ export default function FazerEntrevista() {
 
       if (sessions.length > 0) {
         const agendaRows = sessions.map((s) => ({
-          assistido_id: selectedAssistido.id,
+          assistido_id: selectedAssistido!.id,
           assistido_tratamento_id: vinculo.id,
           tratamento_id: d.tratamento_id,
           data_sessao: s.data_sessao,
@@ -340,7 +363,24 @@ export default function FazerEntrevista() {
           registrado_por: user!.id,
         }));
         await supabase.from("agenda_tratamentos_assistido").insert(agendaRows as any);
+
+        // Return the day after the last session as the next start date
+        const lastSession = sessions[sessions.length - 1];
+        return addDays(new Date(lastSession.data_sessao + "T12:00:00"), 1);
       }
+
+      return startDate;
+    };
+
+    // Process Group B (free treatments) — all start from interview date
+    for (const d of groupB) {
+      await createTratamentoSchedule(d, entrevistaDate);
+    }
+
+    // Process Group A (sequential blocking) — chain start dates
+    let sequentialStart = entrevistaDate;
+    for (const d of groupA) {
+      sequentialStart = await createTratamentoSchedule(d, sequentialStart);
     }
 
     // Update assistido status
