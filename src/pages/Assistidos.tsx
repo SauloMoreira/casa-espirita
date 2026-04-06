@@ -345,6 +345,19 @@ export default function Assistidos() {
           )}
         </CardContent>
       </Card>
+
+      {acessoAssistido && (
+        <GerarAcessoAssistido
+          open={acessoOpen}
+          onOpenChange={setAcessoOpen}
+          assistidoId={acessoAssistido.id}
+          assistidoNome={acessoAssistido.nome}
+          assistidoEmail={acessoAssistido.email}
+          assistidoCelular={acessoAssistido.celular}
+          assistidoDataNascimento={acessoAssistido.data_nascimento}
+          onSuccess={fetchAssistidos}
+        />
+      )}
     </div>
   );
 }
