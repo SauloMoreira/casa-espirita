@@ -45,7 +45,7 @@ export default function PainelGerencial() {
       });
 
       // Presences this month
-      let pQ = supabase.from("presencas_tratamentos").select("status_presenca, assistido_tratamento:assistido_tratamentos(tratamento_id)").gte("data", inicio).lte("data", fim);
+      let pQ = supabase.from("presencas_tratamentos").select("status_presenca, assistido_tratamento:assistido_tratamentos(tratamento_id)").gte("data", inicio).lte("data", fim).limit(10000);
       const { data: presencas } = await pQ;
 
       let sessoesRealizadas = 0, faltas = 0;

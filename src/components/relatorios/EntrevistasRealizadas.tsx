@@ -51,7 +51,7 @@ export default function EntrevistasRealizadas() {
 
       // Get treatment counts per entrevista
       const entrevistaIds = data.map((d: any) => d.id);
-      const { data: tratamentos } = await supabase.from("assistido_tratamentos").select("entrevista_id").in("entrevista_id", entrevistaIds);
+      const { data: tratamentos } = await supabase.from("assistido_tratamentos").select("entrevista_id").in("entrevista_id", entrevistaIds).limit(5000);
       const tratCount = new Map<string, number>();
       (tratamentos || []).forEach((t) => {
         if (t.entrevista_id) tratCount.set(t.entrevista_id, (tratCount.get(t.entrevista_id) || 0) + 1);
