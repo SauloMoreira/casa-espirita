@@ -80,6 +80,8 @@ export default function Tratamentos() {
 
   const handleSave = async () => {
     if (!form.nome.trim()) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; }
+    const qtdPadrao = parseInt(form.quantidade_padrao_sessoes);
+    if (!qtdPadrao || qtdPadrao <= 0) { toast({ title: "Quantidade padrão de sessões deve ser maior que zero", variant: "destructive" }); return; }
     setLoading(true);
     const payload = {
       nome: form.nome.trim(),
