@@ -58,8 +58,9 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
 
       if (show.includes("tratamentoId") || show.includes("tipoTratamento")) {
         promises.push(
-          supabase.from("tipos_tratamento").select("id, nome").order("nome").then(({ data }) => {
-            setTratamentos((data || []).map((t) => ({ id: t.id, nome: t.nome })));
+          supabase.from("tipos_tratamento").select("id, nome, tipo").order("nome").then(({ data }) => {
+            setTratamentos((data || []).map((t: any) => ({ id: t.id, nome: t.nome })));
+            setTiposTratamento([...new Set((data || []).map((t: any) => t.tipo as string).filter(Boolean))]);
           })
         );
       }
