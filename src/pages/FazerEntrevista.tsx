@@ -768,7 +768,7 @@ export default function FazerEntrevista() {
           {(() => {
             const espirituais = tratamentos.filter((t) => t.tipo === "espiritual");
             const holisticos = tratamentos.filter((t) => t.tipo !== "espiritual");
-            const totalAssigned = Object.values(quantidades).filter((q) => q > 0).length;
+            const totalAssigned = Object.keys(quantidades).length;
 
             const renderGroup = (title: string, items: TipoTratamento[]) => {
               if (items.length === 0) return null;
