@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, HandHeart, Pencil } from "lucide-react";
+import { Plus, Search, HandHeart, Pencil, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
+import { GerarAcessoAssistido } from "@/components/GerarAcessoAssistido";
 
 interface Assistido {
   id: string;
@@ -35,6 +36,7 @@ interface Assistido {
   observacoes: string | null;
   status: string;
   quantidade_palestras: number;
+  user_id: string | null;
 }
 
 const STATUS_OPTIONS = [
@@ -67,6 +69,8 @@ export default function Assistidos() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acessoOpen, setAcessoOpen] = useState(false);
+  const [acessoAssistido, setAcessoAssistido] = useState<Assistido | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -303,6 +307,7 @@ export default function Assistidos() {
                     <TableHead className="hidden md:table-cell">Celular</TableHead>
                     <TableHead>Palestras</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-10">Acesso</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -319,6 +324,15 @@ export default function Assistidos() {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        {a.user_id ? (
+                          <Badge variant="default" className="text-xs">Ativo</Badge>
+                        ) : (
+                          <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => { setAcessoAssistido(a); setAcessoOpen(true); }}>
+                            <KeyRound className="h-3.5 w-3.5" /> Gerar
+                          </Button>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(a)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -331,6 +345,19 @@ export default function Assistidos() {
           )}
         </CardContent>
       </Card>
+
+      {acessoAssistido && (
+        <GerarAcessoAssistido
+          open={acessoOpen}
+          onOpenChange={setAcessoOpen}
+          assistidoId={acessoAssistido.id}
+          assistidoNome={acessoAssistido.nome}
+          assistidoEmail={acessoAssistido.email}
+          assistidoCelular={acessoAssistido.celular}
+          assistidoDataNascimento={acessoAssistido.data_nascimento}
+          onSuccess={fetchAssistidos}
+        />
+      )}
     </div>
   );
 }
