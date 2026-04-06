@@ -16,6 +16,7 @@ interface FichaVoluntarioProps {
   open: boolean;
   onClose: () => void;
   voluntario: any;
+  funcoesNomes?: string[];
 }
 
 export function FichaVoluntario({ open, onClose, voluntario }: FichaVoluntarioProps) {
