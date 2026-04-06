@@ -705,7 +705,7 @@ export default function FazerEntrevista() {
 
     recognition.onend = () => {
       // Auto-restart if still recording (browser stops after silence)
-      if (recognitionRef[0] && isRecording) {
+      if (isRecordingRef.current) {
         try {
           recognition.start();
           return;
@@ -713,11 +713,14 @@ export default function FazerEntrevista() {
           // ignore restart errors
         }
       }
+      isRecordingRef.current = false;
+      recognitionRef.current = null;
       setIsRecording(false);
     };
 
     recognition.start();
-    recognitionRef[0] = recognition;
+    recognitionRef.current = recognition;
+    isRecordingRef.current = true;
     setIsRecording(true);
     toast({ title: "🎙️ Gravando...", description: "Fale normalmente. Clique novamente para parar." });
   };
