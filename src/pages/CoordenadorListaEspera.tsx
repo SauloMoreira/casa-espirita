@@ -198,6 +198,12 @@ export default function CoordenadorListaEspera() {
     toast({ title: "Tratamento agendado com sucesso!", description: `${sessions.length} sessão(ões) gerada(s)` });
     setAgendarOpen(false);
     setSaving(false);
+    
+    // Show scheduling letter
+    setCartaAssistidoId(selectedItem.assistido_id);
+    setCartaVinculoIds([selectedItem.id]);
+    setCartaOpen(true);
+    
     fetchData();
   };
 
