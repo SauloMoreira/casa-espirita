@@ -8,16 +8,16 @@ import { Heart, Calendar, CheckCircle, Clock, Bell } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const STATUS_LABELS: Record<string, string> = {
   aguardando_inicio: "Aguardando", em_andamento: "Em Andamento", concluido: "Concluído",
 };
 
 export default function AssistidoDashboard() {
   const [tratamentos, setTratamentos] = useState<any[]>([]);
+  const [proximaSessao, setProximaSessao] = useState<any | null>(null);
   const [stats, setStats] = useState({ ativos: 0, realizadas: 0, faltantes: 0 });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -25,7 +25,7 @@ export default function AssistidoDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: assistido } = await supabase.from("assistidos").select("id").eq("user_id", user!.id).maybeSingle();
       if (!assistido) { setLoading(false); return; }
 
@@ -36,14 +36,25 @@ export default function AssistidoDashboard() {
       if (!vinculos || vinculos.length === 0) { setLoading(false); return; }
 
       const tratIds = [...new Set(vinculos.map((v) => v.tratamento_id))];
-      const { data: tipos } = await supabase.from("tipos_tratamento").select("id, nome, tipo, dia_semana, horario").in("id", tratIds);
+      const vinculoIds = vinculos.map((v) => v.id);
+      const hoje = new Date().toISOString().split("T")[0];
+
+      const [{ data: tipos }, { data: proxSessoes }] = await Promise.all([
+        supabase.from("tipos_tratamento").select("id, nome").in("id", tratIds),
+        supabase.from("agenda_tratamentos_assistido")
+          .select("id, assistido_tratamento_id, tratamento_id, data_sessao, horario, status")
+          .in("assistido_tratamento_id", vinculoIds)
+          .eq("status", "agendado")
+          .gte("data_sessao", hoje)
+          .order("data_sessao", { ascending: true })
+          .limit(1),
+      ]);
+
       const tipoMap = Object.fromEntries((tipos || []).map((t) => [t.id, t]));
 
       const mapped = vinculos.map((v) => ({
         ...v,
         nome: tipoMap[v.tratamento_id]?.nome || "—",
-        dia_semana: tipoMap[v.tratamento_id]?.dia_semana,
-        horario: tipoMap[v.tratamento_id]?.horario,
       }));
 
       setTratamentos(mapped);
@@ -52,12 +63,25 @@ export default function AssistidoDashboard() {
         realizadas: vinculos.reduce((sum, v) => sum + v.quantidade_realizada, 0),
         faltantes: vinculos.reduce((sum, v) => sum + (v.quantidade_faltante || 0), 0),
       });
+
+      if (proxSessoes && proxSessoes.length > 0) {
+        const s = proxSessoes[0];
+        setProximaSessao({
+          ...s,
+          tratamento_nome: tipoMap[s.tratamento_id]?.nome || "—",
+        });
+      }
+
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [user]);
 
   if (loading) return <div className="flex items-center justify-center py-12 text-muted-foreground">Carregando...</div>;
+
+  const proximaLabel = proximaSessao
+    ? format(new Date(proximaSessao.data_sessao + "T12:00:00"), "dd/MM")
+    : "—";
 
   return (
     <div className="space-y-6">
@@ -69,7 +93,7 @@ export default function AssistidoDashboard() {
         <StatCard title="Tratamentos Ativos" value={stats.ativos} icon={Heart} />
         <StatCard title="Sessões Realizadas" value={stats.realizadas} icon={CheckCircle} />
         <StatCard title="Sessões Faltantes" value={stats.faltantes} icon={Clock} />
-        <StatCard title="Próximo Atendimento" value="—" icon={Calendar} />
+        <StatCard title="Próximo Atendimento" value={proximaLabel} icon={Calendar} />
       </div>
 
       {tratamentos.length > 0 && (
@@ -81,7 +105,7 @@ export default function AssistidoDashboard() {
             {tratamentos.map((t) => {
               const pct = t.quantidade_total > 0 ? (t.quantidade_realizada / t.quantidade_total) * 100 : 0;
               return (
-                <div key={t.id} className="rounded-lg border p-3 space-y-2">
+                <div key={t.id} className="rounded-lg border p-3 space-y-2 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate("/meus-tratamentos")}>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{t.nome}</p>
                     <Badge variant="secondary" className="text-xs">{STATUS_LABELS[t.status] || t.status}</Badge>
@@ -89,11 +113,30 @@ export default function AssistidoDashboard() {
                   <Progress value={pct} className="h-1.5" />
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{t.quantidade_realizada}/{t.quantidade_total} sessões</span>
-                    {t.dia_semana !== null && <span>{DIAS_SEMANA[t.dia_semana]} {t.horario || ""}</span>}
                   </div>
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Próxima sessão real */}
+      {proximaSessao && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" /> Próxima Sessão
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border p-3">
+              <p className="text-sm font-medium">{proximaSessao.tratamento_nome}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {format(new Date(proximaSessao.data_sessao + "T12:00:00"), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                {proximaSessao.horario && ` às ${proximaSessao.horario.slice(0, 5)}`}
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
