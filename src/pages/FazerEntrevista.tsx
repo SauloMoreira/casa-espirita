@@ -824,23 +824,41 @@ export default function FazerEntrevista() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Observações</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    onClick={handleAiAssistant}
-                    disabled={aiLoading || !observacoes.trim()}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Assistente IA
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant={isRecording ? "destructive" : "outline"}
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      onClick={toggleRecording}
+                    >
+                      {isRecording ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                      {isRecording ? "Parar Gravação" : "Gravar Voz"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      onClick={handleAiAssistant}
+                      disabled={aiLoading || !observacoes.trim()}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Assistente IA
+                    </Button>
+                  </div>
                 </div>
+                {isRecording && (
+                  <div className="flex items-center gap-2 text-xs text-destructive animate-pulse">
+                    <span className="inline-block h-2 w-2 rounded-full bg-destructive" />
+                    Gravando... fale normalmente
+                  </div>
+                )}
                 <Textarea
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
-                  rows={3}
-                  placeholder="Registre observações importantes da entrevista..."
+                  rows={5}
+                  placeholder="Registre observações importantes da entrevista ou use o botão Gravar Voz..."
                 />
               </div>
             </CardContent>
