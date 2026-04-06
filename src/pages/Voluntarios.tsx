@@ -102,6 +102,7 @@ export default function Voluntarios() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [filterTipo, setFilterTipo] = useState("todos");
+  const [filterFuncao, setFilterFuncao] = useState("todos");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -111,8 +112,27 @@ export default function Voluntarios() {
   const [fichaOpen, setFichaOpen] = useState(false);
   const [selectedVoluntario, setSelectedVoluntario] = useState<Voluntario | null>(null);
   const [instData, setInstData] = useState<any>(null);
+  const [allFuncoes, setAllFuncoes] = useState<FuncaoVoluntariado[]>([]);
+  const [voluntarioFuncoesMap, setVoluntarioFuncoesMap] = useState<Record<string, string[]>>({});
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const fetchFuncoes = async () => {
+    const { data } = await supabase.from("funcoes_voluntariado").select("*").eq("status", "ativo").order("tipo_voluntario").order("nome_funcao");
+    if (data) setAllFuncoes(data as any);
+  };
+
+  const fetchVoluntarioFuncoes = async () => {
+    const { data } = await supabase.from("voluntario_funcoes").select("voluntario_id, funcao_id");
+    if (data) {
+      const map: Record<string, string[]> = {};
+      data.forEach((r: any) => {
+        if (!map[r.voluntario_id]) map[r.voluntario_id] = [];
+        map[r.voluntario_id].push(r.funcao_id);
+      });
+      setVoluntarioFuncoesMap(map);
+    }
+  };
 
   const fetchVoluntarios = async () => {
     const { data } = await supabase
@@ -130,6 +150,8 @@ export default function Voluntarios() {
   useEffect(() => {
     fetchVoluntarios();
     fetchInst();
+    fetchFuncoes();
+    fetchVoluntarioFuncoes();
   }, []);
 
   const validate = (): boolean => {
