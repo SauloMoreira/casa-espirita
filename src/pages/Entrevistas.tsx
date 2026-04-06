@@ -533,9 +533,18 @@ export default function Entrevistas() {
                             </>
                           )}
                           {e.status === "realizada" && (
-                            <Button variant="ghost" size="icon" title="Ver" onClick={() => openRealizar(e)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="icon" title="Ver" onClick={() => openRealizar(e)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="Imprimir Carta" onClick={() => {
+                                setCartaAssistidoId(e.assistido_id);
+                                setCartaEntrevistaId(e.id);
+                                setCartaOpen(true);
+                              }}>
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
