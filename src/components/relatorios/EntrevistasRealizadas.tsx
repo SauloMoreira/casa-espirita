@@ -33,7 +33,7 @@ export default function EntrevistasRealizadas() {
         .select("id, data, assistido_id, entrevistador_id, tipo_entrevista, status, assistido:assistidos(nome)")
         .gte("data", filters.dataInicio)
         .lte("data", filters.dataFim + "T23:59:59")
-        .eq("status", "concluida");
+        .in("status", ["concluida", "realizada"]);
 
       if (filters.entrevistadorId !== "todos") q = q.eq("entrevistador_id", filters.entrevistadorId);
       if (filters.tipoEntrevista !== "todos") q = q.eq("tipo_entrevista", filters.tipoEntrevista);
