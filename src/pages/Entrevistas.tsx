@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, BookOpen, Eye, Trash2 } from "lucide-react";
+import { Plus, Calendar, BookOpen, Eye, Trash2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
+import { CartaAgendamento } from "@/components/CartaAgendamento";
 
 interface Entrevista {
   id: string;
@@ -122,6 +123,9 @@ export default function Entrevistas() {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [cartaOpen, setCartaOpen] = useState(false);
+  const [cartaAssistidoId, setCartaAssistidoId] = useState("");
+  const [cartaEntrevistaId, setCartaEntrevistaId] = useState("");
 
   const fetchAll = async () => {
     const [{ data: ent }, { data: assist }, { data: trat }, { data: config }] = await Promise.all([
@@ -529,9 +533,18 @@ export default function Entrevistas() {
                             </>
                           )}
                           {e.status === "realizada" && (
-                            <Button variant="ghost" size="icon" title="Ver" onClick={() => openRealizar(e)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="icon" title="Ver" onClick={() => openRealizar(e)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="Imprimir Carta" onClick={() => {
+                                setCartaAssistidoId(e.assistido_id);
+                                setCartaEntrevistaId(e.id);
+                                setCartaOpen(true);
+                              }}>
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
@@ -543,6 +556,13 @@ export default function Entrevistas() {
           )}
         </CardContent>
       </Card>
+
+      <CartaAgendamento
+        open={cartaOpen}
+        onOpenChange={setCartaOpen}
+        assistidoId={cartaAssistidoId}
+        entrevistaId={cartaEntrevistaId}
+      />
     </div>
   );
 }

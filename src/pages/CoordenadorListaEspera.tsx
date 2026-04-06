@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Calendar, ClipboardCheck } from "lucide-react";
+import { Search, Calendar, ClipboardCheck, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
+import { CartaAgendamento } from "@/components/CartaAgendamento";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -41,6 +42,9 @@ export default function CoordenadorListaEspera() {
   const [dataInicial, setDataInicial] = useState("");
   const [saving, setSaving] = useState(false);
   const [tratNomes, setTratNomes] = useState<string[]>([]);
+  const [cartaOpen, setCartaOpen] = useState(false);
+  const [cartaAssistidoId, setCartaAssistidoId] = useState("");
+  const [cartaVinculoIds, setCartaVinculoIds] = useState<string[]>([]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -194,6 +198,12 @@ export default function CoordenadorListaEspera() {
     toast({ title: "Tratamento agendado com sucesso!", description: `${sessions.length} sessão(ões) gerada(s)` });
     setAgendarOpen(false);
     setSaving(false);
+    
+    // Show scheduling letter
+    setCartaAssistidoId(selectedItem.assistido_id);
+    setCartaVinculoIds([selectedItem.id]);
+    setCartaOpen(true);
+    
     fetchData();
   };
 
@@ -307,6 +317,14 @@ export default function CoordenadorListaEspera() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Carta de Agendamento */}
+      <CartaAgendamento
+        open={cartaOpen}
+        onOpenChange={setCartaOpen}
+        assistidoId={cartaAssistidoId}
+        assistidoTratamentoIds={cartaVinculoIds}
+      />
     </div>
   );
 }

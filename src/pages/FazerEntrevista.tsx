@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, UserPlus, BookOpen, Heart, CheckCircle, RotateCcw } from "lucide-react";
+import { Search, UserPlus, BookOpen, Heart, CheckCircle, RotateCcw, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
 import { addDays, addWeeks, addMonths, getDay, setDay, startOfDay, format } from "date-fns";
+import { CartaAgendamento } from "@/components/CartaAgendamento";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -140,6 +141,9 @@ export default function FazerEntrevista() {
   const [assistidoErrors, setAssistidoErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [savingAssistido, setSavingAssistido] = useState(false);
+  const [cartaOpen, setCartaOpen] = useState(false);
+  const [cartaAssistidoId, setCartaAssistidoId] = useState("");
+  const [cartaEntrevistaId, setCartaEntrevistaId] = useState("");
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -633,6 +637,14 @@ export default function FazerEntrevista() {
     }
 
     toast({ title: "Entrevista salva com sucesso!", description: `${validDesignacoes.length} tratamento(s) designado(s)` });
+    
+    // Show scheduling letter if treatments were assigned
+    if (validDesignacoes.length > 0) {
+      setCartaAssistidoId(selectedAssistido.id);
+      setCartaEntrevistaId(entrevista.id);
+      setCartaOpen(true);
+    }
+    
     clearSelection();
     setSaving(false);
   };
@@ -940,6 +952,14 @@ export default function FazerEntrevista() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Carta de Agendamento */}
+      <CartaAgendamento
+        open={cartaOpen}
+        onOpenChange={setCartaOpen}
+        assistidoId={cartaAssistidoId}
+        entrevistaId={cartaEntrevistaId}
+      />
     </div>
   );
 }
