@@ -24,6 +24,8 @@ import MeuPerfil from "./pages/MeuPerfil";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import Auditoria from "./pages/Auditoria";
+import RegrasOperacionais from "./pages/RegrasOperacionais";
+import Excecoes from "./pages/Excecoes";
 import Instituicao from "./pages/Instituicao";
 import CoordenadorListaEspera from "./pages/CoordenadorListaEspera";
 import CoordenadorTratamentos from "./pages/CoordenadorTratamentos";
