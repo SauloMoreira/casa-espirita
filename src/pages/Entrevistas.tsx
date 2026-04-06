@@ -556,6 +556,13 @@ export default function Entrevistas() {
           )}
         </CardContent>
       </Card>
+
+      <CartaAgendamento
+        open={cartaOpen}
+        onOpenChange={setCartaOpen}
+        assistidoId={cartaAssistidoId}
+        entrevistaId={cartaEntrevistaId}
+      />
     </div>
   );
 }
