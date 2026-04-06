@@ -13,6 +13,7 @@ import {
   LogOut,
   User,
   Building2,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
