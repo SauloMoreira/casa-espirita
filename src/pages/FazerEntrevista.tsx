@@ -638,6 +638,14 @@ export default function FazerEntrevista() {
     }
 
     toast({ title: "Entrevista salva com sucesso!", description: `${validDesignacoes.length} tratamento(s) designado(s)` });
+    
+    // Show scheduling letter if treatments were assigned
+    if (validDesignacoes.length > 0) {
+      setCartaAssistidoId(selectedAssistido.id);
+      setCartaEntrevistaId(entrevista.id);
+      setCartaOpen(true);
+    }
+    
     clearSelection();
     setSaving(false);
   };
