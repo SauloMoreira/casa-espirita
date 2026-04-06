@@ -113,7 +113,7 @@ export default function QueixasTratamentos() {
     setTratSearch("");
   };
 
-  const openEdit = (q: Queixa) => {
+  const openEdit = async (q: Queixa) => {
     setEditId(q.id);
     setNome(q.nome_queixa);
     setCategoria(q.categoria);
@@ -122,6 +122,10 @@ export default function QueixasTratamentos() {
     setSinonimos((q.sinonimos || []).join(", "));
     setNivelRelevancia(q.nivel_relevancia);
     setObservacoes(q.observacoes || "");
+    // Load existing vinculos for this queixa
+    const { data } = await supabase.from("ia_queixa_tratamento").select("tratamento_id").eq("queixa_id", q.id);
+    setSelectedTratamentos((data || []).map(v => v.tratamento_id));
+    setTratSearch("");
     setShowForm(true);
   };
 
