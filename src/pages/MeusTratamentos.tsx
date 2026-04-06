@@ -4,38 +4,63 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Heart, Calendar, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Heart, Calendar, CheckCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const DIAS_SEMANA = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_TRAT_LABELS: Record<string, string> = {
   aguardando_inicio: "Aguardando Início",
+  aguardando_liberacao: "Aguardando Liberação",
+  aguardando_agendamento: "Aguardando Agendamento",
   em_andamento: "Em Andamento",
   concluido: "Concluído",
-  suspenso: "Suspenso",
-  cancelado: "Cancelado",
 };
+
+const STATUS_SESSAO_LABELS: Record<string, string> = {
+  agendado: "Agendada",
+  realizado: "Realizada",
+  ausente: "Ausente",
+  cancelado: "Cancelada",
+  remarcado: "Remarcada",
+};
+
+const STATUS_SESSAO_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  agendado: "outline",
+  realizado: "default",
+  ausente: "destructive",
+  cancelado: "destructive",
+  remarcado: "secondary",
+};
+
+interface Sessao {
+  id: string;
+  data_sessao: string;
+  horario: string | null;
+  status: string;
+}
 
 interface MeuTratamento {
   id: string;
   tratamento_nome: string;
   tratamento_tipo: string;
-  dia_semana: number | null;
-  horario: string | null;
   quantidade_total: number;
   quantidade_realizada: number;
   quantidade_faltante: number | null;
   status: string;
+  sessoes: Sessao[];
 }
 
 export default function MeusTratamentos() {
   const [tratamentos, setTratamentos] = useState<MeuTratamento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetch = async () => {
-      // First get assistido record linked to this user
+    const fetchData = async () => {
       const { data: assistido } = await supabase.from("assistidos").select("id").eq("user_id", user!.id).maybeSingle();
       if (!assistido) { setLoading(false); return; }
 
@@ -43,29 +68,50 @@ export default function MeusTratamentos() {
         .from("assistido_tratamentos")
         .select("id, tratamento_id, quantidade_total, quantidade_realizada, quantidade_faltante, status")
         .eq("assistido_id", assistido.id)
-        .in("status", ["aguardando_inicio", "em_andamento", "concluido"]);
+        .in("status", ["aguardando_inicio", "aguardando_liberacao", "aguardando_agendamento", "em_andamento", "concluido"]);
 
       if (!vinculos || vinculos.length === 0) { setLoading(false); return; }
 
       const tratIds = [...new Set(vinculos.map((v) => v.tratamento_id))];
-      const { data: tipos } = await supabase.from("tipos_tratamento").select("id, nome, tipo, dia_semana, horario").in("id", tratIds);
+      const vinculoIds = vinculos.map((v) => v.id);
+
+      const [{ data: tipos }, { data: sessoes }] = await Promise.all([
+        supabase.from("tipos_tratamento").select("id, nome, tipo").in("id", tratIds),
+        supabase.from("agenda_tratamentos_assistido")
+          .select("id, assistido_tratamento_id, data_sessao, horario, status")
+          .in("assistido_tratamento_id", vinculoIds)
+          .order("data_sessao", { ascending: true }),
+      ]);
+
       const tipoMap = Object.fromEntries((tipos || []).map((t) => [t.id, t]));
+      const sessoesByVinculo = (sessoes || []).reduce<Record<string, Sessao[]>>((acc, s) => {
+        if (!acc[s.assistido_tratamento_id]) acc[s.assistido_tratamento_id] = [];
+        acc[s.assistido_tratamento_id].push(s);
+        return acc;
+      }, {});
 
       setTratamentos(vinculos.map((v) => ({
         id: v.id,
         tratamento_nome: tipoMap[v.tratamento_id]?.nome || "—",
         tratamento_tipo: tipoMap[v.tratamento_id]?.tipo || "—",
-        dia_semana: tipoMap[v.tratamento_id]?.dia_semana ?? null,
-        horario: tipoMap[v.tratamento_id]?.horario || null,
         quantidade_total: v.quantidade_total,
         quantidade_realizada: v.quantidade_realizada,
         quantidade_faltante: v.quantidade_faltante,
         status: v.status,
+        sessoes: sessoesByVinculo[v.id] || [],
       })));
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [user]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Carregando...</div>;
@@ -75,7 +121,7 @@ export default function MeusTratamentos() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Meus Tratamentos</h1>
-        <p className="text-sm text-muted-foreground mt-1">Acompanhe seus tratamentos e sessões</p>
+        <p className="text-sm text-muted-foreground mt-1">Acompanhe seus tratamentos e sessões agendadas</p>
       </div>
 
       {tratamentos.length === 0 ? (
@@ -89,9 +135,15 @@ export default function MeusTratamentos() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           {tratamentos.map((t) => {
             const pct = t.quantidade_total > 0 ? (t.quantidade_realizada / t.quantidade_total) * 100 : 0;
+            const hoje = new Date().toISOString().split("T")[0];
+            const proximasSessoes = t.sessoes.filter((s) => s.data_sessao >= hoje && s.status === "agendado");
+            const expanded = expandedIds.has(t.id);
+            const sessoesVisiveis = expanded ? t.sessoes : proximasSessoes.slice(0, 3);
+            const temMaisSessoes = expanded ? false : (proximasSessoes.length > 3 || t.sessoes.length > proximasSessoes.length);
+
             return (
               <Card key={t.id} className="glass-card">
                 <CardHeader className="pb-3">
@@ -103,30 +155,85 @@ export default function MeusTratamentos() {
                       </p>
                     </div>
                     <Badge variant={t.status === "concluido" ? "default" : t.status === "em_andamento" ? "secondary" : "outline"}>
-                      {STATUS_LABELS[t.status] || t.status}
+                      {STATUS_TRAT_LABELS[t.status] || t.status}
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-4 text-sm">
-                    {t.dia_semana !== null && (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>{DIAS_SEMANA[t.dia_semana]}</span>
+                <CardContent className="space-y-4">
+                  {/* Progresso */}
+                  <div>
+                    <Progress value={pct} className="h-2" />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        {t.quantidade_realizada} realizadas
+                      </span>
+                      <span>{t.quantidade_faltante ?? 0} faltantes</span>
+                      <span>Total: {t.quantidade_total}</span>
+                    </div>
+                  </div>
+
+                  {/* Sessões agendadas */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {expanded ? "Todas as sessões" : "Próximas sessões"}
+                    </h4>
+
+                    {t.sessoes.length === 0 ? (
+                      <div className="rounded-lg border border-dashed p-4 text-center">
+                        <Clock className="h-5 w-5 mx-auto text-muted-foreground/40 mb-1" />
+                        <p className="text-xs text-muted-foreground">
+                          {t.status === "aguardando_agendamento"
+                            ? "Aguardando definição pelo coordenador"
+                            : t.status === "aguardando_liberacao"
+                            ? "Aguardando liberação do tratamento anterior"
+                            : "Ainda não há sessões confirmadas"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {sessoesVisiveis.map((s) => {
+                          const dataObj = new Date(s.data_sessao + "T12:00:00");
+                          const diaSemana = DIAS_SEMANA[dataObj.getDay()];
+                          return (
+                            <div key={s.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {format(dataObj, "dd/MM/yyyy")}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {diaSemana}
+                                </span>
+                                {s.horario && (
+                                  <span className="text-xs text-muted-foreground">
+                                    às {s.horario.slice(0, 5)}
+                                  </span>
+                                )}
+                              </div>
+                              <Badge variant={STATUS_SESSAO_VARIANT[s.status] || "outline"} className="text-[10px]">
+                                {STATUS_SESSAO_LABELS[s.status] || s.status}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+
+                        {(temMaisSessoes || expanded) && t.sessoes.length > 3 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-xs mt-1"
+                            onClick={() => toggleExpand(t.id)}
+                          >
+                            {expanded ? (
+                              <><ChevronUp className="h-3 w-3 mr-1" /> Mostrar menos</>
+                            ) : (
+                              <><ChevronDown className="h-3 w-3 mr-1" /> Ver agenda completa ({t.sessoes.length} sessões)</>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     )}
-                    {t.horario && (
-                      <span className="text-muted-foreground">{t.horario}</span>
-                    )}
-                  </div>
-                  <Progress value={pct} className="h-2" />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      {t.quantidade_realizada} realizadas
-                    </span>
-                    <span>{t.quantidade_faltante ?? 0} faltantes</span>
-                    <span>Total: {t.quantidade_total}</span>
                   </div>
                 </CardContent>
               </Card>
