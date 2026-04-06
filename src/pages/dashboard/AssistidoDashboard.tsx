@@ -21,6 +21,8 @@ export default function AssistidoDashboard() {
   const [stats, setStats] = useState({ ativos: 0, realizadas: 0, faltantes: 0 });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { avisos, naoLidos, marcarComoLido } = useAvisos();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = async () => {
