@@ -325,7 +325,7 @@ export default function Assistidos() {
                       </TableCell>
                       <TableCell>
                         {a.user_id ? (
-                          <Badge variant="outline" className="text-xs text-green-600 border-green-300">Ativo</Badge>
+                          <Badge variant="default" className="text-xs">Ativo</Badge>
                         ) : (
                           <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => { setAcessoAssistido(a); setAcessoOpen(true); }}>
                             <KeyRound className="h-3.5 w-3.5" /> Gerar
