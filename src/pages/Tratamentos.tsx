@@ -133,6 +133,7 @@ export default function Tratamentos() {
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
       modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
       coordenador_responsavel_id: (t as any).coordenador_responsavel_id || "",
+      quantidade_padrao_sessoes: (t as any).quantidade_padrao_sessoes?.toString() || "1",
     });
     setOpen(true);
   };
