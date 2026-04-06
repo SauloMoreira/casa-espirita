@@ -109,6 +109,39 @@ export default function AssistidoDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Avisos recentes */}
+      {avisos.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Bell className="h-4 w-4 text-primary" /> Avisos Recentes
+              {naoLidos > 0 && <Badge className="text-xs">{naoLidos}</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {avisos.slice(0, 3).map((a) => (
+              <div
+                key={a.id}
+                onClick={async () => {
+                  if (!a.lido) await marcarComoLido(a.id);
+                  if (a.link) navigate(a.link);
+                }}
+                className={`rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-colors ${!a.lido ? "border-primary/30 bg-primary/5" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{a.titulo}</p>
+                  {!a.lido && <span className="h-2 w-2 rounded-full bg-primary" />}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{a.mensagem}</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-1">
+                  {formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR })}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
