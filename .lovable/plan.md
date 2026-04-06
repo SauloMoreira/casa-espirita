@@ -1,40 +1,43 @@
-## Plano de Implementação
 
-### 1. Migração de Banco de Dados
-- Adicionar `coordenador_de_tratamento` ao enum `app_role`
-- Adicionar coluna `coordenador_responsavel_id` na tabela `tipos_tratamento`
-- Adicionar coluna `agendado_por` (nullable) na tabela `assistido_tratamentos` para rastrear quem agendou
-- Adicionar status `aguardando_agendamento` como valor válido em `assistido_tratamentos`
-- Criar políticas RLS para o coordenador:
-  - SELECT em `assistido_tratamentos`, `agenda_tratamentos_assistido`, `assistidos` — apenas dos tratamentos sob sua coordenação
-  - UPDATE em `assistido_tratamentos` — para agendar
-  - INSERT em `agenda_tratamentos_assistido` — para gerar agenda
+# Fase 2 — Relatórios Operacionais e Gerenciais
 
-### 2. Atualizar Tela de Tratamentos (`Tratamentos.tsx`)
-- Adicionar campo "Coordenador Responsável" no formulário de cadastro/edição de tratamento
-- Select com lista de usuários que tenham role `coordenador_de_tratamento`
+## Arquitetura
+- **Página hub** (`Relatorios.tsx`): grid de cards clicáveis que abrem cada relatório inline (tabs ou estado)
+- **6 componentes de relatório** em `src/components/relatorios/`:
+  1. `AssistidosPorTratamento.tsx`
+  2. `FrequenciaPresenca.tsx`
+  3. `EntrevistasRealizadas.tsx`
+  4. `TratamentosConcluidos.tsx`
+  5. `FaltasPorPeriodo.tsx`
+  6. `CargaPorTarefeiro.tsx`
+- **Componente reutilizável** `ReportFilters.tsx` para filtros de período, tratamento, tarefeiro, coordenador, assistido
+- **Utilitário** `exportCsv.ts` para exportação CSV respeitando filtros
 
-### 3. Atualizar Tela Fazer Entrevista (`FazerEntrevista.tsx`)
-- Para tratamentos `agendado_por_data_inicial`: tornar data inicial **opcional** (não obrigatória)
-- Se data em branco → salvar com status `aguardando_agendamento` e não gerar agenda
-- Exibir mensagem informativa: "Sem data → lista de espera do coordenador"
+## Fontes de dados (sempre dados reais)
+- `agenda_tratamentos_assistido` → sessões reais agendadas
+- `presencas_tratamentos` → presenças/ausências registradas
+- `assistido_tratamentos` → vínculos e status
+- `tipos_tratamento` → dados do tratamento
+- `assistidos` → dados do assistido
+- `entrevistas_fraternas` → entrevistas realizadas
+- `profiles` → nomes de tarefeiros/coordenadores/entrevistadores
 
-### 4. Criar Dashboard do Coordenador
-- Nova página `CoordenadorDashboard.tsx` com 3 abas:
-  - **Lista de Espera**: assistidos aguardando agendamento, ordenados por data/hora da entrevista
-  - **Em Andamento**: assistidos com tratamento ativo
-  - **Agenda**: próximas sessões dos tratamentos coordenados
-- Ação "Agendar" na lista de espera: campo de data + validação de dia da semana + geração automática de agenda
+## Cada relatório terá
+- Filtros no topo (período + filtros específicos)
+- Cards-resumo com totais
+- Gráfico simples (barras ou pizza via Recharts, já instalado)
+- Tabela detalhada
+- Botão "Exportar CSV"
 
-### 5. Atualizar Navegação e Rotas
-- Adicionar rotas para o coordenador no `App.tsx`
-- Adicionar itens de menu no `AppSidebar.tsx`
-- Atualizar `Dashboard.tsx` para renderizar dashboard do coordenador
-- Atualizar `ProtectedRoute` se necessário
+## Permissões
+- Rota aberta para `admin`, `entrevistador`, `coordenador_de_tratamento`, `tarefeiro`
+- Dados filtrados por role no frontend (coordenador vê só seus tratamentos, tarefeiro só os seus)
+- Assistido não acessa
 
-### 6. Atualizar AuthContext
-- Incluir `coordenador_de_tratamento` no type `AppRole`
-
-### Ordem de execução:
-1. Migração DB (precisa aprovação)
-2. Código (após migração aprovada)
+## Etapas de implementação
+1. Criar utilitário de exportação CSV
+2. Criar componente de filtros reutilizável
+3. Criar os 6 componentes de relatório
+4. Refatorar `Relatorios.tsx` como hub com navegação para cada relatório
+5. Atualizar rota no `App.tsx` para incluir perfis permitidos
+6. Validar build
