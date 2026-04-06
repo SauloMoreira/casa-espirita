@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,7 +148,8 @@ export default function FazerEntrevista() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSugestao, setAiSugestao] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useState<any>(null);
+  const isRecordingRef = useRef(false);
+  const recognitionRef = useRef<any>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -665,8 +666,10 @@ export default function FazerEntrevista() {
       return;
     }
 
-    if (isRecording && recognitionRef[0]) {
-      recognitionRef[0].stop();
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      isRecordingRef.current = false;
       setIsRecording(false);
       return;
     }
@@ -693,16 +696,20 @@ export default function FazerEntrevista() {
       // "aborted" and "no-speech" are non-critical – don't show error toast
       if (event.error === "not-allowed") {
         toast({ title: "Microfone bloqueado", description: "Permita o acesso ao microfone nas configurações do navegador.", variant: "destructive" });
+        isRecordingRef.current = false;
+        recognitionRef.current = null;
         setIsRecording(false);
       } else if (event.error !== "no-speech" && event.error !== "aborted") {
         toast({ title: "Erro no reconhecimento de voz", description: event.error, variant: "destructive" });
+        isRecordingRef.current = false;
+        recognitionRef.current = null;
         setIsRecording(false);
       }
     };
 
     recognition.onend = () => {
       // Auto-restart if still recording (browser stops after silence)
-      if (recognitionRef[0] && isRecording) {
+      if (isRecordingRef.current) {
         try {
           recognition.start();
           return;
@@ -710,11 +717,14 @@ export default function FazerEntrevista() {
           // ignore restart errors
         }
       }
+      isRecordingRef.current = false;
+      recognitionRef.current = null;
       setIsRecording(false);
     };
 
     recognition.start();
-    recognitionRef[0] = recognition;
+    recognitionRef.current = recognition;
+    isRecordingRef.current = true;
     setIsRecording(true);
     toast({ title: "🎙️ Gravando...", description: "Fale normalmente. Clique novamente para parar." });
   };
