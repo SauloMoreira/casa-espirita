@@ -69,6 +69,8 @@ export default function Assistidos() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acessoOpen, setAcessoOpen] = useState(false);
+  const [acessoAssistido, setAcessoAssistido] = useState<Assistido | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
