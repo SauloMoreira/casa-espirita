@@ -46,6 +46,7 @@ export const defaultFilters = (): FilterValues => ({
 
 export default function ReportFilters({ values, onChange, show = [] }: Props) {
   const [tratamentos, setTratamentos] = useState<Option[]>([]);
+  const [tiposTratamento, setTiposTratamento] = useState<string[]>([]);
   const [assistidos, setAssistidos] = useState<Option[]>([]);
   const [tarefeiros, setTarefeiros] = useState<Option[]>([]);
   const [coordenadores, setCoordenadores] = useState<Option[]>([]);
