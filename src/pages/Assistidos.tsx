@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
+import { GerarAcessoAssistido } from "@/components/GerarAcessoAssistido";
 
 interface Assistido {
   id: string;
