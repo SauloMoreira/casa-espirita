@@ -62,19 +62,19 @@ export function CartaAgendamento({ open, onOpenChange, assistidoId, entrevistaId
       setLoading(true);
 
       // Fetch institution, assistido, and entrevista data in parallel
-      const promises: Promise<any>[] = [
+      const [instRes, assistRes] = await Promise.all([
         supabase.from("instituicao_config").select("*").limit(1).single(),
         supabase.from("assistidos").select("nome, cpf, celular").eq("id", assistidoId).single(),
-      ];
+      ]);
 
+      const instData = instRes.data;
+      const assistData = assistRes.data;
+
+      let entData: any = null;
       if (entrevistaId) {
-        promises.push(supabase.from("entrevistas_fraternas").select("data").eq("id", entrevistaId).single());
+        const { data } = await supabase.from("entrevistas_fraternas").select("data").eq("id", entrevistaId).single();
+        entData = data;
       }
-
-      const results = await Promise.all(promises);
-      const instData = results[0].data;
-      const assistData = results[1].data;
-      const entData = entrevistaId ? results[2]?.data : null;
 
       if (instData) setInstituicao(instData);
       if (assistData) setAssistido(assistData);
