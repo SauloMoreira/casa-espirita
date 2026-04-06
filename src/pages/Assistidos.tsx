@@ -36,6 +36,7 @@ interface Assistido {
   observacoes: string | null;
   status: string;
   quantidade_palestras: number;
+  user_id: string | null;
 }
 
 const STATUS_OPTIONS = [
