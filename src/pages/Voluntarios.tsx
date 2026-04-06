@@ -614,6 +614,7 @@ export default function Voluntarios() {
           onClose={() => setTermoOpen(false)}
           voluntario={selectedVoluntario}
           instituicao={instData}
+          funcoesNomes={getFuncaoNames(selectedVoluntario.id)}
         />
       )}
 
@@ -623,6 +624,7 @@ export default function Voluntarios() {
           open={fichaOpen}
           onClose={() => setFichaOpen(false)}
           voluntario={selectedVoluntario}
+          funcoesNomes={getFuncaoNames(selectedVoluntario.id)}
         />
       )}
     </div>

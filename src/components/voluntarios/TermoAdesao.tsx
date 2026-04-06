@@ -51,7 +51,12 @@ export function TermoAdesao({ open, onClose, voluntario, instituicao, funcoesNom
   const inst = instituicao || {};
   const v = voluntario;
   const tiposLabel = (v.tipos_voluntario || []).join(" e ") || "Voluntário";
-  const atuacao = v.atuacao_detalhada || tiposLabel;
+  const funcoesLabel = funcoesNomes && funcoesNomes.length > 0
+    ? funcoesNomes.length === 1
+      ? funcoesNomes[0]
+      : funcoesNomes.slice(0, -1).join(", ") + " e " + funcoesNomes[funcoesNomes.length - 1]
+    : null;
+  const atuacao = funcoesLabel || v.atuacao_detalhada || tiposLabel;
   const enderecoInst = [inst.logradouro, inst.numero, inst.complemento, inst.bairro, inst.cidade, inst.estado].filter(Boolean).join(", ");
   const enderecoVol = [v.logradouro, v.numero, v.complemento, v.bairro, v.cidade, v.estado].filter(Boolean).join(", ");
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
