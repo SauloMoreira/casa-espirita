@@ -123,6 +123,9 @@ export default function Entrevistas() {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [cartaOpen, setCartaOpen] = useState(false);
+  const [cartaAssistidoId, setCartaAssistidoId] = useState("");
+  const [cartaEntrevistaId, setCartaEntrevistaId] = useState("");
 
   const fetchAll = async () => {
     const [{ data: ent }, { data: assist }, { data: trat }, { data: config }] = await Promise.all([
