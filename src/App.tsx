@@ -72,6 +72,7 @@ const App = () => (
               <Route path="/coordenador-agenda" element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorAgenda /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "coordenador_de_tratamento", "tarefeiro"]}><Relatorios /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><Configuracoes /></ProtectedRoute>} />
+              <Route path="/configuracoes/cores" element={<ProtectedRoute allowedRoles={["admin"]}><GestaoCores /></ProtectedRoute>} />
               <Route path="/auditoria" element={<ProtectedRoute allowedRoles={["admin"]}><Auditoria /></ProtectedRoute>} />
               <Route path="/regras" element={<ProtectedRoute allowedRoles={["admin"]}><RegrasOperacionais /></ProtectedRoute>} />
               <Route path="/excecoes" element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
