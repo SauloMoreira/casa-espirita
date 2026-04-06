@@ -623,6 +623,7 @@ export type Database = {
           nome: string
           observacoes: string | null
           ordem_tratamento: number | null
+          quantidade_padrao_sessoes: number
           status: string
           tarefeiro_id: string | null
           tipo: string
@@ -644,6 +645,7 @@ export type Database = {
           nome: string
           observacoes?: string | null
           ordem_tratamento?: number | null
+          quantidade_padrao_sessoes?: number
           status?: string
           tarefeiro_id?: string | null
           tipo: string
@@ -665,6 +667,7 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           ordem_tratamento?: number | null
+          quantidade_padrao_sessoes?: number
           status?: string
           tarefeiro_id?: string | null
           tipo?: string
