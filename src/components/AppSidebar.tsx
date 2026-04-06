@@ -10,6 +10,8 @@ import {
   Shield,
   HandHeart,
   FileText,
+  Cog,
+  AlertTriangle,
   LogOut,
   User,
   Building2,
