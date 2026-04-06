@@ -777,14 +777,16 @@ export default function FazerEntrevista() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {items.map((t) => {
-                      const qty = quantidades[t.id] || 0;
-                      const isActive = qty > 0;
+                      const qtyStr = quantidades[t.id];
+                      const isActive = t.id in quantidades;
                       const needsStartDate = t.modo_agendamento === "agendado_por_data_inicial";
                       const startDateVal = datasIniciais[t.id] || "";
+                      const defaultQty = t.quantidade_padrao_sessoes;
                       return (
                         <div
                           key={t.id}
-                          className={`rounded-lg border p-3 space-y-2 transition-colors ${isActive ? "border-primary/40 bg-primary/5" : ""}`}
+                          className={`rounded-lg border p-3 space-y-2 transition-colors cursor-pointer ${isActive ? "border-primary/40 bg-primary/5" : "hover:border-muted-foreground/30"}`}
+                          onClick={() => { if (!isActive) toggleTratamento(t.id); }}
                         >
                           <div className="flex items-center gap-3">
                             <div className="flex-1 min-w-0">
@@ -794,16 +796,20 @@ export default function FazerEntrevista() {
                               {needsStartDate && (
                                 <p className="text-[10px] text-muted-foreground">Agendado por data inicial</p>
                               )}
+                              <p className="text-[10px] text-muted-foreground">Padrão: {defaultQty} sessão(ões)</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <Input
-                                type="number"
-                                min={0}
-                                value={qty || ""}
-                                placeholder="0"
-                                onChange={(e) => setQtd(t.id, parseInt(e.target.value) || 0)}
-                                className="w-16 h-8 text-center text-sm"
-                              />
+                              {isActive && (
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={qtyStr || ""}
+                                  placeholder={String(defaultQty)}
+                                  onChange={(e) => setQtd(t.id, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-16 h-8 text-center text-sm"
+                                />
+                              )}
                               {isActive && (
                                 <Button
                                   variant="ghost"
