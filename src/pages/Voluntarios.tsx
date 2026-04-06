@@ -285,6 +285,15 @@ export default function Voluntarios() {
     setOpen(true);
   };
 
+  // Helper: get funcao names for a voluntario
+  const getFuncaoNames = (volId: string) => {
+    const ids = voluntarioFuncoesMap[volId] || [];
+    return allFuncoes.filter((f) => ids.includes(f.id)).map((f) => f.nome_funcao);
+  };
+
+  // Filtered funcoes for form (based on selected tipos_voluntario)
+  const availableFuncoes = allFuncoes.filter((f) => form.tipos_voluntario.includes(f.tipo_voluntario));
+
   const filtered = voluntarios.filter((v) => {
     const searchLower = search.toLowerCase();
     const matchesSearch =
