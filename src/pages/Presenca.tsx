@@ -34,55 +34,65 @@ export default function Presenca() {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const selectedDate = new Date(data + "T12:00:00");
-    const diaSemana = selectedDate.getDay();
+    // Query actual scheduled sessions for the selected date
+    let agendaQuery = supabase
+      .from("agenda_tratamentos_assistido")
+      .select("id, assistido_id, assistido_tratamento_id, tratamento_id, data_sessao, horario, status")
+      .eq("data_sessao", data)
+      .in("status", ["agendado", "confirmado"]);
 
-    // Get treatments for this day of week
-    let tratQuery = supabase.from("tipos_tratamento").select("id, nome, horario, tarefeiro_id").eq("status", "ativo").eq("dia_semana", diaSemana);
-    if (role === "tarefeiro") {
-      tratQuery = tratQuery.eq("tarefeiro_id", user!.id);
-    }
-    const { data: tratamentos } = await tratQuery;
-    if (!tratamentos || tratamentos.length === 0) { setItems([]); return; }
+    const { data: sessoes } = await agendaQuery;
+    if (!sessoes || sessoes.length === 0) { setItems([]); return; }
 
-    const tratIds = tratamentos.map((t) => t.id);
-    const tratMap = Object.fromEntries(tratamentos.map((t) => [t.id, t]));
+    // Get unique tratamento and assistido_tratamento IDs
+    const tratIds = [...new Set(sessoes.map((s) => s.tratamento_id))];
+    const atIds = [...new Set(sessoes.map((s) => s.assistido_tratamento_id))];
+    const assistidoIds = [...new Set(sessoes.map((s) => s.assistido_id))];
 
-    // Get active assistido_tratamentos for these treatments
-    const { data: vinculos } = await supabase
-      .from("assistido_tratamentos")
-      .select("id, assistido_id, tratamento_id, quantidade_total, quantidade_realizada, quantidade_faltante, status")
-      .in("tratamento_id", tratIds)
-      .in("status", ["aguardando_inicio", "em_andamento", "liberado"]);
+    // Fetch related data in parallel
+    const [{ data: tratamentos }, { data: vinculos }, { data: assistidos }, { data: presencas }] = await Promise.all([
+      supabase.from("tipos_tratamento").select("id, nome, tarefeiro_id").in("id", tratIds),
+      supabase.from("assistido_tratamentos")
+        .select("id, quantidade_total, quantidade_realizada, quantidade_faltante, status")
+        .in("id", atIds)
+        .in("status", ["aguardando_inicio", "em_andamento", "liberado"]),
+      supabase.from("assistidos").select("id, nome").in("id", assistidoIds),
+      supabase.from("presencas_tratamentos")
+        .select("assistido_tratamento_id")
+        .in("assistido_tratamento_id", atIds)
+        .eq("data", data),
+    ]);
 
-    if (!vinculos || vinculos.length === 0) { setItems([]); return; }
-
-    const assistidoIds = [...new Set(vinculos.map((v) => v.assistido_id))];
-    const { data: assistidos } = await supabase.from("assistidos").select("id, nome").in("id", assistidoIds);
+    const tratMap = Object.fromEntries((tratamentos || []).map((t) => [t.id, t]));
+    const vinculoMap = Object.fromEntries((vinculos || []).map((v) => [v.id, v]));
     const assistMap = Object.fromEntries((assistidos || []).map((a) => [a.id, a.nome]));
-
-    // Check existing presences for the selected date
-    const vinculoIds = vinculos.map((v) => v.id);
-    const { data: presencas } = await supabase
-      .from("presencas_tratamentos")
-      .select("assistido_tratamento_id")
-      .in("assistido_tratamento_id", vinculoIds)
-      .eq("data", data);
-
     const presencaSet = new Set((presencas || []).map((p) => p.assistido_tratamento_id));
 
-    const result: TratamentoDoDia[] = vinculos.map((v) => ({
-      tratamento_id: v.tratamento_id,
-      tratamento_nome: tratMap[v.tratamento_id]?.nome || "—",
-      horario: tratMap[v.tratamento_id]?.horario || null,
-      assistido_tratamento_id: v.id,
-      assistido_nome: assistMap[v.assistido_id] || "—",
-      quantidade_total: v.quantidade_total,
-      quantidade_realizada: v.quantidade_realizada,
-      quantidade_faltante: v.quantidade_faltante,
-      status: v.status,
-      presenca_registrada: presencaSet.has(v.id),
-    }));
+    // Filter by tarefeiro if needed
+    const result: TratamentoDoDia[] = sessoes
+      .filter((s) => {
+        const trat = tratMap[s.tratamento_id];
+        if (!trat) return false;
+        if (role === "tarefeiro" && trat.tarefeiro_id !== user!.id) return false;
+        // Only show if vinculo is in active status
+        return vinculoMap[s.assistido_tratamento_id] != null;
+      })
+      .map((s) => {
+        const trat = tratMap[s.tratamento_id];
+        const vinculo = vinculoMap[s.assistido_tratamento_id];
+        return {
+          tratamento_id: s.tratamento_id,
+          tratamento_nome: trat?.nome || "—",
+          horario: s.horario || null,
+          assistido_tratamento_id: s.assistido_tratamento_id,
+          assistido_nome: assistMap[s.assistido_id] || "—",
+          quantidade_total: vinculo?.quantidade_total || 0,
+          quantidade_realizada: vinculo?.quantidade_realizada || 0,
+          quantidade_faltante: vinculo?.quantidade_faltante ?? null,
+          status: vinculo?.status || "",
+          presenca_registrada: presencaSet.has(s.assistido_tratamento_id),
+        };
+      });
 
     setItems(result.sort((a, b) => a.tratamento_nome.localeCompare(b.tratamento_nome)));
   };
