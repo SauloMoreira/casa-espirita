@@ -39,6 +39,7 @@ const emptyForm = {
   frequencia_valor: "1", frequencia_unidade: "semanas", status: "ativo", observacoes: "", tarefeiro_id: "",
   ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
   modo_agendamento: "sequencial_bloqueante", coordenador_responsavel_id: "",
+  quantidade_padrao_sessoes: "1",
 };
 
 export default function Tratamentos() {
