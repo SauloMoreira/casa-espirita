@@ -307,6 +307,7 @@ export default function Assistidos() {
                     <TableHead className="hidden md:table-cell">Celular</TableHead>
                     <TableHead>Palestras</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-10">Acesso</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
