@@ -37,8 +37,9 @@ export function useAvisos() {
   // Realtime
   useEffect(() => {
     if (!user) return;
+    const channelName = "avisos-" + user.id + "-" + Math.random().toString(36).slice(2, 8);
     const channel = supabase
-      .channel("avisos-" + user.id)
+      .channel(channelName)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
