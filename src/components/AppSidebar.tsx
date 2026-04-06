@@ -120,6 +120,7 @@ const navGroups: NavGroup[] = [
       { title: "Instituição", url: "/instituicao", icon: Building2, roles: ["admin"] },
       { title: "Regras Operacionais", url: "/regras", icon: Cog, roles: ["admin"] },
       { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
+      { title: "Gestão de Cores", url: "/configuracoes/cores", icon: Palette, roles: ["admin"] },
     ],
   },
 ];
