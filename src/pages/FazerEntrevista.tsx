@@ -658,6 +658,54 @@ export default function FazerEntrevista() {
     }
   };
 
+  const toggleRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "Navegador não suporta reconhecimento de voz", description: "Use o Google Chrome para essa funcionalidade.", variant: "destructive" });
+      return;
+    }
+
+    if (isRecording && recognitionRef[0]) {
+      recognitionRef[0].stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = observacoes;
+
+    recognition.onresult = (event: any) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+          setObservacoes(finalTranscript);
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error !== "no-speech") {
+        toast({ title: "Erro no reconhecimento de voz", description: event.error, variant: "destructive" });
+      }
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+    recognitionRef[0] = recognition;
+    setIsRecording(true);
+    toast({ title: "🎙️ Gravando...", description: "Fale normalmente. Clique novamente para parar." });
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
