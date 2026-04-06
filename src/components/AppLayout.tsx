@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function AppLayout() {
   const [nomeFantasia, setNomeFantasia] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchInst = () => {
     supabase.from("instituicao_config").select("nome_fantasia").limit(1).then(({ data }) => {
