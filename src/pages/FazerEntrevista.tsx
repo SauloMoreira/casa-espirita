@@ -685,14 +685,14 @@ export default function FazerEntrevista() {
       return;
     }
 
-    const startRecognition = (seedTranscript: string) => {
+    transcriptBaseRef.current = observacoes.trim();
+
+    const startRecognition = () => {
       const recognition = new SpeechRecognition();
       recognition.lang = "pt-BR";
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
-
-      let finalTranscript = seedTranscript.trim();
       recognitionRef.current = recognition;
 
       recognition.onresult = (event: any) => {
@@ -703,13 +703,13 @@ export default function FazerEntrevista() {
           if (!transcript) continue;
 
           if (event.results[i].isFinal) {
-            finalTranscript = [finalTranscript, transcript].filter(Boolean).join(" ").trim();
+            transcriptBaseRef.current = [transcriptBaseRef.current, transcript].filter(Boolean).join(" ").trim();
           } else {
             interimTranscript = [interimTranscript, transcript].filter(Boolean).join(" ").trim();
           }
         }
 
-        const combinedTranscript = [finalTranscript, interimTranscript].filter(Boolean).join(" ").trim();
+        const combinedTranscript = [transcriptBaseRef.current, interimTranscript].filter(Boolean).join(" ").trim();
         setObservacoes(combinedTranscript);
       };
 
