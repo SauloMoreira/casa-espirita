@@ -772,7 +772,20 @@ export default function FazerEntrevista() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Observações</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Observações</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                    onClick={handleAiAssistant}
+                    disabled={aiLoading || !observacoes.trim()}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Assistente IA
+                  </Button>
+                </div>
                 <Textarea
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
