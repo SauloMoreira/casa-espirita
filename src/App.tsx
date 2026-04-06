@@ -23,6 +23,7 @@ import MinhaAgenda from "./pages/MinhaAgenda";
 import MeuPerfil from "./pages/MeuPerfil";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
+import GestaoCores from "./pages/GestaoCores";
 import Auditoria from "./pages/Auditoria";
 import RegrasOperacionais from "./pages/RegrasOperacionais";
 import Excecoes from "./pages/Excecoes";
