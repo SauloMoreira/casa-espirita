@@ -39,6 +39,7 @@ const emptyForm = {
   frequencia_valor: "1", frequencia_unidade: "semanas", status: "ativo", observacoes: "", tarefeiro_id: "",
   ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
   modo_agendamento: "sequencial_bloqueante", coordenador_responsavel_id: "",
+  quantidade_padrao_sessoes: "1",
 };
 
 export default function Tratamentos() {
@@ -79,6 +80,8 @@ export default function Tratamentos() {
 
   const handleSave = async () => {
     if (!form.nome.trim()) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; }
+    const qtdPadrao = parseInt(form.quantidade_padrao_sessoes);
+    if (!qtdPadrao || qtdPadrao <= 0) { toast({ title: "Quantidade padrão de sessões deve ser maior que zero", variant: "destructive" }); return; }
     setLoading(true);
     const payload = {
       nome: form.nome.trim(),
@@ -96,6 +99,7 @@ export default function Tratamentos() {
       bloqueia_proximo_tratamento: form.modo_agendamento === "sequencial_bloqueante",
       modo_agendamento: form.modo_agendamento,
       coordenador_responsavel_id: form.coordenador_responsavel_id || null,
+      quantidade_padrao_sessoes: qtdPadrao,
     };
 
     let error;
@@ -129,6 +133,7 @@ export default function Tratamentos() {
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
       modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
       coordenador_responsavel_id: (t as any).coordenador_responsavel_id || "",
+      quantidade_padrao_sessoes: (t as any).quantidade_padrao_sessoes?.toString() || "1",
     });
     setOpen(true);
   };
@@ -244,6 +249,11 @@ export default function Tratamentos() {
                   <Label>Ordem do Tratamento</Label>
                   <Input type="number" min={1} value={form.ordem_tratamento} onChange={(e) => setForm({ ...form, ordem_tratamento: e.target.value })} placeholder="Ex: 1, 2, 3..." />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade Padrão de Sessões *</Label>
+                <Input type="number" min={1} value={form.quantidade_padrao_sessoes} onChange={(e) => setForm({ ...form, quantidade_padrao_sessoes: e.target.value })} placeholder="Ex: 7" />
+                <p className="text-xs text-muted-foreground">Número de sessões usado quando o entrevistador não informar a quantidade na entrevista</p>
               </div>
               <div className="space-y-2">
                 <Label>Coordenador Responsável</Label>

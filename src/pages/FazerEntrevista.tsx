@@ -41,6 +41,7 @@ interface TipoTratamento {
   tratamento_livre: boolean;
   bloqueia_proximo_tratamento: boolean;
   modo_agendamento: string;
+  quantidade_padrao_sessoes: number;
 }
 
 // quantidades map: tratamento_id -> quantidade (0 = not assigned)
@@ -131,7 +132,7 @@ export default function FazerEntrevista() {
   const [dataEntrevista, setDataEntrevista] = useState(new Date().toISOString().split("T")[0]);
   const [tipoEntrevista, setTipoEntrevista] = useState<"regular" | "livre">("regular");
   const [observacoes, setObservacoes] = useState("");
-  const [quantidades, setQuantidades] = useState<Record<string, number>>({});
+  const [quantidades, setQuantidades] = useState<Record<string, string>>({});
   const [datasIniciais, setDatasIniciais] = useState<Record<string, string>>({});
 
   const [novoAssistidoOpen, setNovoAssistidoOpen] = useState(false);
@@ -147,7 +148,7 @@ export default function FazerEntrevista() {
     const fetchData = async () => {
       const [{ data: assist }, { data: trat }, { data: config }] = await Promise.all([
         supabase.from("assistidos").select("id, nome, cpf, celular, email, status, quantidade_palestras").is("deleted_at", null).order("nome"),
-        supabase.from("tipos_tratamento").select("id, nome, tipo, dia_semana, horario, frequencia_valor, frequencia_unidade, status, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento, modo_agendamento").eq("status", "ativo"),
+        supabase.from("tipos_tratamento").select("id, nome, tipo, dia_semana, horario, frequencia_valor, frequencia_unidade, status, ordem_tratamento, tratamento_livre, bloqueia_proximo_tratamento, modo_agendamento, quantidade_padrao_sessoes").eq("status", "ativo"),
         supabase.from("configuracoes_gerais").select("chave, valor"),
       ]);
       if (assist) setAssistidos(assist as Assistido[]);
@@ -191,12 +192,27 @@ export default function FazerEntrevista() {
     setDataEntrevista(new Date().toISOString().split("T")[0]);
   };
 
-  const setQtd = (tratId: string, val: number) => {
-    setQuantidades((prev) => ({ ...prev, [tratId]: Math.max(0, val) }));
+  const setQtd = (tratId: string, val: string) => {
+    setQuantidades((prev) => ({ ...prev, [tratId]: val }));
+  };
+
+  const toggleTratamento = (tratId: string) => {
+    setQuantidades((prev) => {
+      if (tratId in prev) {
+        const next = { ...prev };
+        delete next[tratId];
+        return next;
+      }
+      return { ...prev, [tratId]: "" };
+    });
   };
 
   const clearQtd = (tratId: string) => {
-    setQuantidades((prev) => ({ ...prev, [tratId]: 0 }));
+    setQuantidades((prev) => {
+      const next = { ...prev };
+      delete next[tratId];
+      return next;
+    });
   };
 
   const tratamentoMap = useMemo(() =>
@@ -319,9 +335,17 @@ export default function FazerEntrevista() {
       toast({ title: "Informe a data da entrevista", variant: "destructive" });
       return;
     }
-    const validDesignacoes = Object.entries(quantidades)
-      .filter(([_, qty]) => qty > 0)
-      .map(([tratamento_id, quantidade_total]) => ({ tratamento_id, quantidade_total }));
+    // Build valid designations: selected treatments with resolved quantities
+    const validDesignacoes: { tratamento_id: string; quantidade_total: number }[] = [];
+    for (const [tid, qtyStr] of Object.entries(quantidades)) {
+      const trat = tratamentoMap[tid];
+      if (!trat) continue;
+      const parsedQty = qtyStr ? parseInt(qtyStr) : 0;
+      const effectiveQty = parsedQty > 0 ? parsedQty : trat.quantidade_padrao_sessoes;
+      if (effectiveQty > 0) {
+        validDesignacoes.push({ tratamento_id: tid, quantidade_total: effectiveQty });
+      }
+    }
 
     // Note: treatments with modo_agendamento = agendado_por_data_inicial can have blank start date
     // In that case they go to the coordinator's wait list
@@ -744,7 +768,7 @@ export default function FazerEntrevista() {
           {(() => {
             const espirituais = tratamentos.filter((t) => t.tipo === "espiritual");
             const holisticos = tratamentos.filter((t) => t.tipo !== "espiritual");
-            const totalAssigned = Object.values(quantidades).filter((q) => q > 0).length;
+            const totalAssigned = Object.keys(quantidades).length;
 
             const renderGroup = (title: string, items: TipoTratamento[]) => {
               if (items.length === 0) return null;
@@ -753,14 +777,16 @@ export default function FazerEntrevista() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {items.map((t) => {
-                      const qty = quantidades[t.id] || 0;
-                      const isActive = qty > 0;
+                      const qtyStr = quantidades[t.id];
+                      const isActive = t.id in quantidades;
                       const needsStartDate = t.modo_agendamento === "agendado_por_data_inicial";
                       const startDateVal = datasIniciais[t.id] || "";
+                      const defaultQty = t.quantidade_padrao_sessoes;
                       return (
                         <div
                           key={t.id}
-                          className={`rounded-lg border p-3 space-y-2 transition-colors ${isActive ? "border-primary/40 bg-primary/5" : ""}`}
+                          className={`rounded-lg border p-3 space-y-2 transition-colors cursor-pointer ${isActive ? "border-primary/40 bg-primary/5" : "hover:border-muted-foreground/30"}`}
+                          onClick={() => { if (!isActive) toggleTratamento(t.id); }}
                         >
                           <div className="flex items-center gap-3">
                             <div className="flex-1 min-w-0">
@@ -770,16 +796,20 @@ export default function FazerEntrevista() {
                               {needsStartDate && (
                                 <p className="text-[10px] text-muted-foreground">Agendado por data inicial</p>
                               )}
+                              <p className="text-[10px] text-muted-foreground">Padrão: {defaultQty} sessão(ões)</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <Input
-                                type="number"
-                                min={0}
-                                value={qty || ""}
-                                placeholder="0"
-                                onChange={(e) => setQtd(t.id, parseInt(e.target.value) || 0)}
-                                className="w-16 h-8 text-center text-sm"
-                              />
+                              {isActive && (
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={qtyStr || ""}
+                                  placeholder={String(defaultQty)}
+                                  onChange={(e) => setQtd(t.id, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-16 h-8 text-center text-sm"
+                                />
+                              )}
                               {isActive && (
                                 <Button
                                   variant="ghost"
