@@ -1144,6 +1144,90 @@ export type Database = {
         }
         Relationships: []
       }
+      voluntarios: {
+        Row: {
+          atuacao_detalhada: string | null
+          bairro: string
+          celular: string
+          cep: string
+          cidade: string
+          complemento: string | null
+          cpf: string
+          created_at: string
+          created_by: string
+          data_adesao_voluntariado: string | null
+          data_desligamento: string | null
+          data_ingresso_sistema: string
+          data_nascimento: string
+          email: string
+          estado: string
+          foto_url: string | null
+          id: string
+          logradouro: string
+          nome_completo: string
+          numero: string
+          observacoes: string | null
+          rg: string | null
+          status: string
+          tipos_voluntario: string[]
+          updated_at: string
+        }
+        Insert: {
+          atuacao_detalhada?: string | null
+          bairro: string
+          celular: string
+          cep: string
+          cidade: string
+          complemento?: string | null
+          cpf: string
+          created_at?: string
+          created_by: string
+          data_adesao_voluntariado?: string | null
+          data_desligamento?: string | null
+          data_ingresso_sistema?: string
+          data_nascimento: string
+          email: string
+          estado: string
+          foto_url?: string | null
+          id?: string
+          logradouro: string
+          nome_completo: string
+          numero: string
+          observacoes?: string | null
+          rg?: string | null
+          status?: string
+          tipos_voluntario?: string[]
+          updated_at?: string
+        }
+        Update: {
+          atuacao_detalhada?: string | null
+          bairro?: string
+          celular?: string
+          cep?: string
+          cidade?: string
+          complemento?: string | null
+          cpf?: string
+          created_at?: string
+          created_by?: string
+          data_adesao_voluntariado?: string | null
+          data_desligamento?: string | null
+          data_ingresso_sistema?: string
+          data_nascimento?: string
+          email?: string
+          estado?: string
+          foto_url?: string | null
+          id?: string
+          logradouro?: string
+          nome_completo?: string
+          numero?: string
+          observacoes?: string | null
+          rg?: string | null
+          status?: string
+          tipos_voluntario?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
