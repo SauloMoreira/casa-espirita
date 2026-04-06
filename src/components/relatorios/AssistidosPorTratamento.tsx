@@ -31,7 +31,8 @@ export default function AssistidosPorTratamento() {
         .from("assistido_tratamentos")
         .select("tratamento_id, status, tratamento:tipos_tratamento(nome, tipo, tarefeiro_id, coordenador_responsavel_id)")
         .gte("created_at", filters.dataInicio)
-        .lte("created_at", filters.dataFim + "T23:59:59");
+        .lte("created_at", filters.dataFim + "T23:59:59")
+        .limit(5000);
 
       if (filters.tratamentoId !== "todos") q = q.eq("tratamento_id", filters.tratamentoId);
       if (filters.status !== "todos") q = q.eq("status", filters.status);

@@ -34,6 +34,7 @@ export default function PainelGerencial() {
       // Fetch vinculos
       let vQ = supabase.from("assistido_tratamentos").select("status, tratamento_id, assistido_id");
       if (tratFilter) vQ = vQ.in("tratamento_id", tratFilter);
+      vQ = vQ.limit(5000);
       const { data: vinculos } = await vQ;
 
       let concluidos = 0, emAndamento = 0;
@@ -44,7 +45,7 @@ export default function PainelGerencial() {
       });
 
       // Presences this month
-      let pQ = supabase.from("presencas_tratamentos").select("status_presenca, assistido_tratamento:assistido_tratamentos(tratamento_id)").gte("data", inicio).lte("data", fim);
+      let pQ = supabase.from("presencas_tratamentos").select("status_presenca, assistido_tratamento:assistido_tratamentos(tratamento_id)").gte("data", inicio).lte("data", fim).limit(10000);
       const { data: presencas } = await pQ;
 
       let sessoesRealizadas = 0, faltas = 0;

@@ -30,7 +30,8 @@ export default function FaltasPorPeriodo() {
         .from("presencas_tratamentos")
         .select("status_presenca, data, assistido_tratamento_id, assistido_tratamento:assistido_tratamentos(assistido_id, tratamento_id, tratamento:tipos_tratamento(nome, tarefeiro_id, coordenador_responsavel_id), assistido:assistidos(nome))")
         .gte("data", filters.dataInicio)
-        .lte("data", filters.dataFim);
+        .lte("data", filters.dataFim)
+        .limit(10000);
 
       if (filters.assistidoId !== "todos") q = q.eq("assistido_tratamento.assistido_id", filters.assistidoId);
       if (filters.tratamentoId !== "todos") q = q.eq("assistido_tratamento.tratamento_id", filters.tratamentoId);
