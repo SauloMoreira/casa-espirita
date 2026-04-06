@@ -168,6 +168,8 @@ export function CartaAgendamento({ open, onOpenChange, assistidoId, entrevistaId
           .signature { margin-top: 40px; display: flex; justify-content: space-around; }
           .signature-line { text-align: center; width: 200px; }
           .signature-line hr { border: none; border-top: 1px solid #333; margin-bottom: 4px; }
+          ul.recomendacoes { list-style: disc; padding-left: 20px; margin: 0; }
+          ul.recomendacoes li { margin-bottom: 6px; line-height: 1.5; }
           @media print { body { padding: 16px; } }
         </style>
       </head>
