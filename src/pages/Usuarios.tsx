@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users as UsersIcon, Pencil } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Pencil, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
+import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
@@ -67,7 +68,9 @@ export default function Usuarios() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const [resetTarget, setResetTarget] = useState<MergedUser | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const { user, role } = useAuth();
   const { toast } = useToast();
 
   const fetchUsers = async () => {
@@ -365,7 +368,12 @@ export default function Usuarios() {
                           {u.profile?.status === "ativo" ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex items-center gap-1">
+                        {role === "admin" && (
+                          <Button variant="ghost" size="icon" title="Redefinir senha" onClick={() => { setResetTarget(u); setResetOpen(true); }}>
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" onClick={() => openEdit(u)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -378,6 +386,15 @@ export default function Usuarios() {
           )}
         </CardContent>
       </Card>
+
+      {resetTarget && (
+        <ResetPasswordDialog
+          open={resetOpen}
+          onOpenChange={setResetOpen}
+          targetUserId={resetTarget.user_id}
+          targetUserName={resetTarget.profile?.nome_completo || resetTarget.user_id.substring(0, 8)}
+        />
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
 import { GerarAcessoAssistido } from "@/components/GerarAcessoAssistido";
+import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 
 interface Assistido {
   id: string;
@@ -71,7 +72,9 @@ export default function Assistidos() {
   const [loading, setLoading] = useState(false);
   const [acessoOpen, setAcessoOpen] = useState(false);
   const [acessoAssistido, setAcessoAssistido] = useState<Assistido | null>(null);
-  const { user } = useAuth();
+  const [resetAssistido, setResetAssistido] = useState<Assistido | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const { user, role } = useAuth();
   const { toast } = useToast();
 
   const fetchAssistidos = async () => {
@@ -325,7 +328,14 @@ export default function Assistidos() {
                       </TableCell>
                       <TableCell>
                         {a.user_id ? (
-                          <Badge variant="default" className="text-xs">Ativo</Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="default" className="text-xs">Ativo</Badge>
+                            {role === "admin" && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Redefinir senha" onClick={() => { setResetAssistido(a); setResetOpen(true); }}>
+                                <KeyRound className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         ) : (
                           <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => { setAcessoAssistido(a); setAcessoOpen(true); }}>
                             <KeyRound className="h-3.5 w-3.5" /> Gerar
@@ -356,6 +366,16 @@ export default function Assistidos() {
           assistidoCelular={acessoAssistido.celular}
           assistidoDataNascimento={acessoAssistido.data_nascimento}
           onSuccess={fetchAssistidos}
+        />
+      )}
+
+      {resetAssistido?.user_id && (
+        <ResetPasswordDialog
+          open={resetOpen}
+          onOpenChange={setResetOpen}
+          targetUserId={resetAssistido.user_id}
+          targetUserName={resetAssistido.nome}
+          targetUserEmail={resetAssistido.email}
         />
       )}
     </div>
