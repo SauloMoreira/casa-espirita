@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, UserPlus, BookOpen, Heart, CheckCircle, RotateCcw, Printer, Sparkles, Loader2 } from "lucide-react";
+import { Search, UserPlus, BookOpen, Heart, CheckCircle, RotateCcw, Printer, Sparkles, Loader2, Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
@@ -147,6 +147,8 @@ export default function FazerEntrevista() {
   const [aiOpen, setAiOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSugestao, setAiSugestao] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useState<any>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -656,6 +658,54 @@ export default function FazerEntrevista() {
     }
   };
 
+  const toggleRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "Navegador não suporta reconhecimento de voz", description: "Use o Google Chrome para essa funcionalidade.", variant: "destructive" });
+      return;
+    }
+
+    if (isRecording && recognitionRef[0]) {
+      recognitionRef[0].stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = observacoes;
+
+    recognition.onresult = (event: any) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+          setObservacoes(finalTranscript);
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error !== "no-speech") {
+        toast({ title: "Erro no reconhecimento de voz", description: event.error, variant: "destructive" });
+      }
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+    recognitionRef[0] = recognition;
+    setIsRecording(true);
+    toast({ title: "🎙️ Gravando...", description: "Fale normalmente. Clique novamente para parar." });
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
@@ -774,23 +824,41 @@ export default function FazerEntrevista() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Observações</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 text-xs"
-                    onClick={handleAiAssistant}
-                    disabled={aiLoading || !observacoes.trim()}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Assistente IA
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant={isRecording ? "destructive" : "outline"}
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      onClick={toggleRecording}
+                    >
+                      {isRecording ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                      {isRecording ? "Parar Gravação" : "Gravar Voz"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      onClick={handleAiAssistant}
+                      disabled={aiLoading || !observacoes.trim()}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Assistente IA
+                    </Button>
+                  </div>
                 </div>
+                {isRecording && (
+                  <div className="flex items-center gap-2 text-xs text-destructive animate-pulse">
+                    <span className="inline-block h-2 w-2 rounded-full bg-destructive" />
+                    Gravando... fale normalmente
+                  </div>
+                )}
                 <Textarea
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
-                  rows={3}
-                  placeholder="Registre observações importantes da entrevista..."
+                  rows={5}
+                  placeholder="Registre observações importantes da entrevista ou use o botão Gravar Voz..."
                 />
               </div>
             </CardContent>
