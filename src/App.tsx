@@ -93,6 +93,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </ThemeLoader>
     </AuthProvider>
   </QueryClientProvider>
 );
