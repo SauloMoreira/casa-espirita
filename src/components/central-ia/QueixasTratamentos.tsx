@@ -142,15 +142,33 @@ export default function QueixasTratamentos() {
       created_by: user!.id,
     };
 
+    let queixaId = editId;
+
     if (editId) {
       const { error } = await supabase.from("ia_queixas").update(payload).eq("id", editId);
       if (error) { toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Queixa atualizada" });
     } else {
-      const { error } = await supabase.from("ia_queixas").insert(payload);
+      const { data, error } = await supabase.from("ia_queixas").insert(payload).select("id").single();
       if (error) { toast({ title: "Erro ao criar", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Queixa criada" });
+      queixaId = data.id;
     }
+
+    // Sync tratamentos vinculos
+    if (queixaId) {
+      // Remove existing vinculos
+      await supabase.from("ia_queixa_tratamento").delete().eq("queixa_id", queixaId);
+      // Insert new vinculos
+      if (selectedTratamentos.length > 0) {
+        const vinculosPayload = selectedTratamentos.map(tId => ({
+          queixa_id: queixaId!,
+          tratamento_id: tId,
+          created_by: user!.id,
+        }));
+        await supabase.from("ia_queixa_tratamento").insert(vinculosPayload);
+      }
+    }
+
+    toast({ title: editId ? "Queixa atualizada" : "Queixa criada" });
     setShowForm(false);
     resetForm();
     fetchQueixas();
