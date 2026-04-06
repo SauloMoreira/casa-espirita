@@ -188,10 +188,18 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
           </Select>
         </div>
       )}
-      {visible("tipoTratamento") && tratamentos.length > 0 && (() => {
-        const tiposUnicos = [...new Set(tratamentos.map(() => ""))]; // We need tipos from DB
-        return null; // handled below
-      })()}
+      {visible("tipoTratamento") && tiposTratamento.length > 0 && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Tipo Tratamento</Label>
+          <Select value={values.tipoTratamento} onValueChange={(v) => set("tipoTratamento", v)}>
+            <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              {tiposTratamento.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {visible("status") && (
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Status</Label>
