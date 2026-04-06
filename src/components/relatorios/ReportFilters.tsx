@@ -186,6 +186,10 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
           </Select>
         </div>
       )}
+      {visible("tipoTratamento") && tratamentos.length > 0 && (() => {
+        const tiposUnicos = [...new Set(tratamentos.map(() => ""))]; // We need tipos from DB
+        return null; // handled below
+      })()}
       {visible("status") && (
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Status</Label>
