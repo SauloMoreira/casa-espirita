@@ -553,9 +553,42 @@ export default function Voluntarios() {
                     <Input type="date" value={form.data_desligamento} onChange={(e) => setForm({ ...form, data_desligamento: e.target.value })} />
                   </div>
                 )}
+                {/* Funções de Voluntariado */}
+                {availableFuncoes.length > 0 && (
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label>Funções / Atuação *</Label>
+                    <div className="flex gap-3 flex-wrap">
+                      {availableFuncoes.map((func) => (
+                        <div key={func.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={form.funcoes_ids.includes(func.id)}
+                            onCheckedChange={() => {
+                              setForm((prev) => ({
+                                ...prev,
+                                funcoes_ids: prev.funcoes_ids.includes(func.id)
+                                  ? prev.funcoes_ids.filter((id) => id !== func.id)
+                                  : [...prev.funcoes_ids, func.id],
+                              }));
+                            }}
+                          />
+                          <span className="text-sm">{func.nome_funcao}</span>
+                          <Badge variant="outline" className="text-[10px] py-0">{func.tipo_voluntario}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    {form.tipos_voluntario.length > 0 && availableFuncoes.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Nenhuma função cadastrada para os tipos selecionados.</p>
+                    )}
+                  </div>
+                )}
+                {form.tipos_voluntario.length === 0 && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-muted-foreground">Selecione um tipo de voluntário para ver as funções disponíveis.</p>
+                  </div>
+                )}
                 <div className="sm:col-span-2 space-y-1">
-                  <Label>Função / Atuação Detalhada</Label>
-                  <Textarea value={form.atuacao_detalhada} onChange={(e) => setForm({ ...form, atuacao_detalhada: e.target.value })} placeholder="Descreva a atuação do voluntário..." rows={2} />
+                  <Label>Observações adicionais sobre a atuação</Label>
+                  <Textarea value={form.atuacao_detalhada} onChange={(e) => setForm({ ...form, atuacao_detalhada: e.target.value })} placeholder="Informações complementares (opcional)..." rows={2} />
                 </div>
                 <div className="sm:col-span-2 space-y-1">
                   <Label>Observações</Label>
