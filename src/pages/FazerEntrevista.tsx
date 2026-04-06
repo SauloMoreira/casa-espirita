@@ -148,7 +148,8 @@ export default function FazerEntrevista() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSugestao, setAiSugestao] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useState<any>(null);
+  const isRecordingRef = useRef(false);
+  const recognitionRef = useRef<any>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
