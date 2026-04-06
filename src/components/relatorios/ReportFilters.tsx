@@ -53,7 +53,7 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
 
   useEffect(() => {
     const load = async () => {
-      const promises: Promise<void>[] = [];
+      const promises: PromiseLike<void>[] = [];
 
       if (show.includes("tratamentoId") || show.includes("tipoTratamento")) {
         promises.push(
