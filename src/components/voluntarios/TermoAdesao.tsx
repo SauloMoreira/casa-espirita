@@ -9,6 +9,7 @@ interface TermoAdesaoProps {
   onClose: () => void;
   voluntario: any;
   instituicao: any;
+  funcoesNomes?: string[];
 }
 
 export function TermoAdesao({ open, onClose, voluntario, instituicao }: TermoAdesaoProps) {
