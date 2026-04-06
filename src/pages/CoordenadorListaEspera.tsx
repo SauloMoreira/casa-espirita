@@ -42,6 +42,9 @@ export default function CoordenadorListaEspera() {
   const [dataInicial, setDataInicial] = useState("");
   const [saving, setSaving] = useState(false);
   const [tratNomes, setTratNomes] = useState<string[]>([]);
+  const [cartaOpen, setCartaOpen] = useState(false);
+  const [cartaAssistidoId, setCartaAssistidoId] = useState("");
+  const [cartaVinculoIds, setCartaVinculoIds] = useState<string[]>([]);
 
   const fetchData = async () => {
     if (!user) return;
