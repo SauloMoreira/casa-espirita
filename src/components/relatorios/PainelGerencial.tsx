@@ -34,6 +34,7 @@ export default function PainelGerencial() {
       // Fetch vinculos
       let vQ = supabase.from("assistido_tratamentos").select("status, tratamento_id, assistido_id");
       if (tratFilter) vQ = vQ.in("tratamento_id", tratFilter);
+      vQ = vQ.limit(5000);
       const { data: vinculos } = await vQ;
 
       let concluidos = 0, emAndamento = 0;

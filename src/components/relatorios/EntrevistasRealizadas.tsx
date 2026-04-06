@@ -35,6 +35,7 @@ export default function EntrevistasRealizadas() {
         .lte("data", filters.dataFim + "T23:59:59")
         .in("status", ["concluida", "realizada"]);
 
+      q = q.limit(5000);
       if (filters.entrevistadorId !== "todos") q = q.eq("entrevistador_id", filters.entrevistadorId);
       if (filters.tipoEntrevista !== "todos") q = q.eq("tipo_entrevista", filters.tipoEntrevista);
       if (role === "entrevistador") q = q.eq("entrevistador_id", user!.id);

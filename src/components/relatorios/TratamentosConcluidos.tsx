@@ -45,7 +45,8 @@ export default function TratamentosConcluidos() {
         .select("id, data_inicio, quantidade_total, quantidade_realizada, status, updated_at, assistido:assistidos(nome), tratamento:tipos_tratamento(id, nome, tipo, tarefeiro_id, coordenador_responsavel_id)")
         .eq("status", "concluido")
         .gte("updated_at", filters.dataInicio)
-        .lte("updated_at", filters.dataFim + "T23:59:59");
+        .lte("updated_at", filters.dataFim + "T23:59:59")
+        .limit(5000);
 
       if (filters.tratamentoId !== "todos") q = q.eq("tratamento_id", filters.tratamentoId);
 
