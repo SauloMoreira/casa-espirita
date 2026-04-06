@@ -255,7 +255,6 @@ export default function Tratamentos() {
                 <Input type="number" min={1} value={form.quantidade_padrao_sessoes} onChange={(e) => setForm({ ...form, quantidade_padrao_sessoes: e.target.value })} placeholder="Ex: 7" />
                 <p className="text-xs text-muted-foreground">Número de sessões usado quando o entrevistador não informar a quantidade na entrevista</p>
               </div>
-              </div>
               <div className="space-y-2">
                 <Label>Coordenador Responsável</Label>
                 {coordenadores.length > 0 ? (
