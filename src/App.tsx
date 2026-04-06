@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import { useThemeColors } from "@/hooks/useThemeColors";
 
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
