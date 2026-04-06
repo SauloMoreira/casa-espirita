@@ -952,6 +952,14 @@ export default function FazerEntrevista() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Carta de Agendamento */}
+      <CartaAgendamento
+        open={cartaOpen}
+        onOpenChange={setCartaOpen}
+        assistidoId={cartaAssistidoId}
+        entrevistaId={cartaEntrevistaId}
+      />
     </div>
   );
 }
