@@ -161,7 +161,7 @@ export function AppSidebar() {
   useEffect(() => {
     const newOpen: Record<string, boolean> = {};
     navGroups.forEach((group) => {
-      const hasActive = group.items.some((item) => location.pathname === item.url);
+      const hasActive = group.items.some((item) => location.pathname === item.url || location.pathname.startsWith(item.url + "/"));
       if (hasActive) newOpen[group.label] = true;
     });
     setOpenGroups((prev) => ({ ...prev, ...newOpen }));
