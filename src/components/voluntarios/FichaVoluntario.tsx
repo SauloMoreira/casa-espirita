@@ -16,9 +16,10 @@ interface FichaVoluntarioProps {
   open: boolean;
   onClose: () => void;
   voluntario: any;
+  funcoesNomes?: string[];
 }
 
-export function FichaVoluntario({ open, onClose, voluntario }: FichaVoluntarioProps) {
+export function FichaVoluntario({ open, onClose, voluntario, funcoesNomes }: FichaVoluntarioProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
@@ -106,7 +107,8 @@ export function FichaVoluntario({ open, onClose, voluntario }: FichaVoluntarioPr
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 20px" }}>
               <div><label style={{ fontSize: "8pt", color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>Ingresso no Sistema</label><p style={{ margin: 0 }}>{v.data_ingresso_sistema ? new Date(v.data_ingresso_sistema + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</p></div>
               {v.data_adesao_voluntariado && <div><label style={{ fontSize: "8pt", color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>Adesão ao Voluntariado</label><p style={{ margin: 0 }}>{new Date(v.data_adesao_voluntariado + "T12:00:00").toLocaleDateString("pt-BR")}</p></div>}
-              {v.atuacao_detalhada && <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: "8pt", color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>Atuação</label><p style={{ margin: 0 }}>{v.atuacao_detalhada}</p></div>}
+              {(funcoesNomes && funcoesNomes.length > 0) && <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: "8pt", color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>Funções</label><p style={{ margin: 0 }}>{funcoesNomes.join(", ")}</p></div>}
+              {v.atuacao_detalhada && <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: "8pt", color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>Observações da Atuação</label><p style={{ margin: 0 }}>{v.atuacao_detalhada}</p></div>}
             </div>
 
             {v.observacoes && (

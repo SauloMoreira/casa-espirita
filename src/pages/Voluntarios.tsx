@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users, Pencil, Printer, FileText, Eye } from "lucide-react";
+import { Plus, Search, Pencil, FileText, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
@@ -34,6 +34,13 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIPOS_VOLUNTARIO = ["Médium", "Tarefeiro"];
+
+interface FuncaoVoluntariado {
+  id: string;
+  nome_funcao: string;
+  tipo_voluntario: string;
+  status: string;
+}
 
 interface Voluntario {
   id: string;
@@ -60,6 +67,7 @@ interface Voluntario {
   observacoes: string | null;
   created_by: string;
   created_at: string;
+  funcoes?: string[]; // loaded separately
 }
 
 const emptyForm = {
@@ -80,6 +88,7 @@ const emptyForm = {
   data_ingresso_sistema: new Date().toISOString().split("T")[0],
   data_adesao_voluntariado: "",
   tipos_voluntario: [] as string[],
+  funcoes_ids: [] as string[],
   atuacao_detalhada: "",
   status: "ativo",
   data_desligamento: "",
@@ -93,6 +102,7 @@ export default function Voluntarios() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [filterTipo, setFilterTipo] = useState("todos");
+  const [filterFuncao, setFilterFuncao] = useState("todos");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -102,8 +112,27 @@ export default function Voluntarios() {
   const [fichaOpen, setFichaOpen] = useState(false);
   const [selectedVoluntario, setSelectedVoluntario] = useState<Voluntario | null>(null);
   const [instData, setInstData] = useState<any>(null);
+  const [allFuncoes, setAllFuncoes] = useState<FuncaoVoluntariado[]>([]);
+  const [voluntarioFuncoesMap, setVoluntarioFuncoesMap] = useState<Record<string, string[]>>({});
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const fetchFuncoes = async () => {
+    const { data } = await supabase.from("funcoes_voluntariado").select("*").eq("status", "ativo").order("tipo_voluntario").order("nome_funcao");
+    if (data) setAllFuncoes(data as any);
+  };
+
+  const fetchVoluntarioFuncoes = async () => {
+    const { data } = await supabase.from("voluntario_funcoes").select("voluntario_id, funcao_id");
+    if (data) {
+      const map: Record<string, string[]> = {};
+      data.forEach((r: any) => {
+        if (!map[r.voluntario_id]) map[r.voluntario_id] = [];
+        map[r.voluntario_id].push(r.funcao_id);
+      });
+      setVoluntarioFuncoesMap(map);
+    }
+  };
 
   const fetchVoluntarios = async () => {
     const { data } = await supabase
@@ -121,6 +150,8 @@ export default function Voluntarios() {
   useEffect(() => {
     fetchVoluntarios();
     fetchInst();
+    fetchFuncoes();
+    fetchVoluntarioFuncoes();
   }, []);
 
   const validate = (): boolean => {
@@ -185,26 +216,40 @@ export default function Voluntarios() {
     };
 
     let error;
+    let savedId = editId;
     if (editId) {
       ({ error } = await supabase.from("voluntarios").update(payload).eq("id", editId));
     } else {
-      ({ error } = await supabase.from("voluntarios").insert({ ...payload, created_by: user.id }));
+      const res = await supabase.from("voluntarios").insert({ ...payload, created_by: user.id }).select("id").single();
+      error = res.error;
+      if (res.data) savedId = res.data.id;
     }
 
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
+    } else if (savedId) {
+      // Save funcoes
+      await supabase.from("voluntario_funcoes").delete().eq("voluntario_id", savedId);
+      if (form.funcoes_ids.length > 0) {
+        await supabase.from("voluntario_funcoes").insert(
+          form.funcoes_ids.map((fid) => ({ voluntario_id: savedId!, funcao_id: fid }))
+        );
+      }
       toast({ title: editId ? "Voluntário atualizado" : "Voluntário cadastrado" });
       setOpen(false);
       setForm(emptyForm);
       setEditId(null);
       fetchVoluntarios();
+      fetchVoluntarioFuncoes();
     }
     setLoading(false);
   };
 
-  const openEdit = (v: Voluntario) => {
+  const openEdit = async (v: Voluntario) => {
     setEditId(v.id);
+    // Load this volunteer's funcoes
+    const { data: vfData } = await supabase.from("voluntario_funcoes").select("funcao_id").eq("voluntario_id", v.id);
+    const funcIds = vfData ? vfData.map((r: any) => r.funcao_id) : [];
     setForm({
       nome_completo: v.nome_completo,
       celular: maskPhone(v.celular),
@@ -223,6 +268,7 @@ export default function Voluntarios() {
       data_ingresso_sistema: v.data_ingresso_sistema,
       data_adesao_voluntariado: v.data_adesao_voluntariado || "",
       tipos_voluntario: v.tipos_voluntario || [],
+      funcoes_ids: funcIds,
       atuacao_detalhada: v.atuacao_detalhada || "",
       status: v.status,
       data_desligamento: v.data_desligamento || "",
@@ -239,6 +285,15 @@ export default function Voluntarios() {
     setOpen(true);
   };
 
+  // Helper: get funcao names for a voluntario
+  const getFuncaoNames = (volId: string) => {
+    const ids = voluntarioFuncoesMap[volId] || [];
+    return allFuncoes.filter((f) => ids.includes(f.id)).map((f) => f.nome_funcao);
+  };
+
+  // Filtered funcoes for form (based on selected tipos_voluntario)
+  const availableFuncoes = allFuncoes.filter((f) => form.tipos_voluntario.includes(f.tipo_voluntario));
+
   const filtered = voluntarios.filter((v) => {
     const searchLower = search.toLowerCase();
     const matchesSearch =
@@ -250,7 +305,9 @@ export default function Voluntarios() {
     const matchesStatus = filterStatus === "todos" || v.status === filterStatus;
     const matchesTipo =
       filterTipo === "todos" || (v.tipos_voluntario && v.tipos_voluntario.includes(filterTipo));
-    return matchesSearch && matchesStatus && matchesTipo;
+    const matchesFuncao =
+      filterFuncao === "todos" || (voluntarioFuncoesMap[v.id] || []).includes(filterFuncao);
+    return matchesSearch && matchesStatus && matchesTipo && matchesFuncao;
   });
 
   const toggleTipo = (tipo: string) => {
@@ -307,6 +364,17 @@ export default function Voluntarios() {
                 <SelectItem value="todos">Todos</SelectItem>
                 {TIPOS_VOLUNTARIO.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterFuncao} onValueChange={setFilterFuncao}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Função" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas as Funções</SelectItem>
+                {allFuncoes.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.nome_funcao} ({f.tipo_voluntario})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -485,9 +553,42 @@ export default function Voluntarios() {
                     <Input type="date" value={form.data_desligamento} onChange={(e) => setForm({ ...form, data_desligamento: e.target.value })} />
                   </div>
                 )}
+                {/* Funções de Voluntariado */}
+                {availableFuncoes.length > 0 && (
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label>Funções / Atuação *</Label>
+                    <div className="flex gap-3 flex-wrap">
+                      {availableFuncoes.map((func) => (
+                        <div key={func.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={form.funcoes_ids.includes(func.id)}
+                            onCheckedChange={() => {
+                              setForm((prev) => ({
+                                ...prev,
+                                funcoes_ids: prev.funcoes_ids.includes(func.id)
+                                  ? prev.funcoes_ids.filter((id) => id !== func.id)
+                                  : [...prev.funcoes_ids, func.id],
+                              }));
+                            }}
+                          />
+                          <span className="text-sm">{func.nome_funcao}</span>
+                          <Badge variant="outline" className="text-[10px] py-0">{func.tipo_voluntario}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    {form.tipos_voluntario.length > 0 && availableFuncoes.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Nenhuma função cadastrada para os tipos selecionados.</p>
+                    )}
+                  </div>
+                )}
+                {form.tipos_voluntario.length === 0 && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-muted-foreground">Selecione um tipo de voluntário para ver as funções disponíveis.</p>
+                  </div>
+                )}
                 <div className="sm:col-span-2 space-y-1">
-                  <Label>Função / Atuação Detalhada</Label>
-                  <Textarea value={form.atuacao_detalhada} onChange={(e) => setForm({ ...form, atuacao_detalhada: e.target.value })} placeholder="Descreva a atuação do voluntário..." rows={2} />
+                  <Label>Observações adicionais sobre a atuação</Label>
+                  <Textarea value={form.atuacao_detalhada} onChange={(e) => setForm({ ...form, atuacao_detalhada: e.target.value })} placeholder="Informações complementares (opcional)..." rows={2} />
                 </div>
                 <div className="sm:col-span-2 space-y-1">
                   <Label>Observações</Label>
@@ -513,6 +614,7 @@ export default function Voluntarios() {
           onClose={() => setTermoOpen(false)}
           voluntario={selectedVoluntario}
           instituicao={instData}
+          funcoesNomes={getFuncaoNames(selectedVoluntario.id)}
         />
       )}
 
@@ -522,6 +624,7 @@ export default function Voluntarios() {
           open={fichaOpen}
           onClose={() => setFichaOpen(false)}
           voluntario={selectedVoluntario}
+          funcoesNomes={getFuncaoNames(selectedVoluntario.id)}
         />
       )}
     </div>

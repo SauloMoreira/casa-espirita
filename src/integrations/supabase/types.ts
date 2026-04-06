@@ -384,6 +384,39 @@ export type Database = {
           },
         ]
       }
+      funcoes_voluntariado: {
+        Row: {
+          created_at: string
+          created_by: string
+          descricao: string | null
+          id: string
+          nome_funcao: string
+          status: string
+          tipo_voluntario: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          descricao?: string | null
+          id?: string
+          nome_funcao: string
+          status?: string
+          tipo_voluntario: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          descricao?: string | null
+          id?: string
+          nome_funcao?: string
+          status?: string
+          tipo_voluntario?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ia_biblioteca: {
         Row: {
           arquivo_url: string | null
@@ -1143,6 +1176,42 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      voluntario_funcoes: {
+        Row: {
+          created_at: string
+          funcao_id: string
+          id: string
+          voluntario_id: string
+        }
+        Insert: {
+          created_at?: string
+          funcao_id: string
+          id?: string
+          voluntario_id: string
+        }
+        Update: {
+          created_at?: string
+          funcao_id?: string
+          id?: string
+          voluntario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voluntario_funcoes_funcao_id_fkey"
+            columns: ["funcao_id"]
+            isOneToOne: false
+            referencedRelation: "funcoes_voluntariado"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voluntario_funcoes_voluntario_id_fkey"
+            columns: ["voluntario_id"]
+            isOneToOne: false
+            referencedRelation: "voluntarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voluntarios: {
         Row: {
