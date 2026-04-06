@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, BookOpen, Eye, Trash2 } from "lucide-react";
+import { Plus, Calendar, BookOpen, Eye, Trash2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
+import { CartaAgendamento } from "@/components/CartaAgendamento";
 
 interface Entrevista {
   id: string;
