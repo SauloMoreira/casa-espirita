@@ -22,6 +22,21 @@ export function AppLayout() {
     return () => window.removeEventListener("instituicao-updated", fetchInst);
   }, []);
 
+  // Push notification toasts
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const aviso = (e as CustomEvent).detail;
+      if (aviso?.titulo) {
+        toast({
+          title: aviso.titulo,
+          description: aviso.mensagem?.substring(0, 100),
+        });
+      }
+    };
+    window.addEventListener("aviso-novo", handler);
+    return () => window.removeEventListener("aviso-novo", handler);
+  }, [toast]);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
