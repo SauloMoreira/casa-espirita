@@ -19,7 +19,7 @@ interface FichaVoluntarioProps {
   funcoesNomes?: string[];
 }
 
-export function FichaVoluntario({ open, onClose, voluntario }: FichaVoluntarioProps) {
+export function FichaVoluntario({ open, onClose, voluntario, funcoesNomes }: FichaVoluntarioProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
