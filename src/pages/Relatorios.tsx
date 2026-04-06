@@ -72,6 +72,7 @@ export default function Relatorios() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {REPORTS.filter((r) => !(r.key === "carga" && role === "tarefeiro")).map((r) => {
         {REPORTS.map((r) => {
           const Icon = r.icon;
           return (
