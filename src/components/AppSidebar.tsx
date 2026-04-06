@@ -16,6 +16,7 @@ import {
   User,
   Building2,
   Bell,
+  Brain,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -59,6 +60,7 @@ const navItems: NavItem[] = [
   { title: "Lista de Espera", url: "/lista-espera", icon: ClipboardCheck, roles: ["coordenador_de_tratamento"] },
   { title: "Meus Tratamentos", url: "/coordenador-tratamentos", icon: Heart, roles: ["coordenador_de_tratamento"] },
   { title: "Agenda do Tratamento", url: "/coordenador-agenda", icon: Calendar, roles: ["coordenador_de_tratamento"] },
+  { title: "Central de IA", url: "/central-ia", icon: Brain, roles: ["admin", "entrevistador"] },
   { title: "Relatórios", url: "/relatorios", icon: FileText, roles: ["admin"] },
   { title: "Exceções", url: "/excecoes", icon: AlertTriangle, roles: ["admin"] },
   { title: "Instituição", url: "/instituicao", icon: Building2, roles: ["admin"] },

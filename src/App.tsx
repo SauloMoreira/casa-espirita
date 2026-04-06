@@ -32,6 +32,7 @@ import CoordenadorTratamentos from "./pages/CoordenadorTratamentos";
 import CoordenadorAgenda from "./pages/CoordenadorAgenda";
 import Notificacoes from "./pages/Notificacoes";
 import MeusDocumentos from "./pages/MeusDocumentos";
+import CentralIA from "./pages/CentralIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const App = () => (
               <Route path="/regras" element={<ProtectedRoute allowedRoles={["admin"]}><RegrasOperacionais /></ProtectedRoute>} />
               <Route path="/excecoes" element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
               <Route path="/instituicao" element={<ProtectedRoute allowedRoles={["admin"]}><Instituicao /></ProtectedRoute>} />
+              <Route path="/central-ia" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><CentralIA /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
