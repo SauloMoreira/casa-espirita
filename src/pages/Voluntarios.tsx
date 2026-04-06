@@ -216,26 +216,40 @@ export default function Voluntarios() {
     };
 
     let error;
+    let savedId = editId;
     if (editId) {
       ({ error } = await supabase.from("voluntarios").update(payload).eq("id", editId));
     } else {
-      ({ error } = await supabase.from("voluntarios").insert({ ...payload, created_by: user.id }));
+      const res = await supabase.from("voluntarios").insert({ ...payload, created_by: user.id }).select("id").single();
+      error = res.error;
+      if (res.data) savedId = res.data.id;
     }
 
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
+    } else if (savedId) {
+      // Save funcoes
+      await supabase.from("voluntario_funcoes").delete().eq("voluntario_id", savedId);
+      if (form.funcoes_ids.length > 0) {
+        await supabase.from("voluntario_funcoes").insert(
+          form.funcoes_ids.map((fid) => ({ voluntario_id: savedId!, funcao_id: fid }))
+        );
+      }
       toast({ title: editId ? "Voluntário atualizado" : "Voluntário cadastrado" });
       setOpen(false);
       setForm(emptyForm);
       setEditId(null);
       fetchVoluntarios();
+      fetchVoluntarioFuncoes();
     }
     setLoading(false);
   };
 
-  const openEdit = (v: Voluntario) => {
+  const openEdit = async (v: Voluntario) => {
     setEditId(v.id);
+    // Load this volunteer's funcoes
+    const { data: vfData } = await supabase.from("voluntario_funcoes").select("funcao_id").eq("voluntario_id", v.id);
+    const funcIds = vfData ? vfData.map((r: any) => r.funcao_id) : [];
     setForm({
       nome_completo: v.nome_completo,
       celular: maskPhone(v.celular),
@@ -254,6 +268,7 @@ export default function Voluntarios() {
       data_ingresso_sistema: v.data_ingresso_sistema,
       data_adesao_voluntariado: v.data_adesao_voluntariado || "",
       tipos_voluntario: v.tipos_voluntario || [],
+      funcoes_ids: funcIds,
       atuacao_detalhada: v.atuacao_detalhada || "",
       status: v.status,
       data_desligamento: v.data_desligamento || "",
