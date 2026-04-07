@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import {
   Clock,
   User,
   Filter,
+  BookOpen,
 } from "lucide-react";
 import {
   format,
@@ -68,6 +70,7 @@ type ViewMode = "dia" | "semana" | "mes";
 
 export default function Agenda() {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [entrevistas, setEntrevistas] = useState<Entrevista[]>([]);
   const [loading, setLoading] = useState(true);
