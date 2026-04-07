@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AIInsightsBlock from "@/components/dashboard/AIInsightsBlock";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Users, Heart, Calendar, ClipboardCheck, BookOpen, TrendingUp, TrendingDown,
   AlertTriangle, BarChart3, FileText, ListChecks, Clock, CheckCircle,
@@ -65,6 +66,8 @@ export default function AdminDashboard() {
   const [aguardandoAgend, setAguardandoAgend] = useState(0);
   const [tratamentos, setTratamentos] = useState<any[]>([]);
   const [publicoPalestras, setPublicoPalestras] = useState(0);
+  const [aguardandoList, setAguardandoList] = useState<any[]>([]);
+  const [aguardandoOpen, setAguardandoOpen] = useState(false);
 
   const range = useMemo(() => getPeriodRange(period), [period]);
 
@@ -98,7 +101,7 @@ export default function AdminDashboard() {
       supabase.from("entrevistas_fraternas").select("*", { count: "exact", head: true }).eq("status", "agendada"),
       supabase.from("presencas_tratamentos").select("*", { count: "exact", head: true }).eq("data", today),
       supabase.from("assistido_tratamentos").select("*", { count: "exact", head: true }).eq("status", "aguardando_liberacao"),
-      supabase.from("assistido_tratamentos").select("*", { count: "exact", head: true }).eq("status", "aguardando_inicio"),
+      supabase.from("assistido_tratamentos").select("*", { count: "exact", head: true }).eq("status", "aguardando_agendamento"),
       supabase.from("entrevistas_fraternas").select("id, data, status, assistido_id, entrevistador_id, tipo_entrevista").order("data", { ascending: false }).limit(5),
       supabase.from("assistido_tratamentos").select("tratamento_id, status, tratamento:tipos_tratamento(nome, tarefeiro_id)").in("status", ["aguardando_inicio", "em_andamento"]).limit(5000),
       supabase.from("presencas_tratamentos").select("data, status_presenca").gte("data", range.start).lte("data", range.end).limit(5000),
