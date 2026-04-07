@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AIInsightsBlock from "@/components/dashboard/AIInsightsBlock";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Users, Heart, Calendar, ClipboardCheck, BookOpen, TrendingUp, TrendingDown,
   AlertTriangle, BarChart3, FileText, ListChecks, Clock, CheckCircle,
@@ -65,6 +66,8 @@ export default function AdminDashboard() {
   const [aguardandoAgend, setAguardandoAgend] = useState(0);
   const [tratamentos, setTratamentos] = useState<any[]>([]);
   const [publicoPalestras, setPublicoPalestras] = useState(0);
+  const [aguardandoList, setAguardandoList] = useState<any[]>([]);
+  const [aguardandoOpen, setAguardandoOpen] = useState(false);
 
   const range = useMemo(() => getPeriodRange(period), [period]);
 
@@ -98,7 +101,7 @@ export default function AdminDashboard() {
       supabase.from("entrevistas_fraternas").select("*", { count: "exact", head: true }).eq("status", "agendada"),
       supabase.from("presencas_tratamentos").select("*", { count: "exact", head: true }).eq("data", today),
       supabase.from("assistido_tratamentos").select("*", { count: "exact", head: true }).eq("status", "aguardando_liberacao"),
-      supabase.from("assistido_tratamentos").select("*", { count: "exact", head: true }).eq("status", "aguardando_inicio"),
+      supabase.from("assistido_tratamentos").select("*", { count: "exact", head: true }).eq("status", "aguardando_agendamento"),
       supabase.from("entrevistas_fraternas").select("id, data, status, assistido_id, entrevistador_id, tipo_entrevista").order("data", { ascending: false }).limit(5),
       supabase.from("assistido_tratamentos").select("tratamento_id, status, tratamento:tipos_tratamento(nome, tarefeiro_id)").in("status", ["aguardando_inicio", "em_andamento"]).limit(5000),
       supabase.from("presencas_tratamentos").select("data, status_presenca").gte("data", range.start).lte("data", range.end).limit(5000),
@@ -180,7 +183,7 @@ export default function AdminDashboard() {
 
     // Pendencies
     const pend: any[] = [];
-    if ((aguardAgendC || 0) > 0) pend.push({ label: "Assistidos aguardando agendamento", count: aguardAgendC, path: "/lista-espera", icon: Hourglass });
+    if ((aguardAgendC || 0) > 0) pend.push({ label: "Assistidos aguardando agendamento", count: aguardAgendC, action: "aguardando", icon: Hourglass });
     if ((listaEsperaC || 0) > 0) pend.push({ label: "Itens na lista de espera", count: listaEsperaC, path: "/lista-espera", icon: Clock });
     if ((faltasMesC || 0) > 0) pend.push({ label: "Faltas no período", count: faltasMesC, path: "/relatorios", icon: CalendarX });
     setPendencias(pend);
@@ -244,6 +247,23 @@ export default function AdminDashboard() {
     return map[s] || s;
   };
 
+  const handleOpenAguardando = useCallback(async () => {
+    const { data } = await supabase
+      .from("assistido_tratamentos")
+      .select("id, assistido_id, tratamento_id, created_at, prioridade, urgencia, status, assistido:assistidos(nome), tratamento:tipos_tratamento(nome)")
+      .eq("status", "aguardando_agendamento")
+      .order("created_at", { ascending: true })
+      .limit(200);
+    setAguardandoList(
+      (data || []).map((d: any) => ({
+        ...d,
+        assistido_nome: d.assistido?.nome || "—",
+        tratamento_nome: d.tratamento?.nome || "—",
+      }))
+    );
+    setAguardandoOpen(true);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -292,7 +312,9 @@ export default function AdminDashboard() {
         <StatCard title="Maior Carga" value={topTarefeiro?.nome?.split(" ")[0] || "—"} subtitle={`${topTarefeiro?.total || 0} vínculos`} icon={Briefcase} />
         <StatCard title="Palestras" value={publicoPalestras} subtitle="Presenças no período" icon={BookOpen} />
         <StatCard title="Faltas" value={faltasMes} subtitle="No período" icon={CalendarX} />
-        <StatCard title="Aguardando Agend." value={aguardandoAgend} subtitle="Assistidos" icon={Clock} />
+        <div className="cursor-pointer" onClick={handleOpenAguardando}>
+          <StatCard title="Aguardando Agend." value={aguardandoAgend} subtitle="Ver detalhes ›" icon={Clock} />
+        </div>
       </div>
 
       {/* Age group mini-cards */}
@@ -316,7 +338,10 @@ export default function AdminDashboard() {
                 return (
                   <div
                     key={i}
-                    onClick={() => navigate(p.path)}
+                    onClick={() => {
+                      if (p.action === "aguardando") handleOpenAguardando();
+                      else if (p.path) navigate(p.path);
+                    }}
                     className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-card hover:bg-secondary/50 cursor-pointer transition-colors"
                   >
                     <Icon className="h-5 w-5 text-warning shrink-0" />
@@ -614,6 +639,48 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog: Aguardando Agendamento */}
+      <Dialog open={aguardandoOpen} onOpenChange={setAguardandoOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Assistidos Aguardando Agendamento
+            </DialogTitle>
+          </DialogHeader>
+          {aguardandoList.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum item aguardando agendamento.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Assistido</TableHead>
+                  <TableHead>Tratamento</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Desde</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {aguardandoList.map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.assistido_nome}</TableCell>
+                    <TableCell>{item.tratamento_nome}</TableCell>
+                    <TableCell>
+                      <Badge variant={item.prioridade === "alta" || item.prioridade === "urgente" ? "destructive" : "secondary"}>
+                        {item.prioridade === "alta" ? "Alta" : item.prioridade === "urgente" ? "Urgente" : "Normal"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {format(new Date(item.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
