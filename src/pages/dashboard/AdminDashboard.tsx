@@ -247,7 +247,23 @@ export default function AdminDashboard() {
     return map[s] || s;
   };
 
-  if (loading) {
+  const handleOpenAguardando = useCallback(async () => {
+    const { data } = await supabase
+      .from("assistido_tratamentos")
+      .select("id, assistido_id, tratamento_id, created_at, prioridade, urgencia, status, assistido:assistidos(nome), tratamento:tipos_tratamento(nome)")
+      .eq("status", "aguardando_agendamento")
+      .order("created_at", { ascending: true })
+      .limit(200);
+    setAguardandoList(
+      (data || []).map((d: any) => ({
+        ...d,
+        assistido_nome: d.assistido?.nome || "—",
+        tratamento_nome: d.tratamento?.nome || "—",
+      }))
+    );
+    setAguardandoOpen(true);
+  }, []);
+
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-pulse text-muted-foreground">Carregando dashboard...</div>
