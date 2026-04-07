@@ -32,6 +32,12 @@ interface Tratamento {
   ordem_tratamento: number | null;
   tratamento_livre: boolean;
   bloqueia_proximo_tratamento: boolean;
+  trabalho_publico: boolean;
+  permite_entrada_sem_agendamento: boolean;
+  exige_controle_presenca: boolean;
+  modo_checkin: string;
+  permite_cadastro_rapido: boolean;
+  permite_registro_manual: boolean;
 }
 
 const emptyForm = {
@@ -40,6 +46,9 @@ const emptyForm = {
   ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
   modo_agendamento: "sequencial_bloqueante", coordenador_responsavel_id: "",
   quantidade_padrao_sessoes: "1",
+  trabalho_publico: false, permite_entrada_sem_agendamento: false,
+  exige_controle_presenca: true, modo_checkin: "qr_do_dia",
+  permite_cadastro_rapido: false, permite_registro_manual: false,
 };
 
 export default function Tratamentos() {
