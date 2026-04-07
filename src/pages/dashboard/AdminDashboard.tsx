@@ -180,8 +180,8 @@ export default function AdminDashboard() {
 
     // Pendencies
     const pend: any[] = [];
-    if ((aguardAgendC || 0) > 0) pend.push({ label: "Assistidos aguardando agendamento", count: aguardAgendC, path: "/coordenador/tratamentos", icon: Hourglass });
-    if ((listaEsperaC || 0) > 0) pend.push({ label: "Itens na lista de espera", count: listaEsperaC, path: "/coordenador/lista-espera", icon: Clock });
+    if ((aguardAgendC || 0) > 0) pend.push({ label: "Assistidos aguardando agendamento", count: aguardAgendC, path: "/excecoes", icon: Hourglass });
+    if ((listaEsperaC || 0) > 0) pend.push({ label: "Itens na lista de espera", count: listaEsperaC, path: "/lista-espera", icon: Clock });
     if ((faltasMesC || 0) > 0) pend.push({ label: "Faltas no período", count: faltasMesC, path: "/relatorios", icon: CalendarX });
     setPendencias(pend);
 
