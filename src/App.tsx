@@ -37,6 +37,8 @@ import MeusDocumentos from "./pages/MeusDocumentos";
 import CentralIA from "./pages/CentralIA";
 import Voluntarios from "./pages/Voluntarios";
 import FuncoesVoluntariado from "./pages/FuncoesVoluntariado";
+import SessoesPublicas from "./pages/SessoesPublicas";
+import CheckinPublico from "./pages/CheckinPublico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/checkin-publico/:token" element={<CheckinPublico />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -87,6 +90,7 @@ const App = () => (
               <Route path="/central-ia" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><CentralIA /></ProtectedRoute>} />
               <Route path="/voluntarios" element={<ProtectedRoute allowedRoles={["admin"]}><Voluntarios /></ProtectedRoute>} />
               <Route path="/funcoes-voluntariado" element={<ProtectedRoute allowedRoles={["admin"]}><FuncoesVoluntariado /></ProtectedRoute>} />
+              <Route path="/sessoes-publicas" element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><SessoesPublicas /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
