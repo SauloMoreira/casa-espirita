@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import AIInsightsBlock from "@/components/dashboard/AIInsightsBlock";
 import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -562,6 +563,24 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* BLOCK — AI Insights */}
+      <AIInsightsBlock dashboardData={{
+        totalAssistidos: assistidos.length,
+        tratAtivos,
+        tratConcluidos,
+        entAgendadas,
+        presencasHoje,
+        listaEspera,
+        faltasMes,
+        aguardandoAgend,
+        publicoPalestras,
+        periodo: `${range.start} a ${range.end}`,
+        faixaEtaria: ageData,
+        tratPorTipo,
+        cargaTarefeiros,
+        entrevistasPorTipo,
+      }} />
 
       {/* BLOCK 9 — Shortcuts */}
       <Card>
