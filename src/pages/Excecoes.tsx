@@ -49,7 +49,6 @@ export default function Excecoes() {
       valor: aguardando?.length || 0,
       icon: Clock,
       cor: "text-amber-500",
-      link: "/lista-espera",
       tab: "aguardando",
     });
 
@@ -136,19 +135,17 @@ export default function Excecoes() {
     if (tab === "aguardando") {
       const { data } = await supabase
         .from("assistido_tratamentos")
-        .select("id, assistido_id, created_at")
+        .select("id, assistido_id, tratamento_id, created_at, prioridade, assistido:assistidos(nome), tratamento:tipos_tratamento(nome)")
         .eq("status", "aguardando_agendamento")
         .order("created_at", { ascending: true })
-        .limit(50);
+        .limit(100);
       if (data) {
-        const ids = [...new Set(data.map((d: any) => d.assistido_id))];
-        const { data: nomes } = await supabase.from("assistidos").select("id, nome").in("id", ids);
-        const map = Object.fromEntries((nomes || []).map((n: any) => [n.id, n.nome]));
         data.forEach((d: any) => {
+          const prioLabel = d.prioridade === "urgente" ? "Urgente" : d.prioridade === "alta" ? "Alta" : "Normal";
           rows.push({
             id: d.id,
-            label: map[d.assistido_id] || d.assistido_id.substring(0, 8),
-            sublabel: "Aguardando agendamento",
+            label: d.assistido?.nome || d.assistido_id.substring(0, 8),
+            sublabel: `${d.tratamento?.nome || "—"} · ${prioLabel}`,
             date: format(new Date(d.created_at), "dd/MM/yyyy"),
           });
         });
