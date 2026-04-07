@@ -32,6 +32,12 @@ interface Tratamento {
   ordem_tratamento: number | null;
   tratamento_livre: boolean;
   bloqueia_proximo_tratamento: boolean;
+  trabalho_publico: boolean;
+  permite_entrada_sem_agendamento: boolean;
+  exige_controle_presenca: boolean;
+  modo_checkin: string;
+  permite_cadastro_rapido: boolean;
+  permite_registro_manual: boolean;
 }
 
 const emptyForm = {
@@ -40,6 +46,9 @@ const emptyForm = {
   ordem_tratamento: "", tratamento_livre: false, bloqueia_proximo_tratamento: false,
   modo_agendamento: "sequencial_bloqueante", coordenador_responsavel_id: "",
   quantidade_padrao_sessoes: "1",
+  trabalho_publico: false, permite_entrada_sem_agendamento: false,
+  exige_controle_presenca: true, modo_checkin: "qr_do_dia",
+  permite_cadastro_rapido: false, permite_registro_manual: false,
 };
 
 export default function Tratamentos() {
@@ -100,6 +109,12 @@ export default function Tratamentos() {
       modo_agendamento: form.modo_agendamento,
       coordenador_responsavel_id: form.coordenador_responsavel_id || null,
       quantidade_padrao_sessoes: qtdPadrao,
+      trabalho_publico: form.trabalho_publico,
+      permite_entrada_sem_agendamento: form.permite_entrada_sem_agendamento,
+      exige_controle_presenca: form.exige_controle_presenca,
+      modo_checkin: form.modo_checkin,
+      permite_cadastro_rapido: form.permite_cadastro_rapido,
+      permite_registro_manual: form.permite_registro_manual,
     };
 
     let error;
@@ -134,6 +149,12 @@ export default function Tratamentos() {
       modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
       coordenador_responsavel_id: (t as any).coordenador_responsavel_id || "",
       quantidade_padrao_sessoes: (t as any).quantidade_padrao_sessoes?.toString() || "1",
+      trabalho_publico: t.trabalho_publico ?? false,
+      permite_entrada_sem_agendamento: t.permite_entrada_sem_agendamento ?? false,
+      exige_controle_presenca: t.exige_controle_presenca ?? true,
+      modo_checkin: (t as any).modo_checkin || "qr_do_dia",
+      permite_cadastro_rapido: t.permite_cadastro_rapido ?? false,
+      permite_registro_manual: t.permite_registro_manual ?? false,
     });
     setOpen(true);
   };
@@ -269,6 +290,38 @@ export default function Tratamentos() {
                   <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">Nenhum coordenador cadastrado. Crie um usuário com perfil "Coordenador de Tratamento" primeiro.</p>
                 )}
               </div>
+
+              {/* Seção Trabalho Público */}
+              <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-semibold">Trabalho Público</Label>
+                    <p className="text-xs text-muted-foreground">Ativa o fluxo de acesso público (QR Code, cadastro rápido, etc.)</p>
+                  </div>
+                  <Switch checked={form.trabalho_publico} onCheckedChange={(v) => setForm({ ...form, trabalho_publico: v, ...(v ? { permite_entrada_sem_agendamento: true, permite_cadastro_rapido: true, permite_registro_manual: true } : {}) })} />
+                </div>
+                {form.trabalho_publico && (
+                  <div className="space-y-3 pl-2 border-l-2 border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Permite entrada sem agendamento</Label>
+                      <Switch checked={form.permite_entrada_sem_agendamento} onCheckedChange={(v) => setForm({ ...form, permite_entrada_sem_agendamento: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Exige controle de presença</Label>
+                      <Switch checked={form.exige_controle_presenca} onCheckedChange={(v) => setForm({ ...form, exige_controle_presenca: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Permite cadastro rápido</Label>
+                      <Switch checked={form.permite_cadastro_rapido} onCheckedChange={(v) => setForm({ ...form, permite_cadastro_rapido: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Permite registro manual (tarefeiro)</Label>
+                      <Switch checked={form.permite_registro_manual} onCheckedChange={(v) => setForm({ ...form, permite_registro_manual: v })} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <Button onClick={handleSave} disabled={loading} className="w-full">
                 {loading ? "Salvando..." : editId ? "Atualizar" : "Cadastrar"}
               </Button>

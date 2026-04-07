@@ -310,6 +310,63 @@ export type Database = {
         }
         Relationships: []
       }
+      checkins_publicos: {
+        Row: {
+          assistido_id: string | null
+          cadastro_rapido: boolean
+          celular: string | null
+          checkin_at: string
+          created_at: string
+          faixa_etaria: string | null
+          id: string
+          modo_checkin: string
+          nome_participante: string | null
+          registrado_por: string | null
+          sessao_id: string
+        }
+        Insert: {
+          assistido_id?: string | null
+          cadastro_rapido?: boolean
+          celular?: string | null
+          checkin_at?: string
+          created_at?: string
+          faixa_etaria?: string | null
+          id?: string
+          modo_checkin?: string
+          nome_participante?: string | null
+          registrado_por?: string | null
+          sessao_id: string
+        }
+        Update: {
+          assistido_id?: string | null
+          cadastro_rapido?: boolean
+          celular?: string | null
+          checkin_at?: string
+          created_at?: string
+          faixa_etaria?: string | null
+          id?: string
+          modo_checkin?: string
+          nome_participante?: string | null
+          registrado_por?: string | null
+          sessao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_publicos_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_publicos_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_publicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracoes_gerais: {
         Row: {
           chave: string
@@ -1084,6 +1141,56 @@ export type Database = {
         }
         Relationships: []
       }
+      sessoes_publicas: {
+        Row: {
+          created_at: string
+          criado_por: string | null
+          data_sessao: string
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          status: string
+          token: string
+          total_presentes: number
+          tratamento_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por?: string | null
+          data_sessao: string
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          status?: string
+          token?: string
+          total_presentes?: number
+          tratamento_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string | null
+          data_sessao?: string
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          status?: string
+          token?: string
+          total_presentes?: number
+          tratamento_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessoes_publicas_tratamento_id_fkey"
+            columns: ["tratamento_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_tratamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipos_tratamento: {
         Row: {
           bloqueia_proximo_tratamento: boolean
@@ -1092,18 +1199,24 @@ export type Database = {
           created_by: string | null
           descricao: string | null
           dia_semana: number | null
+          exige_controle_presenca: boolean
           frequencia_unidade: string | null
           frequencia_valor: number | null
           horario: string | null
           id: string
           modo_agendamento: string
+          modo_checkin: string
           nome: string
           observacoes: string | null
           ordem_tratamento: number | null
+          permite_cadastro_rapido: boolean
+          permite_entrada_sem_agendamento: boolean
+          permite_registro_manual: boolean
           quantidade_padrao_sessoes: number
           status: string
           tarefeiro_id: string | null
           tipo: string
+          trabalho_publico: boolean
           tratamento_livre: boolean
           updated_at: string
         }
@@ -1114,18 +1227,24 @@ export type Database = {
           created_by?: string | null
           descricao?: string | null
           dia_semana?: number | null
+          exige_controle_presenca?: boolean
           frequencia_unidade?: string | null
           frequencia_valor?: number | null
           horario?: string | null
           id?: string
           modo_agendamento?: string
+          modo_checkin?: string
           nome: string
           observacoes?: string | null
           ordem_tratamento?: number | null
+          permite_cadastro_rapido?: boolean
+          permite_entrada_sem_agendamento?: boolean
+          permite_registro_manual?: boolean
           quantidade_padrao_sessoes?: number
           status?: string
           tarefeiro_id?: string | null
           tipo: string
+          trabalho_publico?: boolean
           tratamento_livre?: boolean
           updated_at?: string
         }
@@ -1136,18 +1255,24 @@ export type Database = {
           created_by?: string | null
           descricao?: string | null
           dia_semana?: number | null
+          exige_controle_presenca?: boolean
           frequencia_unidade?: string | null
           frequencia_valor?: number | null
           horario?: string | null
           id?: string
           modo_agendamento?: string
+          modo_checkin?: string
           nome?: string
           observacoes?: string | null
           ordem_tratamento?: number | null
+          permite_cadastro_rapido?: boolean
+          permite_entrada_sem_agendamento?: boolean
+          permite_registro_manual?: boolean
           quantidade_padrao_sessoes?: number
           status?: string
           tarefeiro_id?: string | null
           tipo?: string
+          trabalho_publico?: boolean
           tratamento_livre?: boolean
           updated_at?: string
         }
