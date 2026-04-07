@@ -198,6 +198,38 @@ export default function Excecoes() {
           });
         });
       }
+    } else if (tab === "faltas") {
+      const { data: presencas } = await supabase
+        .from("presencas_tratamentos")
+        .select("assistido_tratamento_id")
+        .eq("status_presenca", "ausente");
+      if (presencas) {
+        const faltaCount: Record<string, number> = {};
+        presencas.forEach((p: any) => {
+          faltaCount[p.assistido_tratamento_id] = (faltaCount[p.assistido_tratamento_id] || 0) + 1;
+        });
+        const comFaltas = Object.entries(faltaCount)
+          .filter(([, c]) => c >= 3)
+          .sort(([, a], [, b]) => b - a);
+
+        if (comFaltas.length > 0) {
+          const atIds = comFaltas.map(([id]) => id);
+          const { data: vinculos } = await supabase
+            .from("assistido_tratamentos")
+            .select("id, assistido_id, tratamento_id, assistido:assistidos(nome), tratamento:tipos_tratamento(nome)")
+            .in("id", atIds.slice(0, 100));
+          const vincMap = Object.fromEntries((vinculos || []).map((v: any) => [v.id, v]));
+          comFaltas.slice(0, 100).forEach(([atId, count]) => {
+            const v = vincMap[atId];
+            rows.push({
+              id: atId,
+              label: v?.assistido?.nome || "—",
+              sublabel: `${v?.tratamento?.nome || "—"} · ${count} faltas`,
+              date: "",
+            });
+          });
+        }
+      }
     }
 
     setDetailRows(rows);
