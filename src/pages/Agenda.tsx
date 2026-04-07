@@ -415,6 +415,23 @@ export default function Agenda() {
                   <p className="text-sm bg-muted/50 rounded-md p-2">{selectedEntrevista.observacoes}</p>
                 </div>
               )}
+              {/* Fazer Entrevista button - only for admin/entrevistador and agendada status */}
+              {(role === "admin" || role === "entrevistador") && selectedEntrevista.status === "agendada" && (
+                <Button
+                  className="w-full gap-2"
+                  onClick={() => {
+                    const params = new URLSearchParams({
+                      entrevista_id: selectedEntrevista.id,
+                      assistido_id: selectedEntrevista.assistido_id,
+                      tipo_entrevista: selectedEntrevista.tipo_entrevista,
+                    });
+                    navigate(`/fazer-entrevista?${params.toString()}`);
+                  }}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Fazer Entrevista
+                </Button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
