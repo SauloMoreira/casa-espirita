@@ -497,7 +497,7 @@ export default function FazerEntrevista() {
         setSaving(false);
         return;
       }
-      entrevistaId = entrevistaId;
+      entrevistaId = entrevista.id;
     }
 
     const entrevistaDate = new Date(dataEntrevista + "T12:00:00");
