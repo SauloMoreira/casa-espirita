@@ -290,6 +290,38 @@ export default function Tratamentos() {
                   <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">Nenhum coordenador cadastrado. Crie um usuário com perfil "Coordenador de Tratamento" primeiro.</p>
                 )}
               </div>
+
+              {/* Seção Trabalho Público */}
+              <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-semibold">Trabalho Público</Label>
+                    <p className="text-xs text-muted-foreground">Ativa o fluxo de acesso público (QR Code, cadastro rápido, etc.)</p>
+                  </div>
+                  <Switch checked={form.trabalho_publico} onCheckedChange={(v) => setForm({ ...form, trabalho_publico: v, ...(v ? { permite_entrada_sem_agendamento: true, permite_cadastro_rapido: true, permite_registro_manual: true } : {}) })} />
+                </div>
+                {form.trabalho_publico && (
+                  <div className="space-y-3 pl-2 border-l-2 border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Permite entrada sem agendamento</Label>
+                      <Switch checked={form.permite_entrada_sem_agendamento} onCheckedChange={(v) => setForm({ ...form, permite_entrada_sem_agendamento: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Exige controle de presença</Label>
+                      <Switch checked={form.exige_controle_presenca} onCheckedChange={(v) => setForm({ ...form, exige_controle_presenca: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Permite cadastro rápido</Label>
+                      <Switch checked={form.permite_cadastro_rapido} onCheckedChange={(v) => setForm({ ...form, permite_cadastro_rapido: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Permite registro manual (tarefeiro)</Label>
+                      <Switch checked={form.permite_registro_manual} onCheckedChange={(v) => setForm({ ...form, permite_registro_manual: v })} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <Button onClick={handleSave} disabled={loading} className="w-full">
                 {loading ? "Salvando..." : editId ? "Atualizar" : "Cadastrar"}
               </Button>
