@@ -264,6 +264,7 @@ export default function AdminDashboard() {
     setAguardandoOpen(true);
   }, []);
 
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-pulse text-muted-foreground">Carregando dashboard...</div>
