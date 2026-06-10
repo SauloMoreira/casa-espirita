@@ -73,9 +73,9 @@ export async function fetchAdminDashboard(
     supabase.from("tipos_tratamento").select("id, nome, tarefeiro_id, coordenador_responsavel_id").eq("status", "ativo"),
   ]);
 
-  const entRecentes = await buildEntrevistasRecentes(recentesData ?? []);
-  const tratPorTipo = buildTratamentoDistribuicao(tratData ?? []);
-  const cargaTarefeiros = await buildCargaTarefeiros(tratData ?? []);
+  const entRecentes = await buildEntrevistasRecentes((recentesData ?? []) as unknown as RecenteRow[]);
+  const tratPorTipo = buildTratamentoDistribuicao((tratData ?? []) as unknown as TratRow[]);
+  const cargaTarefeiros = await buildCargaTarefeiros((tratData ?? []) as unknown as TratRow[]);
   const publicoPalestras = (palData ?? []).filter((p) => p.presente).length;
 
   return {
