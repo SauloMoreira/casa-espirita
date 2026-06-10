@@ -152,7 +152,44 @@ export default function TarefeiroDashboard() {
         <StatCard title="Presenças Registradas" value={registradas} icon={ClipboardCheck} />
       </div>
 
-      {/* Inline attendance control */}
+      {/* Public sessions of the day (real sessoes_publicas) */}
+      {sessoesPublicas.length > 0 && (
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.05] to-card shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <QrCode className="h-4 w-4 text-primary" />
+                Sessões Públicas de Hoje
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/sessoes-publicas")}
+              >
+                Gerenciar <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {sessoesPublicas.map((s) => (
+                <div
+                  key={s.id}
+                  onClick={() => navigate("/sessoes-publicas")}
+                  className="flex items-center justify-between rounded-xl border border-border/60 p-3 cursor-pointer hover:bg-secondary/30 transition-colors"
+                >
+                  <span className="text-sm font-medium truncate">{s.nome}</span>
+                  <Badge variant="secondary" className="gap-1 shrink-0">
+                    <Users className="h-3 w-3" /> {s.total_presentes}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-border/60 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
