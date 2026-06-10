@@ -56,7 +56,7 @@ export default function AdminDashboard() {
       <AdminCriticalPendencies
         pendencias={pendencias}
         onOpenAguardando={openAguardando}
-        onNavigate={navigate}
+        onNavigate={(path) => navigate(path)}
       />
 
       <AdminMainCharts
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
 
       <AIInsightsBlock dashboardData={aiDashboardData} />
 
-      <AdminShortcuts onNavigate={navigate} />
+      <AdminShortcuts onNavigate={(path) => navigate(path)} />
 
       <AguardandoAgendamentoDialog
         open={aguardandoOpen}
