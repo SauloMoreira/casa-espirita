@@ -285,19 +285,9 @@ export function CartaAgendamento({ open, onOpenChange, assistidoId, entrevistaId
                   <span style={{ marginRight: 16 }}>
                     <strong>Sessões:</strong> {trat.quantidade_total}
                   </span>
-                  <span style={{ marginRight: 16 }}>
+                  <span>
                     <strong>Frequência:</strong> {formatFrequencia(trat.frequencia_valor, trat.frequencia_unidade)}
                   </span>
-                  {trat.dia_semana !== null && (
-                    <span style={{ marginRight: 16 }}>
-                      <strong>Dia:</strong> {DIAS_SEMANA[trat.dia_semana]}
-                    </span>
-                  )}
-                  {trat.horario && (
-                    <span>
-                      <strong>Horário:</strong> {trat.horario.slice(0, 5)}
-                    </span>
-                  )}
                 </div>
                 {trat.sessoes.length > 0 ? (
                   <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 0 }}>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Users, Heart, Clock, Check, X, ArrowRight } from "lucide-react";
+import { ClipboardCheck, Users, Heart, Clock, Check, X, ArrowRight, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -20,8 +20,15 @@ interface SessaoDoDia {
   presenca_registrada: boolean;
 }
 
+interface SessaoPublica {
+  id: string;
+  nome: string;
+  total_presentes: number;
+}
+
 export default function TarefeiroDashboard() {
   const [sessoes, setSessoes] = useState<SessaoDoDia[]>([]);
+  const [sessoesPublicas, setSessoesPublicas] = useState<SessaoPublica[]>([]);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,6 +38,22 @@ export default function TarefeiroDashboard() {
 
   const fetchData = useCallback(async () => {
     if (!user) return;
+
+    // Real public sessions of the day (only open ones)
+    const { data: pubSessoes } = await supabase
+      .from("sessoes_publicas")
+      .select("id, total_presentes, tipos_tratamento:tratamento_id(nome)")
+      .eq("data_sessao", today)
+      .eq("status", "aberta");
+    setSessoesPublicas(
+      (pubSessoes || []).map((s: any) => ({
+        id: s.id,
+        nome: s.tipos_tratamento?.nome || "Trabalho público",
+        total_presentes: s.total_presentes ?? 0,
+      }))
+    );
+
+
 
     const { data: agendaSessoes } = await supabase
       .from("agenda_tratamentos_assistido")
@@ -129,7 +152,44 @@ export default function TarefeiroDashboard() {
         <StatCard title="Presenças Registradas" value={registradas} icon={ClipboardCheck} />
       </div>
 
-      {/* Inline attendance control */}
+      {/* Public sessions of the day (real sessoes_publicas) */}
+      {sessoesPublicas.length > 0 && (
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/[0.05] to-card shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <QrCode className="h-4 w-4 text-primary" />
+                Sessões Públicas de Hoje
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/sessoes-publicas")}
+              >
+                Gerenciar <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {sessoesPublicas.map((s) => (
+                <div
+                  key={s.id}
+                  onClick={() => navigate("/sessoes-publicas")}
+                  className="flex items-center justify-between rounded-xl border border-border/60 p-3 cursor-pointer hover:bg-secondary/30 transition-colors"
+                >
+                  <span className="text-sm font-medium truncate">{s.nome}</span>
+                  <Badge variant="secondary" className="gap-1 shrink-0">
+                    <Users className="h-3 w-3" /> {s.total_presentes}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-border/60 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
