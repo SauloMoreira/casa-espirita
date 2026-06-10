@@ -73,7 +73,7 @@ const App = () => (
                 <Route path={ROUTES.login} element={<Login />} />
                 <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
                 <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
-                <Route path={ROUTES.checkinPublico()} element={<CheckinPublico />} />
+                <Route path={ROUTES.checkinPublico()} element={guard(<CheckinPublico />, "Check-in Público")} />
                 <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
 
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
