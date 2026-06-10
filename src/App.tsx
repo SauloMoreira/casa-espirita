@@ -77,18 +77,18 @@ const App = () => (
                 <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
 
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                  <Route path={ROUTES.dashboard} element={<Dashboard />} />
+                  <Route path={ROUTES.dashboard} element={guard(<Dashboard />, "Dashboard")} />
                   <Route path={ROUTES.usuarios} element={<ProtectedRoute allowedRoles={["admin"]}><Usuarios /></ProtectedRoute>} />
                   <Route path={ROUTES.tratamentos} element={<ProtectedRoute allowedRoles={["admin"]}><Tratamentos /></ProtectedRoute>} />
                   <Route path={ROUTES.assistidos} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Assistidos /></ProtectedRoute>} />
                   <Route path={ROUTES.entrevistas} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Entrevistas /></ProtectedRoute>} />
-                  <Route path={ROUTES.fazerEntrevista} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><FazerEntrevista /></ProtectedRoute>} />
-                  <Route path={ROUTES.agenda} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Agenda /></ProtectedRoute>} />
-                  <Route path={ROUTES.presenca} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><Presenca /></ProtectedRoute>} />
-                  <Route path={ROUTES.meusTratamentos} element={<ProtectedRoute allowedRoles={["assistido"]}><MeusTratamentos /></ProtectedRoute>} />
-                  <Route path={ROUTES.minhaAgenda} element={<ProtectedRoute allowedRoles={["assistido"]}><MinhaAgenda /></ProtectedRoute>} />
+                  <Route path={ROUTES.fazerEntrevista} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}>{guard(<FazerEntrevista />, "Fazer Entrevista")}</ProtectedRoute>} />
+                  <Route path={ROUTES.agenda} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}>{guard(<Agenda />, "Agenda")}</ProtectedRoute>} />
+                  <Route path={ROUTES.presenca} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}>{guard(<Presenca />, "Controle de Presença")}</ProtectedRoute>} />
+                  <Route path={ROUTES.meusTratamentos} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MeusTratamentos />, "Meus Tratamentos")}</ProtectedRoute>} />
+                  <Route path={ROUTES.minhaAgenda} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MinhaAgenda />, "Minha Agenda")}</ProtectedRoute>} />
                   <Route path={ROUTES.meuPerfil} element={<ProtectedRoute allowedRoles={["assistido"]}><MeuPerfil /></ProtectedRoute>} />
-                  <Route path={ROUTES.meusDocumentos} element={<ProtectedRoute allowedRoles={["assistido"]}><MeusDocumentos /></ProtectedRoute>} />
+                  <Route path={ROUTES.meusDocumentos} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MeusDocumentos />, "Meus Documentos")}</ProtectedRoute>} />
                   <Route path={ROUTES.notificacoes} element={<Notificacoes />} />
                   <Route path={ROUTES.listaEspera} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorListaEspera /></ProtectedRoute>} />
                   <Route path={ROUTES.coordenadorTratamentos} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorTratamentos /></ProtectedRoute>} />
