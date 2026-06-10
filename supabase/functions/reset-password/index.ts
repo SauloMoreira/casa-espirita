@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { target_user_id, mode } = body;
+    log.info("reset_requested", { by: caller.id, target_user_id, mode });
 
     if (!target_user_id || !mode) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios: target_user_id, mode" }), {
