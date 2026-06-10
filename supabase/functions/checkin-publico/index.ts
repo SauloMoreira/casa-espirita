@@ -225,6 +225,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    log.error("checkin_failed", { message: (err as Error).message });
     return new Response(
       JSON.stringify({ error: (err as Error).message || "Erro interno" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
