@@ -14,9 +14,7 @@ export async function listPresencasPorVinculo(
 }
 
 export async function registrarPresenca(
-  payload: PresencaTratamento["Insert"] extends never
-    ? Partial<PresencaTratamento>
-    : Partial<PresencaTratamento>,
+  payload: Partial<PresencaTratamento>,
 ): Promise<void> {
   const { error } = await supabase
     .from("presencas_tratamentos")
