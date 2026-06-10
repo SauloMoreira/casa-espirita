@@ -22,8 +22,12 @@ export default function ResetPassword() {
     if (hash.includes("type=recovery")) {
       setReady(true);
     }
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setReady(true);
+    // Forced change: user is already signed in with a temporary password.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) setReady(true);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -40,10 +44,15 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { data: { user }, error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      // Clear temporary-password flag so the user is no longer forced to change it.
+      if (user) {
+        await supabase.from("profiles").update({ senha_temporaria: false }).eq("user_id", user.id);
+      }
       toast({ title: "Senha redefinida com sucesso!" });
-      navigate("/dashboard");
+      // Re-fetch session/profile so guards pick up the cleared flag.
+      window.location.href = "/dashboard";
     } catch (error: any) {
       toast({ title: "Erro", description: error?.message, variant: "destructive" });
     } finally {
