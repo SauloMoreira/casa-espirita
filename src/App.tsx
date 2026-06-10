@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,39 +8,43 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import { ROUTES } from "@/constants";
 
+// Eager: small auth/entry pages on the critical path.
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import Usuarios from "./pages/Usuarios";
-import Tratamentos from "./pages/Tratamentos";
-import Assistidos from "./pages/Assistidos";
-import Entrevistas from "./pages/Entrevistas";
-import FazerEntrevista from "./pages/FazerEntrevista";
-import Agenda from "./pages/Agenda";
-import Presenca from "./pages/Presenca";
-import MeusTratamentos from "./pages/MeusTratamentos";
-import MinhaAgenda from "./pages/MinhaAgenda";
-import MeuPerfil from "./pages/MeuPerfil";
-import Relatorios from "./pages/Relatorios";
-import Configuracoes from "./pages/Configuracoes";
-import GestaoCores from "./pages/GestaoCores";
-import Auditoria from "./pages/Auditoria";
-import RegrasOperacionais from "./pages/RegrasOperacionais";
-import Excecoes from "./pages/Excecoes";
-import Instituicao from "./pages/Instituicao";
-import CoordenadorListaEspera from "./pages/CoordenadorListaEspera";
-import CoordenadorTratamentos from "./pages/CoordenadorTratamentos";
-import CoordenadorAgenda from "./pages/CoordenadorAgenda";
-import Notificacoes from "./pages/Notificacoes";
-import MeusDocumentos from "./pages/MeusDocumentos";
-import CentralIA from "./pages/CentralIA";
-import Voluntarios from "./pages/Voluntarios";
-import FuncoesVoluntariado from "./pages/FuncoesVoluntariado";
-import SessoesPublicas from "./pages/SessoesPublicas";
-import CheckinPublico from "./pages/CheckinPublico";
-import NotFound from "./pages/NotFound";
+
+// Lazy: route-split the heavier authenticated pages to lighten the initial bundle.
+const CheckinPublico = lazy(() => import("./pages/CheckinPublico"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Usuarios = lazy(() => import("./pages/Usuarios"));
+const Tratamentos = lazy(() => import("./pages/Tratamentos"));
+const Assistidos = lazy(() => import("./pages/Assistidos"));
+const Entrevistas = lazy(() => import("./pages/Entrevistas"));
+const FazerEntrevista = lazy(() => import("./pages/FazerEntrevista"));
+const Agenda = lazy(() => import("./pages/Agenda"));
+const Presenca = lazy(() => import("./pages/Presenca"));
+const MeusTratamentos = lazy(() => import("./pages/MeusTratamentos"));
+const MinhaAgenda = lazy(() => import("./pages/MinhaAgenda"));
+const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
+const Relatorios = lazy(() => import("./pages/Relatorios"));
+const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const GestaoCores = lazy(() => import("./pages/GestaoCores"));
+const Auditoria = lazy(() => import("./pages/Auditoria"));
+const RegrasOperacionais = lazy(() => import("./pages/RegrasOperacionais"));
+const Excecoes = lazy(() => import("./pages/Excecoes"));
+const Instituicao = lazy(() => import("./pages/Instituicao"));
+const CoordenadorListaEspera = lazy(() => import("./pages/CoordenadorListaEspera"));
+const CoordenadorTratamentos = lazy(() => import("./pages/CoordenadorTratamentos"));
+const CoordenadorAgenda = lazy(() => import("./pages/CoordenadorAgenda"));
+const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const MeusDocumentos = lazy(() => import("./pages/MeusDocumentos"));
+const CentralIA = lazy(() => import("./pages/CentralIA"));
+const Voluntarios = lazy(() => import("./pages/Voluntarios"));
+const FuncoesVoluntariado = lazy(() => import("./pages/FuncoesVoluntariado"));
+const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -48,55 +53,63 @@ const ThemeLoader = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const RouteFallback = () => (
+  <div className="flex h-[60vh] w-full items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeLoader>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/checkin-publico/:token" element={<CheckinPublico />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path={ROUTES.login} element={<Login />} />
+                <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
+                <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
+                <Route path={ROUTES.checkinPublico()} element={<CheckinPublico />} />
+                <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
 
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/usuarios" element={<ProtectedRoute allowedRoles={["admin"]}><Usuarios /></ProtectedRoute>} />
-              <Route path="/tratamentos" element={<ProtectedRoute allowedRoles={["admin"]}><Tratamentos /></ProtectedRoute>} />
-              <Route path="/assistidos" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Assistidos /></ProtectedRoute>} />
-              <Route path="/entrevistas" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Entrevistas /></ProtectedRoute>} />
-              <Route path="/fazer-entrevista" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><FazerEntrevista /></ProtectedRoute>} />
-              <Route path="/agenda" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Agenda /></ProtectedRoute>} />
-              <Route path="/presenca" element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><Presenca /></ProtectedRoute>} />
-              <Route path="/meus-tratamentos" element={<ProtectedRoute allowedRoles={["assistido"]}><MeusTratamentos /></ProtectedRoute>} />
-              <Route path="/minha-agenda" element={<ProtectedRoute allowedRoles={["assistido"]}><MinhaAgenda /></ProtectedRoute>} />
-              <Route path="/meu-perfil" element={<ProtectedRoute allowedRoles={["assistido"]}><MeuPerfil /></ProtectedRoute>} />
-              <Route path="/meus-documentos" element={<ProtectedRoute allowedRoles={["assistido"]}><MeusDocumentos /></ProtectedRoute>} />
-              <Route path="/notificacoes" element={<Notificacoes />} />
-              <Route path="/lista-espera" element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorListaEspera /></ProtectedRoute>} />
-              <Route path="/coordenador-tratamentos" element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorTratamentos /></ProtectedRoute>} />
-              <Route path="/coordenador-agenda" element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorAgenda /></ProtectedRoute>} />
-              <Route path="/relatorios" element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "coordenador_de_tratamento", "tarefeiro"]}><Relatorios /></ProtectedRoute>} />
-              <Route path="/configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><Configuracoes /></ProtectedRoute>} />
-              <Route path="/configuracoes/cores" element={<ProtectedRoute allowedRoles={["admin"]}><GestaoCores /></ProtectedRoute>} />
-              <Route path="/auditoria" element={<ProtectedRoute allowedRoles={["admin"]}><Auditoria /></ProtectedRoute>} />
-              <Route path="/regras" element={<ProtectedRoute allowedRoles={["admin"]}><RegrasOperacionais /></ProtectedRoute>} />
-              <Route path="/excecoes" element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
-              <Route path="/instituicao" element={<ProtectedRoute allowedRoles={["admin"]}><Instituicao /></ProtectedRoute>} />
-              <Route path="/central-ia" element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><CentralIA /></ProtectedRoute>} />
-              <Route path="/voluntarios" element={<ProtectedRoute allowedRoles={["admin"]}><Voluntarios /></ProtectedRoute>} />
-              <Route path="/funcoes-voluntariado" element={<ProtectedRoute allowedRoles={["admin"]}><FuncoesVoluntariado /></ProtectedRoute>} />
-              <Route path="/sessoes-publicas" element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><SessoesPublicas /></ProtectedRoute>} />
-            </Route>
+                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route path={ROUTES.dashboard} element={<Dashboard />} />
+                  <Route path={ROUTES.usuarios} element={<ProtectedRoute allowedRoles={["admin"]}><Usuarios /></ProtectedRoute>} />
+                  <Route path={ROUTES.tratamentos} element={<ProtectedRoute allowedRoles={["admin"]}><Tratamentos /></ProtectedRoute>} />
+                  <Route path={ROUTES.assistidos} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Assistidos /></ProtectedRoute>} />
+                  <Route path={ROUTES.entrevistas} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Entrevistas /></ProtectedRoute>} />
+                  <Route path={ROUTES.fazerEntrevista} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><FazerEntrevista /></ProtectedRoute>} />
+                  <Route path={ROUTES.agenda} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Agenda /></ProtectedRoute>} />
+                  <Route path={ROUTES.presenca} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><Presenca /></ProtectedRoute>} />
+                  <Route path={ROUTES.meusTratamentos} element={<ProtectedRoute allowedRoles={["assistido"]}><MeusTratamentos /></ProtectedRoute>} />
+                  <Route path={ROUTES.minhaAgenda} element={<ProtectedRoute allowedRoles={["assistido"]}><MinhaAgenda /></ProtectedRoute>} />
+                  <Route path={ROUTES.meuPerfil} element={<ProtectedRoute allowedRoles={["assistido"]}><MeuPerfil /></ProtectedRoute>} />
+                  <Route path={ROUTES.meusDocumentos} element={<ProtectedRoute allowedRoles={["assistido"]}><MeusDocumentos /></ProtectedRoute>} />
+                  <Route path={ROUTES.notificacoes} element={<Notificacoes />} />
+                  <Route path={ROUTES.listaEspera} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorListaEspera /></ProtectedRoute>} />
+                  <Route path={ROUTES.coordenadorTratamentos} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorTratamentos /></ProtectedRoute>} />
+                  <Route path={ROUTES.coordenadorAgenda} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorAgenda /></ProtectedRoute>} />
+                  <Route path={ROUTES.relatorios} element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "coordenador_de_tratamento", "tarefeiro"]}><Relatorios /></ProtectedRoute>} />
+                  <Route path={ROUTES.configuracoes} element={<ProtectedRoute allowedRoles={["admin"]}><Configuracoes /></ProtectedRoute>} />
+                  <Route path={ROUTES.gestaoCores} element={<ProtectedRoute allowedRoles={["admin"]}><GestaoCores /></ProtectedRoute>} />
+                  <Route path={ROUTES.auditoria} element={<ProtectedRoute allowedRoles={["admin"]}><Auditoria /></ProtectedRoute>} />
+                  <Route path={ROUTES.regras} element={<ProtectedRoute allowedRoles={["admin"]}><RegrasOperacionais /></ProtectedRoute>} />
+                  <Route path={ROUTES.excecoes} element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
+                  <Route path={ROUTES.instituicao} element={<ProtectedRoute allowedRoles={["admin"]}><Instituicao /></ProtectedRoute>} />
+                  <Route path={ROUTES.centralIa} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><CentralIA /></ProtectedRoute>} />
+                  <Route path={ROUTES.voluntarios} element={<ProtectedRoute allowedRoles={["admin"]}><Voluntarios /></ProtectedRoute>} />
+                  <Route path={ROUTES.funcoesVoluntariado} element={<ProtectedRoute allowedRoles={["admin"]}><FuncoesVoluntariado /></ProtectedRoute>} />
+                  <Route path={ROUTES.sessoesPublicas} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><SessoesPublicas /></ProtectedRoute>} />
+                </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
       </ThemeLoader>
     </AuthProvider>
   </QueryClientProvider>
