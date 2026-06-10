@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Users, Heart, Clock, Check, X, ArrowRight } from "lucide-react";
+import { ClipboardCheck, Users, Heart, Clock, Check, X, ArrowRight, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -20,8 +20,15 @@ interface SessaoDoDia {
   presenca_registrada: boolean;
 }
 
+interface SessaoPublica {
+  id: string;
+  nome: string;
+  total_presentes: number;
+}
+
 export default function TarefeiroDashboard() {
   const [sessoes, setSessoes] = useState<SessaoDoDia[]>([]);
+  const [sessoesPublicas, setSessoesPublicas] = useState<SessaoPublica[]>([]);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,6 +38,22 @@ export default function TarefeiroDashboard() {
 
   const fetchData = useCallback(async () => {
     if (!user) return;
+
+    // Real public sessions of the day (only open ones)
+    const { data: pubSessoes } = await supabase
+      .from("sessoes_publicas")
+      .select("id, total_presentes, tipos_tratamento:tratamento_id(nome)")
+      .eq("data_sessao", today)
+      .eq("status", "aberta");
+    setSessoesPublicas(
+      (pubSessoes || []).map((s: any) => ({
+        id: s.id,
+        nome: s.tipos_tratamento?.nome || "Trabalho público",
+        total_presentes: s.total_presentes ?? 0,
+      }))
+    );
+
+
 
     const { data: agendaSessoes } = await supabase
       .from("agenda_tratamentos_assistido")
