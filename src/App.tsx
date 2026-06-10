@@ -101,9 +101,9 @@ const App = () => (
                   <Route path={ROUTES.excecoes} element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
                   <Route path={ROUTES.instituicao} element={<ProtectedRoute allowedRoles={["admin"]}><Instituicao /></ProtectedRoute>} />
                   <Route path={ROUTES.centralIa} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><CentralIA /></ProtectedRoute>} />
-                  <Route path={ROUTES.voluntarios} element={<ProtectedRoute allowedRoles={["admin"]}><Voluntarios /></ProtectedRoute>} />
+                  <Route path={ROUTES.voluntarios} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Voluntarios />, "Voluntários")}</ProtectedRoute>} />
                   <Route path={ROUTES.funcoesVoluntariado} element={<ProtectedRoute allowedRoles={["admin"]}><FuncoesVoluntariado /></ProtectedRoute>} />
-                  <Route path={ROUTES.sessoesPublicas} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}><SessoesPublicas /></ProtectedRoute>} />
+                  <Route path={ROUTES.sessoesPublicas} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}>{guard(<SessoesPublicas />, "Sessões Públicas")}</ProtectedRoute>} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />
