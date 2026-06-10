@@ -60,7 +60,7 @@ export function useFazerEntrevista() {
   const [agendaEntrevistaId, setAgendaEntrevistaId] = useState<string | null>(null);
 
   const isRecordingRef = useRef(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const transcriptBaseRef = useRef("");
 
   useEffect(() => {
