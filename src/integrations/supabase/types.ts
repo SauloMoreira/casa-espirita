@@ -1454,7 +1454,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      staff_directory: {
+        Row: {
+          nome_completo: string | null
+          user_id: string | null
+        }
+        Insert: {
+          nome_completo?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          nome_completo?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assistido_belongs_to_coordinator: {
