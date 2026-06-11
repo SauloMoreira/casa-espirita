@@ -1,0 +1,190 @@
+import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Send, RefreshCw, MessageSquare, ListChecks, Headphones } from "lucide-react";
+import {
+  listFila, listConversas, listHandoffs, assumirHandoff, fecharHandoff, processarFila,
+  type FilaItem, type Conversa, type Handoff,
+} from "@/services/notificacoes/notificacoesService";
+
+const STATUS_COLORS: Record<string, string> = {
+  pendente: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+  agendado: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  enviado: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  falha: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  cancelado: "bg-muted text-muted-foreground",
+};
+
+const HANDOFF_COLORS: Record<string, string> = {
+  aberto: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  em_atendimento: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+  fechado: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+};
+
+function dt(value?: string | null) {
+  if (!value) return "—";
+  return format(new Date(value), "dd/MM/yy HH:mm", { locale: ptBR });
+}
+
+export default function CentralNotificacoes() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [fila, setFila] = useState<FilaItem[]>([]);
+  const [conversas, setConversas] = useState<Conversa[]>([]);
+  const [handoffs, setHandoffs] = useState<Handoff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [f, c, h] = await Promise.all([listFila(), listConversas(), listHandoffs()]);
+      setFila(f); setConversas(c); setHandoffs(h);
+    } catch (e: any) {
+      toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleProcessar = async () => {
+    setProcessing(true);
+    try {
+      const r: any = await processarFila();
+      toast({ title: "Fila processada", description: `Enviados: ${r?.enviados ?? 0} · Falhas: ${r?.falhas ?? 0} · Ignorados: ${r?.ignorados ?? 0}` });
+      await load();
+    } catch (e: any) {
+      toast({ title: "Erro ao processar fila", description: e.message, variant: "destructive" });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleAssumir = async (h: Handoff) => {
+    if (!user) return;
+    await assumirHandoff(h.id, user.id);
+    toast({ title: "Atendimento assumido" });
+    load();
+  };
+
+  const handleFechar = async (h: Handoff) => {
+    await fecharHandoff(h.id, h.conversa_id);
+    toast({ title: "Atendimento encerrado" });
+    load();
+  };
+
+  const handoffsAbertos = handoffs.filter((h) => h.status !== "fechado").length;
+
+  return (
+    <div className="space-y-6 max-w-screen-xl mx-auto w-full">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Central de Notificações</h1>
+          <p className="text-sm text-muted-foreground mt-1">Mensagens operacionais por WhatsApp, conversas e atendimentos.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+          <Button size="sm" onClick={handleProcessar} disabled={processing}>
+            <Send className="h-4 w-4 mr-1" /> {processing ? "Processando..." : "Processar fila"}
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="fila">
+        <TabsList>
+          <TabsTrigger value="fila"><ListChecks className="h-4 w-4 mr-1" /> Fila</TabsTrigger>
+          <TabsTrigger value="conversas"><MessageSquare className="h-4 w-4 mr-1" /> Conversas</TabsTrigger>
+          <TabsTrigger value="handoffs">
+            <Headphones className="h-4 w-4 mr-1" /> Atendimentos
+            {handoffsAbertos > 0 && <Badge variant="secondary" className="ml-1">{handoffsAbertos}</Badge>}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="fila" className="mt-4">
+          <Card className="glass-card">
+            <CardHeader><CardTitle className="text-base">Fila de envio</CardTitle></CardHeader>
+            <CardContent>
+              {fila.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Nenhum item na fila.</p>
+              ) : (
+                <div className="space-y-2">
+                  {fila.map((f) => (
+                    <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm">
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[f.status] || ""}`}>{f.status}</span>
+                      <span className="font-medium">{f.evento_origem}</span>
+                      <span className="text-muted-foreground">{f.template_codigo}</span>
+                      <span className="text-muted-foreground">· {f.telefone_normalizado || "sem telefone"}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">agendado: {dt(f.scheduled_at)}</span>
+                      {f.sent_at && <span className="text-xs text-muted-foreground">enviado: {dt(f.sent_at)}</span>}
+                      {f.erro && <span className="text-xs text-destructive">{f.erro}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="conversas" className="mt-4">
+          <Card className="glass-card">
+            <CardHeader><CardTitle className="text-base">Conversas</CardTitle></CardHeader>
+            <CardContent>
+              {conversas.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Nenhuma conversa registrada.</p>
+              ) : (
+                <div className="space-y-2">
+                  {conversas.map((c) => (
+                    <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm">
+                      <span className="font-medium">{c.telefone}</span>
+                      <Badge variant="secondary">{c.status_conversa}</Badge>
+                      {c.em_handoff && <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">em atendimento</Badge>}
+                      <span className="ml-auto text-xs text-muted-foreground">último contato: {dt(c.ultimo_contato_em)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="handoffs" className="mt-4">
+          <Card className="glass-card">
+            <CardHeader><CardTitle className="text-base">Atendimentos (handoff)</CardTitle></CardHeader>
+            <CardContent>
+              {handoffs.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Nenhum atendimento.</p>
+              ) : (
+                <div className="space-y-2">
+                  {handoffs.map((h) => (
+                    <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm">
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${HANDOFF_COLORS[h.status] || ""}`}>{h.status}</span>
+                      <span className="font-medium">{h.motivo || "—"}</span>
+                      {h.classificado_por_ia && <Badge variant="secondary" className="text-[10px]">IA</Badge>}
+                      <span className="ml-auto text-xs text-muted-foreground">aberto: {dt(h.opened_at)}</span>
+                      {h.status === "aberto" && (
+                        <Button size="sm" variant="outline" onClick={() => handleAssumir(h)}>Assumir</Button>
+                      )}
+                      {h.status !== "fechado" && (
+                        <Button size="sm" onClick={() => handleFechar(h)}>Encerrar</Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
