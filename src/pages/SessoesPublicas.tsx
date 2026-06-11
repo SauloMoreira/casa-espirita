@@ -14,10 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { withRetry, isTransientError } from "@/lib/resilience";
 
-/** Normaliza texto para busca (sem acentos, minúsculo). */
-const norm = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-
 interface TratamentoPublico {
   id: string;
   nome: string;
