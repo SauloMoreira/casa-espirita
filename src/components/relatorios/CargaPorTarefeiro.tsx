@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMemo, useState } from "react";
 import ReportFilters, { FilterValues, defaultFilters } from "./ReportFilters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,123 +7,29 @@ import { StatCard } from "@/components/StatCard";
 import { Download, Users, Calendar, CalendarCheck, CalendarX, Trophy, Activity, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { exportCsv } from "@/lib/exportCsv";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useCargaTarefeiro } from "@/hooks/useCargaTarefeiro";
+import { fetchCargaTarefeiroParaExport } from "@/services/relatorios/cargaTarefeiro";
+import type { CargaTarefeiroFiltros } from "@/types/relatorios";
 
-interface Row {
-  tarefeiro: string;
-  tarefeiroId: string;
-  totalAssistidos: number;
-  totalSessoes: number;
-  presencas: number;
-  ausencias: number;
-  emAndamento: number;
-  concluidos: number;
-  tratamentos: string[];
+function toFiltros(f: FilterValues): CargaTarefeiroFiltros {
+  return {
+    dataInicio: f.dataInicio,
+    dataFim: f.dataFim,
+    tratamentoId: f.tratamentoId,
+    tarefeiroId: f.tarefeiroId,
+  };
 }
 
 export default function CargaPorTarefeiro() {
   const [filters, setFilters] = useState<FilterValues>(defaultFilters());
-  const [rows, setRows] = useState<Row[]>([]);
-  const { role, user } = useAuth();
+  const filtros = useMemo(() => toFiltros(filters), [filters]);
+  const { data, page, pageSize, loading, setPage, onPageSizeChange } = useCargaTarefeiro(filtros);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // Get tratamentos with tarefeiro
-      const { data: tipos } = await supabase.from("tipos_tratamento").select("id, nome, tarefeiro_id").not("tarefeiro_id", "is", null);
-      if (!tipos || tipos.length === 0) { setRows([]); return; }
-
-      const filtered = tipos.filter((t) => {
-        if (filters.tratamentoId !== "todos" && t.id !== filters.tratamentoId) return false;
-        if (filters.tarefeiroId !== "todos" && t.tarefeiro_id !== filters.tarefeiroId) return false;
-        if (role === "tarefeiro" && t.tarefeiro_id !== user?.id) return false;
-        return true;
-      });
-
-      if (filtered.length === 0) { setRows([]); return; }
-
-      const tarefIds = [...new Set(filtered.map((t) => t.tarefeiro_id).filter(Boolean))] as string[];
-      const tratIds = filtered.map((t) => t.id);
-
-      const [{ data: profiles }, { data: sessoes }, { data: presencas }, { data: vinculos }] = await Promise.all([
-        supabase.rpc("staff_names", { _ids: tarefIds }),
-        supabase.from("agenda_tratamentos_assistido").select("tratamento_id, assistido_id").in("tratamento_id", tratIds).gte("data_sessao", filters.dataInicio).lte("data_sessao", filters.dataFim).limit(10000),
-        supabase.from("presencas_tratamentos").select("status_presenca, assistido_tratamento:assistido_tratamentos(tratamento_id)").gte("data", filters.dataInicio).lte("data", filters.dataFim).limit(10000),
-        supabase.from("assistido_tratamentos").select("tratamento_id, status").in("tratamento_id", tratIds).limit(5000),
-      ]);
-
-      const nameMap = new Map((profiles || []).map((p) => [p.user_id, p.nome_completo || "Sem nome"]));
-
-      const tarefMap = new Map<string, { tratamentos: Set<string>; tratNomes: Set<string>; assistidos: Set<string>; sessoes: number; presencas: number; ausencias: number; emAndamento: number; concluidos: number }>();
-
-      filtered.forEach((t) => {
-        const tid = t.tarefeiro_id!;
-        if (!tarefMap.has(tid)) tarefMap.set(tid, { tratamentos: new Set(), tratNomes: new Set(), assistidos: new Set(), sessoes: 0, presencas: 0, ausencias: 0, emAndamento: 0, concluidos: 0 });
-        const r = tarefMap.get(tid)!;
-        r.tratamentos.add(t.id);
-        r.tratNomes.add(t.nome);
-      });
-
-      (sessoes || []).forEach((s) => {
-        const trat = filtered.find((t) => t.id === s.tratamento_id);
-        if (trat && trat.tarefeiro_id && tarefMap.has(trat.tarefeiro_id)) {
-          const r = tarefMap.get(trat.tarefeiro_id)!;
-          r.sessoes++;
-          r.assistidos.add(s.assistido_id);
-        }
-      });
-
-      (presencas || []).forEach((p: any) => {
-        const tratId = p.assistido_tratamento?.tratamento_id;
-        if (!tratId) return;
-        const trat = filtered.find((t) => t.id === tratId);
-        if (trat && trat.tarefeiro_id && tarefMap.has(trat.tarefeiro_id)) {
-          const r = tarefMap.get(trat.tarefeiro_id)!;
-          if (p.status_presenca === "presente") r.presencas++;
-          else r.ausencias++;
-        }
-      });
-
-      // Count em_andamento and concluidos per tarefeiro
-      (vinculos || []).forEach((v: any) => {
-        const trat = filtered.find((t) => t.id === v.tratamento_id);
-        if (trat && trat.tarefeiro_id && tarefMap.has(trat.tarefeiro_id)) {
-          const r = tarefMap.get(trat.tarefeiro_id)!;
-          if (v.status === "em_andamento") r.emAndamento++;
-          else if (v.status === "concluido") r.concluidos++;
-        }
-      });
-
-      const result: Row[] = [];
-      tarefMap.forEach((v, k) => {
-        result.push({
-          tarefeiro: nameMap.get(k) || "—",
-          tarefeiroId: k,
-          totalAssistidos: v.assistidos.size,
-          totalSessoes: v.sessoes,
-          presencas: v.presencas,
-          ausencias: v.ausencias,
-          emAndamento: v.emAndamento,
-          concluidos: v.concluidos,
-          tratamentos: [...v.tratNomes],
-        });
-      });
-
-      setRows(result.sort((a, b) => a.tarefeiro.localeCompare(b.tarefeiro)));
-    };
-    fetchData();
-  }, [filters, role, user]);
-
-  const totals = rows.reduce((acc, r) => ({
-    sessoes: acc.sessoes + r.totalSessoes,
-    presencas: acc.presencas + r.presencas,
-    ausencias: acc.ausencias + r.ausencias,
-    assistidos: acc.assistidos + r.totalAssistidos,
-    emAndamento: acc.emAndamento + r.emAndamento,
-    concluidos: acc.concluidos + r.concluidos,
-  }), { sessoes: 0, presencas: 0, ausencias: 0, assistidos: 0, emAndamento: 0, concluidos: 0 });
-
-  const maiorCarga = rows.length > 0 ? rows.reduce((a, b) => a.totalSessoes >= b.totalSessoes ? a : b).tarefeiro.split(" ")[0] : "—";
-  const mediaSessoes = rows.length > 0 ? Math.round(totals.sessoes / rows.length) : 0;
-  const mediaAssistidos = rows.length > 0 ? Math.round(totals.assistidos / rows.length) : 0;
+  const rows = data.rows;
+  const totals = data.totais;
+  const mediaSessoes = data.registros > 0 ? Math.round(totals.sessoes / data.registros) : 0;
+  const maiorCarga = totals.maiorCarga ? totals.maiorCarga.split(" ")[0] : "—";
 
   const chartData = rows.map((r) => ({
     name: r.tarefeiro.split(" ")[0],
@@ -133,6 +37,15 @@ export default function CargaPorTarefeiro() {
     Presenças: r.presencas,
     Ausências: r.ausencias,
   }));
+
+  const handleExport = async () => {
+    const all = await fetchCargaTarefeiroParaExport(filtros);
+    exportCsv(
+      "carga_por_tarefeiro.csv",
+      ["Tarefeiro", "Assistidos", "Sessões", "Presenças", "Ausências", "Em Andamento", "Concluídos", "Tratamentos"],
+      all.rows.map((r) => [r.tarefeiro, String(r.totalAssistidos), String(r.totalSessoes), String(r.presencas), String(r.ausencias), String(r.emAndamento), String(r.concluidos), r.tratamentos.join(", ")]),
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -176,7 +89,7 @@ export default function CargaPorTarefeiro() {
       <Card>
         <CardHeader className="flex-row items-center justify-between pb-3">
           <CardTitle className="text-sm font-semibold">Detalhamento</CardTitle>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => exportCsv("carga_por_tarefeiro.csv", ["Tarefeiro", "Assistidos", "Sessões", "Presenças", "Ausências", "Em Andamento", "Concluídos", "Tratamentos"], rows.map((r) => [r.tarefeiro, String(r.totalAssistidos), String(r.totalSessoes), String(r.presencas), String(r.ausencias), String(r.emAndamento), String(r.concluidos), r.tratamentos.join(", ")]))}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleExport}>
             <Download className="h-3.5 w-3.5" /> CSV
           </Button>
         </CardHeader>
@@ -197,7 +110,7 @@ export default function CargaPorTarefeiro() {
               </TableHeader>
               <TableBody>
                 {rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum dado encontrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{loading ? "Carregando..." : "Nenhum dado encontrado"}</TableCell></TableRow>
                 ) : rows.map((r) => (
                   <TableRow key={r.tarefeiroId}>
                     <TableCell className="font-medium">{r.tarefeiro}</TableCell>
@@ -213,6 +126,14 @@ export default function CargaPorTarefeiro() {
               </TableBody>
             </Table>
           </div>
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            total={data.registros}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={onPageSizeChange}
+          />
         </CardContent>
       </Card>
     </div>
