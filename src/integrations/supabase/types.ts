@@ -1482,6 +1482,17 @@ export type Database = {
         }
         Returns: Json
       }
+      relatorio_carga_tarefeiro: {
+        Args: {
+          p_data_fim: string
+          p_data_inicio: string
+          p_page?: number
+          p_page_size?: number
+          p_tarefeiro_id?: string
+          p_tratamento_id?: string
+        }
+        Returns: Json
+      }
       relatorio_faltas_periodo: {
         Args: {
           p_assistido_id?: string
@@ -1504,6 +1515,19 @@ export type Database = {
           p_page?: number
           p_page_size?: number
           p_tarefeiro_id?: string
+          p_tratamento_id?: string
+        }
+        Returns: Json
+      }
+      relatorio_tratamentos_concluidos: {
+        Args: {
+          p_coordenador_id?: string
+          p_data_fim: string
+          p_data_inicio: string
+          p_page?: number
+          p_page_size?: number
+          p_tarefeiro_id?: string
+          p_tipo?: string
           p_tratamento_id?: string
         }
         Returns: Json
