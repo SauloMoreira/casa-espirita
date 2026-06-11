@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Upload, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Upload, FileText, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import MaterialRelacoesDialog from "./MaterialRelacoesDialog";
 
 const TIPOS = ["livro", "capítulo", "resumo", "manual interno", "orientação institucional", "trecho doutrinário"];
 const TEMAS = [
