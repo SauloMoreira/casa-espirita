@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardCheck, Calendar, Check, X, Heart } from "lucide-react";
+import { ClipboardCheck, Calendar, Check, X, Heart, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { withRetry, isTransientError } from "@/lib/resilience";
+import { normalizeText } from "@/lib/normalize";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
