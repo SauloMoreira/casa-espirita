@@ -1482,6 +1482,13 @@ export type Database = {
         }
         Returns: Json
       }
+      staff_names: {
+        Args: { _ids?: string[] }
+        Returns: {
+          nome_completo: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role:

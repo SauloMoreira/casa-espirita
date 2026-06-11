@@ -45,7 +45,7 @@ export default function EntrevistasRealizadas() {
 
       // Get entrevistador names
       const eIds = [...new Set(data.map((d: any) => d.entrevistador_id))];
-      const { data: profiles } = await supabase.from("profiles").select("user_id, nome_completo").in("user_id", eIds);
+      const { data: profiles } = await supabase.rpc("staff_names", { _ids: eIds });
       const nameMap = new Map((profiles || []).map((p) => [p.user_id, p.nome_completo || "—"]));
       setEntrevistadorNames(nameMap);
 

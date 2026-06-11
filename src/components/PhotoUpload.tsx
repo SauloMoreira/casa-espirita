@@ -78,7 +78,15 @@ export function PhotoUpload({ currentUrl, onUrlChange, folder }: PhotoUploadProp
       setPreview(previewUrl);
 
       const ext = optimized.type === "image/webp" ? "webp" : "jpg";
-      const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      if (!uid) {
+        toast({ title: "Sessão expirada", description: "Faça login novamente para enviar a foto.", variant: "destructive" });
+        setPreview(currentUrl);
+        setUploading(false);
+        return;
+      }
+      const path = `${uid}/${folder}/${crypto.randomUUID()}.${ext}`;
 
       const { error } = await supabase.storage.from("avatars").upload(path, optimized, {
         cacheControl: "31536000",

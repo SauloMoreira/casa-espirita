@@ -76,7 +76,7 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
           supabase.from("tipos_tratamento").select("tarefeiro_id").not("tarefeiro_id", "is", null).then(async ({ data }) => {
             const ids = [...new Set((data || []).map((t) => t.tarefeiro_id).filter(Boolean))] as string[];
             if (ids.length > 0) {
-              const { data: profiles } = await supabase.from("profiles").select("user_id, nome_completo").in("user_id", ids);
+              const { data: profiles } = await supabase.rpc("staff_names", { _ids: ids });
               setTarefeiros((profiles || []).map((p) => ({ id: p.user_id, nome: p.nome_completo || "Sem nome" })));
             }
           })
@@ -87,7 +87,7 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
           supabase.from("tipos_tratamento").select("coordenador_responsavel_id").not("coordenador_responsavel_id", "is", null).then(async ({ data }) => {
             const ids = [...new Set((data || []).map((t) => t.coordenador_responsavel_id).filter(Boolean))] as string[];
             if (ids.length > 0) {
-              const { data: profiles } = await supabase.from("profiles").select("user_id, nome_completo").in("user_id", ids);
+              const { data: profiles } = await supabase.rpc("staff_names", { _ids: ids });
               setCoordenadores((profiles || []).map((p) => ({ id: p.user_id, nome: p.nome_completo || "Sem nome" })));
             }
           })
@@ -98,7 +98,7 @@ export default function ReportFilters({ values, onChange, show = [] }: Props) {
           supabase.from("user_roles").select("user_id").eq("role", "entrevistador").then(async ({ data }) => {
             const ids = (data || []).map((r) => r.user_id);
             if (ids.length > 0) {
-              const { data: profiles } = await supabase.from("profiles").select("user_id, nome_completo").in("user_id", ids);
+              const { data: profiles } = await supabase.rpc("staff_names", { _ids: ids });
               setEntrevistadores((profiles || []).map((p) => ({ id: p.user_id, nome: p.nome_completo || "Sem nome" })));
             }
           })

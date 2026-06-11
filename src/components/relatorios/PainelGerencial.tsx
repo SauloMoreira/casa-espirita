@@ -71,8 +71,8 @@ export default function PainelGerencial() {
 
         if (cargaMap.size > 0) {
           const topId = [...cargaMap.entries()].sort((a, b) => b[1] - a[1])[0][0];
-          const { data: prof } = await supabase.from("profiles").select("nome_completo").eq("user_id", topId).single();
-          maiorCarga = prof?.nome_completo?.split(" ")[0] || "—";
+          const { data: profs } = await supabase.rpc("staff_names", { _ids: [topId] });
+          maiorCarga = profs?.[0]?.nome_completo?.split(" ")[0] || "—";
         }
       }
 
