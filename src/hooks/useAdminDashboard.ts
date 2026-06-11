@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { buildAgeDistribution } from "@/lib/ageGroups";
 import {
   fetchAdminDashboard,
   fetchAguardandoList,
@@ -13,13 +12,12 @@ import type {
   DashboardGraficoSerie,
   DashboardPendencia,
   DashboardPresencaSerie,
-  EntrevistasPorTipo,
   PeriodKey,
 } from "@/types/adminDashboard";
 
 const EMPTY: AdminDashboardData = {
   range: getPeriodRange("mes"),
-  assistidos: [],
+  assistidosTotal: 0,
   tratAtivos: 0,
   tratConcluidos: 0,
   entAgendadas: 0,
@@ -30,15 +28,16 @@ const EMPTY: AdminDashboardData = {
   publicoPalestras: 0,
   entRecentes: [],
   tratPorTipo: [],
-  presencas: [],
   cargaTarefeiros: [],
-  entrevistas: [],
+  presencaPontos: [],
+  entrevistasPorTipo: { regulares: 0, livres: 0, realizadas: 0, total: 0 },
+  faixaEtaria: [],
 };
 
 /**
  * Domain hook for the Admin Dashboard. Owns period selection, data loading,
- * derived/aggregated state and the "aguardando agendamento" dialog. Keeps the
- * page component declarative and testable.
+ * light derived state and the "aguardando agendamento" dialog. All heavy
+ * aggregation now happens server-side (RPC `dashboard_admin`).
  */
 export function useAdminDashboard() {
   const [period, setPeriod] = useState<PeriodKey>("mes");
@@ -72,10 +71,7 @@ export function useAdminDashboard() {
   }, []);
 
   /* ------------------------------ Derived ------------------------------- */
-  const ageData = useMemo<DashboardGraficoSerie[]>(
-    () => buildAgeDistribution(data.assistidos),
-    [data.assistidos],
-  );
+  const ageData = data.faixaEtaria;
 
   const topAge = useMemo(
     () => ageData.reduce((a, b) => (b.value > a.value ? b : a), { name: "—", value: 0 }),
@@ -90,45 +86,27 @@ export function useAdminDashboard() {
     [ageData],
   );
 
-  const presenceChart = useMemo<DashboardPresencaSerie[]>(() => {
-    const map = new Map<string, { presentes: number; ausentes: number }>();
-    data.presencas.forEach((p) => {
-      if (!map.has(p.data)) map.set(p.data, { presentes: 0, ausentes: 0 });
-      const entry = map.get(p.data)!;
-      if (p.status_presenca === "presente") entry.presentes++;
-      else entry.ausentes++;
-    });
-    return [...map.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-15)
-      .map(([date, v]) => ({
-        data: format(new Date(date + "T12:00:00"), "dd/MM", { locale: ptBR }),
-        Presenças: v.presentes,
-        Ausências: v.ausentes,
-      }));
-  }, [data.presencas]);
+  const presenceChart = useMemo<DashboardPresencaSerie[]>(
+    () =>
+      data.presencaPontos.map((p) => ({
+        data: format(new Date(p.data + "T12:00:00"), "dd/MM", { locale: ptBR }),
+        Presenças: p.presentes,
+        Ausências: p.ausentes,
+      })),
+    [data.presencaPontos],
+  );
 
-  const entrevistasPorTipo = useMemo<EntrevistasPorTipo>(() => {
-    let regulares = 0;
-    let livres = 0;
-    let realizadas = 0;
-    data.entrevistas.forEach((e) => {
-      if (e.tipo_entrevista === "livre") livres++;
-      else regulares++;
-      if (e.status === "realizada") realizadas++;
-    });
-    return { regulares, livres, realizadas, total: data.entrevistas.length };
-  }, [data.entrevistas]);
+  const entrevistasPorTipo = data.entrevistasPorTipo;
 
   const funnel = useMemo<DashboardGraficoSerie[]>(
     () => [
-      { name: "Cadastrados", value: data.assistidos.length },
+      { name: "Cadastrados", value: data.assistidosTotal },
       { name: "Entrevistados", value: entrevistasPorTipo.realizadas },
       { name: "Em Tratamento", value: data.tratAtivos },
       { name: "Aguardando", value: data.aguardandoAgend },
       { name: "Concluídos", value: data.tratConcluidos },
     ],
-    [data.assistidos.length, data.tratAtivos, data.tratConcluidos, data.aguardandoAgend, entrevistasPorTipo.realizadas],
+    [data.assistidosTotal, data.tratAtivos, data.tratConcluidos, data.aguardandoAgend, entrevistasPorTipo.realizadas],
   );
 
   const pendencias = useMemo<DashboardPendencia[]>(() => {
@@ -148,7 +126,7 @@ export function useAdminDashboard() {
 
   const aiDashboardData = useMemo(
     () => ({
-      totalAssistidos: data.assistidos.length,
+      totalAssistidos: data.assistidosTotal,
       tratAtivos: data.tratAtivos,
       tratConcluidos: data.tratConcluidos,
       entAgendadas: data.entAgendadas,
