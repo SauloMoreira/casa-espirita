@@ -91,6 +91,7 @@ const App = () => (
                   <Route path={ROUTES.meuPerfil} element={<ProtectedRoute allowedRoles={["assistido"]}><MeuPerfil /></ProtectedRoute>} />
                   <Route path={ROUTES.meusDocumentos} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MeusDocumentos />, "Meus Documentos")}</ProtectedRoute>} />
                   <Route path={ROUTES.notificacoes} element={<Notificacoes />} />
+                  <Route path={ROUTES.centralNotificacoes} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<CentralNotificacoes />, "Central de Notificações")}</ProtectedRoute>} />
                   <Route path={ROUTES.listaEspera} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorListaEspera /></ProtectedRoute>} />
                   <Route path={ROUTES.coordenadorTratamentos} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorTratamentos /></ProtectedRoute>} />
                   <Route path={ROUTES.coordenadorAgenda} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorAgenda /></ProtectedRoute>} />
