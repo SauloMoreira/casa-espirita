@@ -150,7 +150,7 @@ export default function MinhaAgenda() {
           </CardHeader>
           {showHistorico && (
             <CardContent>
-              <div className="space-y-2">
+              <div className="grid gap-2 lg:grid-cols-2">
                 {sessoesPassadas.map((s) => {
                   const dataObj = new Date(s.data_sessao + "T12:00:00");
                   return (
