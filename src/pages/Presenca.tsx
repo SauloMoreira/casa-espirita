@@ -41,6 +41,7 @@ export default function Presenca() {
   const { toast } = useToast();
 
   const fetchData = async () => {
+    setLoading(true);
     // Query actual scheduled sessions for the selected date
     let agendaQuery = supabase
       .from("agenda_tratamentos_assistido")
