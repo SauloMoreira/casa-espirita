@@ -85,7 +85,7 @@ export default function AssistidoDashboard() {
     : "—";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-screen-xl mx-auto w-full">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Meu Painel</h1>
         <p className="text-sm text-muted-foreground mt-1">Seus tratamentos e agenda</p>
@@ -163,6 +163,7 @@ export default function AssistidoDashboard() {
       </div>
 
 
+      <div className="grid gap-4 lg:grid-cols-2 items-start">
       {tratamentos.length > 0 && (
         <Card className="border-border/60 shadow-sm">
           <CardHeader>
@@ -232,6 +233,7 @@ export default function AssistidoDashboard() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }

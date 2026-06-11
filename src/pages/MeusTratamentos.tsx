@@ -119,7 +119,7 @@ export default function MeusTratamentos() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-screen-xl mx-auto w-full">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Meus Tratamentos</h1>
         <p className="text-sm text-muted-foreground mt-1">Acompanhe seus tratamentos e sessões agendadas</p>
@@ -136,7 +136,7 @@ export default function MeusTratamentos() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-2 items-start">
           {tratamentos.map((t) => {
             const pct = progressoPct(t.quantidade_realizada, t.quantidade_total);
             const hoje = new Date().toISOString().split("T")[0];
