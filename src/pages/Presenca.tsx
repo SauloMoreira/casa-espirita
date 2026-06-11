@@ -112,7 +112,7 @@ export default function Presenca() {
     setLoadingId(atId);
     try {
       const { error } = await withRetry(
-        () =>
+        async () =>
           supabase.rpc("registrar_presenca", {
             p_assistido_tratamento_id: atId,
             p_data: data,
