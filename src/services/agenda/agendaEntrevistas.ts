@@ -35,7 +35,7 @@ export async function fetchEntrevistasNoRange(
 
   const [{ data: assistidos }, { data: profiles }] = await Promise.all([
     supabase.from("assistidos").select("id, nome").in("id", assistidoIds),
-    supabase.from("profiles").select("user_id, nome_completo").in("user_id", entrevistadorIds),
+    supabase.rpc("staff_names", { _ids: entrevistadorIds }),
   ]);
 
   const assistidoMap = new Map((assistidos ?? []).map((a) => [a.id, a.nome]));
