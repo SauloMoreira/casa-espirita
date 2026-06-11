@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { measureAsync } from "@/lib/perfMonitor";
 import { format, subDays, startOfMonth, endOfMonth, startOfYear } from "date-fns";
 import type {
   AdminDashboardData,
