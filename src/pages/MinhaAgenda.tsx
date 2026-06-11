@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Heart, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { diaSemanaDe, horarioCurto } from "@/lib/assistido";
 
-const DIAS_SEMANA = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
 const STATUS_SESSAO_LABELS: Record<string, string> = {
   agendado: "Agendada",
