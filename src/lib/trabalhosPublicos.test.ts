@@ -44,7 +44,8 @@ describe("participantKey", () => {
 
 describe("resolveFaixa", () => {
   it("uses exact age when birthdate present", () => {
-    expect(resolveFaixa(rec({ id: "1", dataSessao: "2026-06-10", assistidoId: "a1", dataNascimento: "2000-01-01" }))).toBe("30–44");
+    // born 1975 -> 5x years old -> 45–59 bucket (relative to current date)
+    expect(resolveFaixa(rec({ id: "1", dataSessao: "2026-06-10", assistidoId: "a1", dataNascimento: "1975-01-01" }))).toBe("45–59");
   });
   it("falls back to raw quick-registration faixa", () => {
     expect(publicFaixaFromRaw("60_mais")).toBe("60+");
