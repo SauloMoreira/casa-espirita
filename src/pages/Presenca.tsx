@@ -50,7 +50,7 @@ export default function Presenca() {
       .in("status", ["agendado", "confirmado"]);
 
     const { data: sessoes } = await agendaQuery;
-    if (!sessoes || sessoes.length === 0) { setItems([]); return; }
+    if (!sessoes || sessoes.length === 0) { setItems([]); setLoading(false); return; }
 
     // Get unique tratamento and assistido_tratamento IDs
     const tratIds = [...new Set(sessoes.map((s) => s.tratamento_id))];
