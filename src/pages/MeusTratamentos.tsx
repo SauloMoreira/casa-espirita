@@ -196,7 +196,8 @@ export default function MeusTratamentos() {
                       <div className="space-y-1.5">
                         {sessoesVisiveis.map((s) => {
                           const dataObj = new Date(s.data_sessao + "T12:00:00");
-                          const diaSemana = DIAS_SEMANA[dataObj.getDay()];
+                          const diaSemana = diaSemanaDe(s.data_sessao);
+                          const hora = horarioCurto(s.horario);
                           return (
                             <div key={s.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
                               <div className="flex items-center gap-2">
@@ -206,9 +207,9 @@ export default function MeusTratamentos() {
                                 <span className="text-xs text-muted-foreground">
                                   {diaSemana}
                                 </span>
-                                {s.horario && (
+                                {hora && (
                                   <span className="text-xs text-muted-foreground">
-                                    às {s.horario.slice(0, 5)}
+                                    às {hora}
                                   </span>
                                 )}
                               </div>
