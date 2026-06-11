@@ -328,7 +328,11 @@ export default function Assistidos() {
           </div>
         </CardHeader>
         <CardContent>
-          {filtered.length === 0 ? (
+          {listLoading && filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <p className="text-sm">Carregando...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <HandHeart className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm font-medium">Nenhum assistido encontrado</p>
