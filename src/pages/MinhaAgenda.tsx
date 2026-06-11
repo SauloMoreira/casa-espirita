@@ -157,8 +157,8 @@ export default function MinhaAgenda() {
                       <div>
                         <p className="text-sm font-medium">{s.tratamento_nome}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(dataObj, "dd/MM/yyyy")} — {DIAS_SEMANA[dataObj.getDay()]}
-                          {s.horario && ` às ${s.horario.slice(0, 5)}`}
+                          {format(dataObj, "dd/MM/yyyy")} — {diaSemanaDe(s.data_sessao)}
+                          {horarioCurto(s.horario) && ` às ${horarioCurto(s.horario)}`}
                         </p>
                       </div>
                       <Badge
