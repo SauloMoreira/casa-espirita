@@ -72,7 +72,9 @@ export default function IndicadoresAssertividade() {
 
   return (
     <div className="space-y-6">
+      {filtros}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
         {cards.map((c) => (
           <Card key={c.label}>
             <CardContent className="pt-4">
