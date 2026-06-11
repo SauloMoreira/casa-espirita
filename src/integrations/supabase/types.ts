@@ -1454,21 +1454,7 @@ export type Database = {
       }
     }
     Views: {
-      staff_directory: {
-        Row: {
-          nome_completo: string | null
-          user_id: string | null
-        }
-        Insert: {
-          nome_completo?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          nome_completo?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       assistido_belongs_to_coordinator: {
@@ -1495,6 +1481,13 @@ export type Database = {
           p_status_presenca: string
         }
         Returns: Json
+      }
+      staff_names: {
+        Args: { _ids?: string[] }
+        Returns: {
+          nome_completo: string
+          user_id: string
+        }[]
       }
     }
     Enums: {
