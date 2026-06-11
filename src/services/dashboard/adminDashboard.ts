@@ -155,10 +155,7 @@ async function buildCargaTarefeiros(
   });
   const tIds = [...tarefeiroMap.keys()];
   if (tIds.length === 0) return [];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("user_id, nome_completo")
-    .in("user_id", tIds);
+  const { data: profiles } = await supabase.rpc("staff_names", { _ids: tIds });
   const pMap = new Map((profiles ?? []).map((p) => [p.user_id, p.nome_completo || "Sem nome"]));
   return [...tarefeiroMap.entries()]
     .map(([id, total]) => ({ nome: pMap.get(id) || id.slice(0, 8), total }))
