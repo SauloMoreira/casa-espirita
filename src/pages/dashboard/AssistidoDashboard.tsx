@@ -140,7 +140,29 @@ export default function AssistidoDashboard() {
         </Card>
       )}
 
-      {/* Meus Tratamentos */}
+      {/* Atalhos rápidos */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Minha Agenda", icon: Calendar, url: ROUTES.minhaAgenda },
+          { label: "Meus Tratamentos", icon: Heart, url: ROUTES.meusTratamentos },
+          { label: "Documentos", icon: FileText, url: ROUTES.meusDocumentos },
+          { label: "Meu Perfil", icon: User, url: ROUTES.meuPerfil },
+        ].map((a) => (
+          <button
+            key={a.url}
+            onClick={() => navigate(a.url)}
+            className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3.5 text-left active:scale-[0.98] hover:bg-secondary/30 transition-all"
+          >
+            <span className="rounded-lg bg-primary/10 p-2 shrink-0">
+              <a.icon className="h-4 w-4 text-primary" />
+            </span>
+            <span className="text-sm font-medium flex-1 min-w-0 truncate">{a.label}</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </button>
+        ))}
+      </div>
+
+
       {tratamentos.length > 0 && (
         <Card className="border-border/60 shadow-sm">
           <CardHeader>
