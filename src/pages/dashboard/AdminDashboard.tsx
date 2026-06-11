@@ -34,7 +34,7 @@ export default function AdminDashboard() {
       <AdminDashboardHeader period={period} onPeriodChange={setPeriod} />
 
       <AdminMainCards
-        assistidosCount={data.assistidos.length}
+        assistidosCount={data.assistidosTotal}
         tratAtivos={data.tratAtivos}
         entAgendadas={data.entAgendadas}
         presencasHoje={data.presencasHoje}
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
       <AdminQuickLists
         entRecentes={data.entRecentes}
         ageData={ageData}
-        totalAssistidos={data.assistidos.length}
+        totalAssistidos={data.assistidosTotal}
       />
 
       <AIInsightsBlock dashboardData={aiDashboardData} />
