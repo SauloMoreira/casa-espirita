@@ -34,6 +34,8 @@ export default function Presenca() {
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
   const [items, setItems] = useState<TratamentoDoDia[]>([]);
   const [tratamentoFilter, setTratamentoFilter] = useState("todos");
+  const [busca, setBusca] = useState("");
+  const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { user, role } = useAuth();
   const { toast } = useToast();
