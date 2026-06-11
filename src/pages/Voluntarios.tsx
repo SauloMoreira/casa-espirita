@@ -17,11 +17,21 @@ export default function Voluntarios() {
       <VoluntariosFilters filters={v.filters} onChange={v.setFilter} funcoes={v.allFuncoes} />
 
       <VoluntariosList
-        voluntarios={v.filtered}
+        voluntarios={v.paginated}
         onEdit={v.openEdit}
         onFicha={v.openFicha}
         onTermo={v.openTermo}
       />
+
+      {v.total > 0 && (
+        <PaginationControls
+          page={v.page}
+          pageSize={v.pageSize}
+          total={v.total}
+          onPageChange={v.setPage}
+          onPageSizeChange={v.setPageSize}
+        />
+      )}
 
       <VoluntarioFormDialog
         open={v.open}
