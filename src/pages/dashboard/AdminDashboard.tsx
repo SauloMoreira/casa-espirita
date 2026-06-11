@@ -9,6 +9,7 @@ import { AdminInterviewsSection } from "@/components/dashboard/admin/AdminInterv
 import { AdminQuickLists } from "@/components/dashboard/admin/AdminQuickLists";
 import { AdminShortcuts } from "@/components/dashboard/admin/AdminShortcuts";
 import { AguardandoAgendamentoDialog } from "@/components/dashboard/admin/AguardandoAgendamentoDialog";
+import { AdminPublicWorksSection } from "@/components/dashboard/admin/AdminPublicWorksSection";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 
 export default function AdminDashboard() {
@@ -70,6 +71,9 @@ export default function AdminDashboard() {
         entrevistasPorTipo={entrevistasPorTipo}
         cargaTarefeiros={data.cargaTarefeiros}
       />
+
+      <AdminPublicWorksSection period={period} />
+
 
       <AdminQuickLists
         entRecentes={data.entRecentes}

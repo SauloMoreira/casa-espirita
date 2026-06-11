@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, ArrowLeft, Users, CalendarCheck, ClipboardList, CheckCircle, CalendarX, Briefcase } from "lucide-react";
+import { FileText, ArrowLeft, Users, CalendarCheck, ClipboardList, CheckCircle, CalendarX, Briefcase, Megaphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import AssistidosPorTratamento from "@/components/relatorios/AssistidosPorTratamento";
 import FrequenciaPresenca from "@/components/relatorios/FrequenciaPresenca";
@@ -9,6 +9,7 @@ import EntrevistasRealizadas from "@/components/relatorios/EntrevistasRealizadas
 import TratamentosConcluidos from "@/components/relatorios/TratamentosConcluidos";
 import FaltasPorPeriodo from "@/components/relatorios/FaltasPorPeriodo";
 import CargaPorTarefeiro from "@/components/relatorios/CargaPorTarefeiro";
+import TrabalhosPublicos from "@/components/relatorios/TrabalhosPublicos";
 import PainelGerencial from "@/components/relatorios/PainelGerencial";
 
 const REPORTS = [
@@ -18,6 +19,7 @@ const REPORTS = [
   { key: "concluidos", title: "Tratamentos Concluídos", icon: CheckCircle, desc: "Tratamentos finalizados no período" },
   { key: "faltas", title: "Faltas por Período", icon: CalendarX, desc: "Ausências detalhadas por assistido" },
   { key: "carga", title: "Carga por Tarefeiro", icon: Briefcase, desc: "Volume de trabalho por tarefeiro" },
+  { key: "trabalhos_publicos", title: "Trabalhos Públicos", icon: Megaphone, desc: "Demografia, novos vs recorrentes e retorno nos trabalhos públicos" },
 ] as const;
 
 type ReportKey = typeof REPORTS[number]["key"];
@@ -29,6 +31,7 @@ const COMPONENTS: Record<ReportKey, React.FC> = {
   concluidos: TratamentosConcluidos,
   faltas: FaltasPorPeriodo,
   carga: CargaPorTarefeiro,
+  trabalhos_publicos: TrabalhosPublicos,
 };
 
 export default function Relatorios() {
@@ -72,7 +75,9 @@ export default function Relatorios() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {REPORTS.filter((r) => !(r.key === "carga" && (role === "tarefeiro" || role === "coordenador_de_tratamento"))).map((r) => {
+        {REPORTS.filter((r) => !(r.key === "carga" && (role === "tarefeiro" || role === "coordenador_de_tratamento")))
+          .filter((r) => !(r.key === "trabalhos_publicos" && !(role === "admin" || role === "coordenador_de_tratamento" || role === "tarefeiro")))
+          .map((r) => {
           const Icon = r.icon;
           return (
           <Card key={r.key} className="glass-card hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setActive(r.key)}>
