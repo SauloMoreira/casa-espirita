@@ -113,7 +113,8 @@ export default function MinhaAgenda() {
               <p className="text-xs mt-1">Quando suas sessões forem confirmadas, elas aparecerão aqui</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid gap-2 lg:grid-cols-2">
+
               {sessoesFuturas.map((s) => {
                 const dataObj = new Date(s.data_sessao + "T12:00:00");
                 return (
