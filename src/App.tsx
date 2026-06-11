@@ -40,6 +40,7 @@ const CoordenadorListaEspera = lazy(() => import("./pages/CoordenadorListaEspera
 const CoordenadorTratamentos = lazy(() => import("./pages/CoordenadorTratamentos"));
 const CoordenadorAgenda = lazy(() => import("./pages/CoordenadorAgenda"));
 const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const CentralNotificacoes = lazy(() => import("./pages/CentralNotificacoes"));
 const MeusDocumentos = lazy(() => import("./pages/MeusDocumentos"));
 const CentralIA = lazy(() => import("./pages/CentralIA"));
 const Voluntarios = lazy(() => import("./pages/Voluntarios"));
