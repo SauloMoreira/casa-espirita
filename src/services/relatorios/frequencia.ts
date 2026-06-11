@@ -24,7 +24,7 @@ export async function fetchFrequenciaPresenca(
   filtros: RelatorioPresencaFiltros,
   paginacao: PaginacaoParams,
 ): Promise<FrequenciaResult> {
-  const { data, error } = await measureAsync("rpc:relatorio_frequencia_presenca", () =>
+  const { data, error } = await measureAsync("rpc:relatorio_frequencia_presenca", async () =>
     supabase.rpc("relatorio_frequencia_presenca", {
       p_data_inicio: filtros.dataInicio,
       p_data_fim: filtros.dataFim,
