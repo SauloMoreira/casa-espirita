@@ -1,51 +1,75 @@
-# Consolidação da Central de IA — plano incremental
+# Central de Notificações + WhatsApp (Evolution API)
 
-## Situação atual (já existe, não será refeito)
-- **Schema completo**: `ia_queixas`, `ia_queixa_tratamento`, `ia_sugestoes`, `ia_feedback`, `ia_biblioteca`, `ia_biblioteca_relacoes`, `ia_configuracoes` — todas as colunas exigidas pelas Ondas 1–3 já estão lá.
-- **UI completa**: as 6 abas em `CentralIA.tsx` (Queixas/Tratamentos, Biblioteca, Sugestões, Feedback, Indicadores, Configurações).
-- **Edge function `assistente-entrevista`**: já lê configurações, queixas, vínculos e biblioteca e monta o prompt.
-- **Auditoria parcial**: triggers em queixas, queixa_tratamento, biblioteca e configurações.
+Integração de WhatsApp como canal operacional, desacoplada do provedor, com fila, templates, opt-out, triagem por IA e handoff humano. Nenhum fluxo atual é alterado — tudo novo é aditivo.
 
-## Lacuna central (o que realmente falta)
-O ciclo supervisionado está **aberto**:
-- A IA devolve só texto markdown livre; **nada é gravado em `ia_sugestoes`**.
-- Como `ia_sugestoes` fica vazio, **Feedback e Indicadores não têm dados reais**.
-- O diálogo da entrevista (`AssistenteIaDialog`) só exibe texto — sem aceitar/ajustar/rejeitar nem registrar a decisão final.
-- Sem trigger de auditoria em `ia_sugestoes`/`ia_feedback` (quem avaliou).
+## Visão da arquitetura
 
-O foco da consolidação é **fechar esse ciclo** mantendo a regra: IA é apoio, decisão é humana.
+```text
+Evento do sistema (entrevista/sessão criada, lembrete, remarcação, cancelamento)
+        │  (trigger de DB grava na fila, com dedupe_key)
+        ▼
+notificacoes_fila ──► motor de envio (edge function "notificacoes-dispatch", cron a cada X min)
+        │  valida: opt-out, janela horária, limite diário, 1 lembrete/evento, dedupe
+        ▼
+   Adaptador de canal (interface ChannelAdapter) ──► EvolutionAdapter ──► Evolution API
+        │                                            (troca futura = novo adaptador)
+        ▼
+notificacoes_log (saída) + atualização de status/retry/external_message_id
 
-## Trabalho proposto
+Inbound: Evolution webhook ──► edge function "whatsapp-inbound"
+   identifica conversa/assistido ► classifica intenção (IA) ►
+     caso simples: IA responde   │  caso complexo: cria whatsapp_handoffs (humano)
+```
 
-### Onda A — Sugestão estruturada + persistência (núcleo)
-- Alterar `assistente-entrevista` para retornar, além do texto, um JSON estruturado (queixas identificadas, tratamentos sugeridos com quantidade, justificativa, materiais consultados) usando saída estruturada do modelo.
-- Persistir cada análise em `ia_sugestoes` (resumo, queixas/tratamentos/quantidades JSON, justificativa, materiais, `status='pendente'`, vínculo a entrevista/assistido/entrevistador).
-- Retornar o `id` da sugestão ao cliente para ligar à decisão final.
+A camada de negócio nunca chama a Evolution diretamente: fala com o **motor de notificações** e com um **adaptador de canal** atrás de uma interface, garantindo a troca futura (ex.: Cloud API oficial) sem reescrever regras.
 
-### Onda B — Integração supervisionada na entrevista (Onda 4 do pedido)
-- Evoluir `AssistenteIaDialog` para mostrar a sugestão estruturada com ações **aceitar / ajustar / rejeitar** por tratamento, sem autoatribuição e sem poluição visual.
-- Ao aceitar/ajustar, pré-preencher os tratamentos/quantidades já existentes no fluxo (sem mudar a regra de negócio de agendamento).
-- Ao salvar a entrevista, registrar a **decisão final** e disparar `ia_feedback` (classificação + diferenças sugerido×atribuído) — opcionalmente exigido conforme `exigir_feedback`.
+## Banco de dados (migração aditiva)
 
-### Onda C — Indicadores com dados reais
-- Camada `services/ia` + hook para métricas: total com IA, aderência total/parcial, divergência, tratamentos mais sugeridos×atribuídos, queixas com maior acerto/divergência, evolução no tempo.
-- Reaproveitar/atualizar `IndicadoresAssertividade.tsx` para consumir esses dados (cards + gráficos + tabela comparativa).
+Novas tabelas (com GRANTs + RLS):
+- `notificacoes_preferencias` (assistido_id, whatsapp_ativo, opt_out_at, opt_out_motivo, horario_inicio_envio default 08:00, horario_fim_envio default 20:00)
+- `notificacoes_templates` (codigo_template, tipo_evento, canal, titulo_interno, corpo_template, ativo)
+- `notificacoes_fila` (evento_origem, assistido_id, telefone_normalizado, canal, template_codigo, payload_json, status, scheduled_at, sent_at, retry_count, dedupe_key UNIQUE, external_message_id)
+- `notificacoes_log` (fila_id, direcao, payload_enviado, payload_recebido, status, erro)
+- `whatsapp_conversas` (assistido_id, telefone, status_conversa, ultimo_contato_em, em_handoff, atendente_responsavel)
+- `whatsapp_handoffs` (conversa_id, motivo, classificado_por_ia, status, atendente_id, opened_at, closed_at)
 
-### Onda D — Auditoria, permissões e testes
-- Migration: trigger de auditoria em `ia_sugestoes` e `ia_feedback`.
-- Conferir permissões (admin total; entrevistador usa IA + feedback; demais sem acesso à administração da IA) em rotas e RLS.
-- Testes unitários: cálculo de aderência/divergência, classificação de feedback e agregação dos indicadores.
+Enums: `notif_status` (pendente, agendado, enviado, falha, cancelado), `notif_canal` (whatsapp), `notif_evento`, `conversa_status`, `handoff_status`.
 
-## Detalhes técnicos
-- Arquitetura nova: `src/types/ia.ts`, `src/services/ia/*`, `src/hooks/use*`, componentes focados.
-- Saída estruturada via Lovable AI Gateway (tool/JSON) com fallback para texto se o modelo não retornar JSON válido.
-- Nenhuma alteração nas regras de agendamento (`agenda_tratamentos_assistido` permanece fonte única) nem nos fluxos de tratamentos/relatórios.
-- Migrations apenas para triggers de auditoria (sem mudança destrutiva de schema).
+Triggers de enfileiramento (aditivos, não alteram lógica existente):
+- `entrevistas_fraternas` AFTER INSERT → evento "entrevista_criada" + agenda lembrete 24h antes
+- `agenda_tratamentos_assistido` AFTER INSERT → "sessao_criada" + lembrete 24h; AFTER UPDATE de data/horário → "remarcacao"; status→cancelado → "cancelamento"
 
-## Critérios de aceite
-Mapeiam 1:1 os do pedido: base de queixas, relação queixa↔tratamento, registro de sugestão, registro de decisão humana, feedback supervisionado, indicadores de assertividade, biblioteca utilizável, IA integrada de forma supervisionada, tudo auditável, sem regressão.
+Regras anti-spam aplicadas no motor de envio (não no trigger): janela horária, limite diário, 1 lembrete por evento, `dedupe_key` único por evento+destinatário+janela, respeito a opt-out.
 
-## Confirmação
-Como o módulo já existe e a Onda B altera o fluxo consolidado de entrevista, quero confirmar antes de codar:
-1. Posso evoluir o ciclo nesta ordem (A→B→C→D)?
-2. O feedback no fim da entrevista deve ser **obrigatório** (respeitando `exigir_feedback`) ou sempre opcional?
+Seed dos 6 templates (acolhedores, curtos, sem cobrança).
+
+## Edge functions
+- `notificacoes-dispatch` — lê fila elegível, renderiza template, chama adaptador, grava log/status/retry. Disparada por pg_cron (a cada 5 min) e invocável manualmente.
+- `whatsapp-inbound` — webhook da Evolution: identifica conversa/assistido, classifica intenção via Lovable AI, responde casos simples (próxima sessão, horário entrevista, confirmação, onde ver no app, opt-out) ou abre handoff.
+- `_shared/channel-adapter.ts` — interface `ChannelAdapter` + `EvolutionAdapter` (envio via Evolution).
+
+## Frontend
+- `src/services/notificacoes/*` + `src/lib/notificacoes.ts` (lógica pura: dedupe_key, validação de janela, limite diário, render de template) com testes.
+- Perfil do assistido (`MeuPerfil.tsx`): card "WhatsApp" com toggle opt-in/opt-out, status ativo, motivo.
+- Central de Notificações para staff (admin/coordenação): aba/página com fila, status, conversas e handoffs (abrir/atribuir/fechar). Reaproveita padrão visual premium existente.
+
+## Testes (Vitest)
+Lógica pura: geração de fila, dedupe, opt-out, render de template, janela horária, limite diário, classificação de intenção (helper puro), decisão de handoff, auditoria.
+
+## Decisões que preciso de você
+
+1. **Credenciais Evolution API** — vou precisar de 3 segredos para o adaptador e webhook funcionarem de verdade:
+   - `EVOLUTION_API_URL` (URL base da sua instância Evolution)
+   - `EVOLUTION_API_KEY` (apikey)
+   - `EVOLUTION_INSTANCE` (nome da instância conectada ao número da empresa)
+   Posso construir tudo e deixar o adaptador pronto; o envio real só funciona após você inserir esses segredos. Confirma que tem acesso a uma instância Evolution?
+
+2. **Quem acessa a Central de Notificações** (fila/conversas/handoffs)? Sugiro admin + coordenação. Atendentes de handoff = mesmos perfis ou um perfil específico?
+
+3. **Limite diário de mensagens operacionais por assistido** — sugiro 3/dia. Ok?
+
+## Garantias
+- Tudo aditivo; nenhum trigger/fluxo existente é modificado.
+- RLS rigoroso (assistido vê só suas preferências; staff conforme perfil).
+- Adaptador desacoplado para troca futura de provedor.
+- typecheck/build limpos e testes passando.
