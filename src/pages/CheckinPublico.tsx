@@ -156,6 +156,7 @@ export default function CheckinPublico() {
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
               placeholder="Seu nome completo"
+              className="h-12 text-base"
               autoFocus
             />
           </div>
@@ -165,12 +166,14 @@ export default function CheckinPublico() {
               value={form.celular}
               onChange={(e) => setForm({ ...form, celular: e.target.value })}
               placeholder="(00) 00000-0000"
+              className="h-12 text-base"
+              inputMode="tel"
             />
           </div>
           <div className="space-y-2">
             <Label>Faixa etária</Label>
             <Select value={form.faixa_etaria} onValueChange={(v) => setForm({ ...form, faixa_etaria: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="menor_18">Menor de 18</SelectItem>
                 <SelectItem value="18_29">18 a 29</SelectItem>
@@ -180,7 +183,7 @@ export default function CheckinPublico() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleSubmit} disabled={submitting || !form.nome.trim()} className="w-full">
+          <Button onClick={handleSubmit} disabled={submitting || !form.nome.trim()} className="w-full h-12 text-base">
             {submitting ? "Registrando..." : "Confirmar Presença"}
           </Button>
         </CardContent>
