@@ -165,6 +165,9 @@ export function useFazerEntrevista() {
     setObservacoes("");
     setTipoEntrevista("regular");
     setDataEntrevista(todayStr());
+    setAiSugestao("");
+    setAiSugestaoId(null);
+    setAiEstruturada(null);
   }, []);
 
   const setQtd = useCallback((tratId: string, val: string) => {
