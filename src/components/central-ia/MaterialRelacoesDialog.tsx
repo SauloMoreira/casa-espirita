@@ -27,7 +27,6 @@ interface Props {
 
 /** Gerencia associações do material da biblioteca com queixas e tratamentos. */
 export default function MaterialRelacoesDialog({ materialId, materialTitulo, isAdmin, onOpenChange }: Props) {
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const [relacoes, setRelacoes] = useState<Relacao[]>([]);
