@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Heart, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { diaSemanaDe, horarioCurto } from "@/lib/assistido";
 
-const DIAS_SEMANA = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
 const STATUS_SESSAO_LABELS: Record<string, string> = {
   agendado: "Agendada",
@@ -121,8 +121,8 @@ export default function MinhaAgenda() {
                     <div>
                       <p className="text-sm font-medium">{s.tratamento_nome}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(dataObj, "dd/MM/yyyy")} — {DIAS_SEMANA[dataObj.getDay()]}
-                        {s.horario && ` às ${s.horario.slice(0, 5)}`}
+                        {format(dataObj, "dd/MM/yyyy")} — {diaSemanaDe(s.data_sessao)}
+                        {horarioCurto(s.horario) && ` às ${horarioCurto(s.horario)}`}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-[10px]">
@@ -157,8 +157,8 @@ export default function MinhaAgenda() {
                       <div>
                         <p className="text-sm font-medium">{s.tratamento_nome}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(dataObj, "dd/MM/yyyy")} — {DIAS_SEMANA[dataObj.getDay()]}
-                          {s.horario && ` às ${s.horario.slice(0, 5)}`}
+                          {format(dataObj, "dd/MM/yyyy")} — {diaSemanaDe(s.data_sessao)}
+                          {horarioCurto(s.horario) && ` às ${horarioCurto(s.horario)}`}
                         </p>
                       </div>
                       <Badge

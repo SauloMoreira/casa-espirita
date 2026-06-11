@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { AssistidoMobileNav } from "@/components/AssistidoMobileNav";
 import { Outlet } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppLayout() {
   const [nomeFantasia, setNomeFantasia] = useState<string | null>(null);
   const { toast } = useToast();
+  const { role } = useAuth();
+  const isAssistido = role === "assistido";
 
   const fetchInst = () => {
     supabase.from("instituicao_config").select("nome_fantasia").limit(1).then(({ data }) => {
@@ -49,10 +53,11 @@ export function AppLayout() {
             </h1>
             <NotificationBell />
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+          <main className={`flex-1 overflow-auto p-4 md:p-6 ${isAssistido ? "pb-24 md:pb-6" : ""}`}>
             <Outlet />
           </main>
         </div>
+        {isAssistido && <AssistidoMobileNav />}
       </div>
     </SidebarProvider>
   );

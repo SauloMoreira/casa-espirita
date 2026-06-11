@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Heart, Calendar, CheckCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { progressoPct, diaSemanaDe, horarioCurto } from "@/lib/assistido";
 
-const DIAS_SEMANA = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
 
 const STATUS_TRAT_LABELS: Record<string, string> = {
   aguardando_inicio: "Aguardando Início",
@@ -137,7 +138,7 @@ export default function MeusTratamentos() {
       ) : (
         <div className="space-y-4">
           {tratamentos.map((t) => {
-            const pct = t.quantidade_total > 0 ? (t.quantidade_realizada / t.quantidade_total) * 100 : 0;
+            const pct = progressoPct(t.quantidade_realizada, t.quantidade_total);
             const hoje = new Date().toISOString().split("T")[0];
             const proximasSessoes = t.sessoes.filter((s) => s.data_sessao >= hoje && s.status === "agendado");
             const expanded = expandedIds.has(t.id);
@@ -195,7 +196,8 @@ export default function MeusTratamentos() {
                       <div className="space-y-1.5">
                         {sessoesVisiveis.map((s) => {
                           const dataObj = new Date(s.data_sessao + "T12:00:00");
-                          const diaSemana = DIAS_SEMANA[dataObj.getDay()];
+                          const diaSemana = diaSemanaDe(s.data_sessao);
+                          const hora = horarioCurto(s.horario);
                           return (
                             <div key={s.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
                               <div className="flex items-center gap-2">
@@ -205,9 +207,9 @@ export default function MeusTratamentos() {
                                 <span className="text-xs text-muted-foreground">
                                   {diaSemana}
                                 </span>
-                                {s.horario && (
+                                {hora && (
                                   <span className="text-xs text-muted-foreground">
-                                    às {s.horario.slice(0, 5)}
+                                    às {hora}
                                   </span>
                                 )}
                               </div>
