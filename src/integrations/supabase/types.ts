@@ -1461,6 +1461,10 @@ export type Database = {
         Args: { _assistido_id: string; _coordinator_id: string }
         Returns: boolean
       }
+      dashboard_admin: {
+        Args: { p_fim: string; p_inicio: string }
+        Returns: Json
+      }
       entrevista_assistido_belongs_to_coordinator: {
         Args: { _assistido_id: string; _coordinator_id: string }
         Returns: boolean

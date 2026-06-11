@@ -90,10 +90,20 @@ export interface DashboardPendencia {
   count: number;
 }
 
-/** Raw (but normalized) data loaded by the service for one period. */
+/** Ponto agregado da série de presenças (já calculado no servidor). */
+export interface DashboardPresencaPonto {
+  data: string;
+  presentes: number;
+  ausentes: number;
+}
+
+/**
+ * Dados do dashboard administrativo, agregados 100% no servidor (RPC
+ * `dashboard_admin`). O cliente apenas formata séries leves para os gráficos.
+ */
 export interface AdminDashboardData {
   range: DateRange;
-  assistidos: DashboardAssistido[];
+  assistidosTotal: number;
   tratAtivos: number;
   tratConcluidos: number;
   entAgendadas: number;
@@ -104,7 +114,8 @@ export interface AdminDashboardData {
   publicoPalestras: number;
   entRecentes: DashboardEntrevistaRecente[];
   tratPorTipo: DashboardTratamentoTipo[];
-  presencas: DashboardPresencaPonto[];
   cargaTarefeiros: DashboardCargaTarefeiro[];
-  entrevistas: DashboardEntrevistaPeriodo[];
+  presencaPontos: DashboardPresencaPonto[];
+  entrevistasPorTipo: EntrevistasPorTipo;
+  faixaEtaria: DashboardGraficoSerie[];
 }
