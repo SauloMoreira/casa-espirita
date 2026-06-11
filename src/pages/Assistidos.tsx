@@ -17,6 +17,8 @@ import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
 import { GerarAcessoAssistido } from "@/components/GerarAcessoAssistido";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { getRange, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 
 interface Assistido {
   id: string;
