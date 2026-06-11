@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { useIaIndicadores } from "@/hooks/useIaIndicadores";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle, X } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -25,9 +29,31 @@ const fmtPeriodo = (p: string) => {
 };
 
 export default function IndicadoresAssertividade() {
-  const { data, loading } = useIaIndicadores();
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+  const { data, loading } = useIaIndicadores({ inicio: inicio || null, fim: fim || null });
 
-  if (loading) return <div className="text-center text-muted-foreground py-12">Carregando indicadores...</div>;
+  const filtros = (
+    <Card>
+      <CardContent className="flex flex-wrap items-end gap-3 pt-4">
+        <div className="space-y-1">
+          <Label className="text-xs">De</Label>
+          <Input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} className="h-9 w-[150px]" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Até</Label>
+          <Input type="date" value={fim} onChange={(e) => setFim(e.target.value)} className="h-9 w-[150px]" />
+        </div>
+        {(inicio || fim) && (
+          <Button variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>
+            <X className="h-4 w-4 mr-1" /> Limpar
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (loading) return <div className="space-y-6">{filtros}<div className="text-center text-muted-foreground py-12">Carregando indicadores...</div></div>;
 
   const pieData = [
     { name: "Acertou totalmente", value: data.aderenciaTotal, color: "hsl(var(--primary))" },
@@ -46,7 +72,9 @@ export default function IndicadoresAssertividade() {
 
   return (
     <div className="space-y-6">
+      {filtros}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
         {cards.map((c) => (
           <Card key={c.label}>
             <CardContent className="pt-4">
