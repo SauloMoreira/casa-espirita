@@ -1482,6 +1482,32 @@ export type Database = {
         }
         Returns: Json
       }
+      relatorio_faltas_periodo: {
+        Args: {
+          p_assistido_id?: string
+          p_coordenador_id?: string
+          p_data_fim: string
+          p_data_inicio: string
+          p_page?: number
+          p_page_size?: number
+          p_tarefeiro_id?: string
+          p_tratamento_id?: string
+        }
+        Returns: Json
+      }
+      relatorio_frequencia_presenca: {
+        Args: {
+          p_assistido_id?: string
+          p_coordenador_id?: string
+          p_data_fim: string
+          p_data_inicio: string
+          p_page?: number
+          p_page_size?: number
+          p_tarefeiro_id?: string
+          p_tratamento_id?: string
+        }
+        Returns: Json
+      }
       staff_names: {
         Args: { _ids?: string[] }
         Returns: {
