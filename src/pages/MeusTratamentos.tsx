@@ -136,7 +136,7 @@ export default function MeusTratamentos() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-2 items-start">
           {tratamentos.map((t) => {
             const pct = progressoPct(t.quantidade_realizada, t.quantidade_total);
             const hoje = new Date().toISOString().split("T")[0];
