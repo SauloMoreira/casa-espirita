@@ -1,135 +1,177 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useIaIndicadores } from "@/hooks/useIaIndicadores";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, CheckCircle, AlertTriangle, TrendingUp, Brain } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+} from "recharts";
+
+const fmtPeriodo = (p: string) => {
+  const [y, m] = p.split("-");
+  return `${m}/${y.slice(2)}`;
+};
 
 export default function IndicadoresAssertividade() {
-  const [stats, setStats] = useState({
-    total: 0,
-    aderencia_total: 0,
-    aderencia_parcial: 0,
-    divergencia: 0,
-    sem_avaliacao: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetch_ = async () => {
-      const [{ count: total }, { data: fb }] = await Promise.all([
-        supabase.from("ia_sugestoes").select("*", { count: "exact", head: true }),
-        supabase.from("ia_feedback").select("classificacao"),
-      ]);
-
-      let at = 0, ap = 0, dv = 0;
-      (fb || []).forEach(f => {
-        if (f.classificacao === "acertou totalmente") at++;
-        else if (f.classificacao === "acertou parcialmente") ap++;
-        else if (f.classificacao === "inadequada") dv++;
-      });
-
-      setStats({
-        total: total || 0,
-        aderencia_total: at,
-        aderencia_parcial: ap,
-        divergencia: dv,
-        sem_avaliacao: (total || 0) - (fb || []).length,
-      });
-      setLoading(false);
-    };
-    fetch_();
-  }, []);
-
-  const totalAvaliados = stats.aderencia_total + stats.aderencia_parcial + stats.divergencia;
-  const taxaAderencia = totalAvaliados > 0 ? Math.round(((stats.aderencia_total + stats.aderencia_parcial) / totalAvaliados) * 100) : 0;
-
-  const pieData = [
-    { name: "Acertou totalmente", value: stats.aderencia_total, color: "hsl(var(--primary))" },
-    { name: "Acertou parcialmente", value: stats.aderencia_parcial, color: "hsl(var(--secondary))" },
-    { name: "Inadequada", value: stats.divergencia, color: "hsl(var(--destructive))" },
-  ].filter(d => d.value > 0);
-
-  const barData = [
-    { name: "Total", value: stats.total },
-    { name: "Acerto total", value: stats.aderencia_total },
-    { name: "Parcial", value: stats.aderencia_parcial },
-    { name: "Divergência", value: stats.divergencia },
-    { name: "Pendente", value: stats.sem_avaliacao },
-  ];
+  const { data, loading } = useIaIndicadores();
 
   if (loading) return <div className="text-center text-muted-foreground py-12">Carregando indicadores...</div>;
+
+  const pieData = [
+    { name: "Acertou totalmente", value: data.aderenciaTotal, color: "hsl(var(--primary))" },
+    { name: "Acertou parcialmente", value: data.aderenciaParcial, color: "hsl(var(--secondary))" },
+    { name: "Inadequada", value: data.divergencia, color: "hsl(var(--destructive))" },
+    { name: "Inconclusiva", value: data.inconclusiva, color: "hsl(var(--muted-foreground))" },
+    { name: "Sem uso", value: data.semUso, color: "hsl(var(--border))" },
+  ].filter((d) => d.value > 0);
+
+  const cards = [
+    { label: "Entrevistas com IA", value: data.totalSugestoes, icon: Brain, hint: `${data.avaliadas} avaliadas · ${data.pendentes} pendentes` },
+    { label: "Aderência total", value: `${data.taxaAderenciaTotal}%`, icon: CheckCircle, hint: `${data.aderenciaTotal} sugestões` },
+    { label: "Aderência parcial", value: `${data.taxaAderenciaParcial}%`, icon: BarChart3, hint: `${data.aderenciaParcial} sugestões` },
+    { label: "Divergência", value: `${data.taxaDivergencia}%`, icon: AlertTriangle, hint: `${data.divergencia} sugestões` },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><Brain className="h-5 w-5 text-primary" /></div>
-              <div><p className="text-2xl font-bold">{stats.total}</p><p className="text-xs text-muted-foreground">Sugestões da IA</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center"><CheckCircle className="h-5 w-5 text-green-600" /></div>
-              <div><p className="text-2xl font-bold">{taxaAderencia}%</p><p className="text-xs text-muted-foreground">Taxa de aderência</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-yellow-100 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-yellow-600" /></div>
-              <div><p className="text-2xl font-bold">{stats.aderencia_parcial}</p><p className="text-xs text-muted-foreground">Acertos parciais</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center"><AlertTriangle className="h-5 w-5 text-red-600" /></div>
-              <div><p className="text-2xl font-bold">{stats.divergencia}</p><p className="text-xs text-muted-foreground">Divergências</p></div>
-            </div>
-          </CardContent>
-        </Card>
+        {cards.map((c) => (
+          <Card key={c.label}>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">{c.label}</p>
+                <c.icon className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold mt-1">{c.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{c.hint}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {data.avaliadas === 0 ? (
         <Card>
-          <CardHeader><CardTitle className="text-sm">Distribuição por classificação</CardTitle></CardHeader>
-          <CardContent>
-            {pieData.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Sem dados ainda</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+          <CardContent className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
+            <MinusCircle className="h-8 w-8 opacity-50" />
+            <p>Ainda não há sugestões avaliadas para gerar indicadores.</p>
+            <p className="text-xs">Realize entrevistas usando o Assistente IA para alimentar este painel.</p>
           </CardContent>
         </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Distribuição das avaliações</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Visão geral</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Evolução no tempo</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={data.evolucao.map((e) => ({ ...e, periodo: fmtPeriodo(e.periodo) }))}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="periodo" fontSize={11} />
+                    <YAxis allowDecimals={false} fontSize={11} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="sugestoes" name="Sugestões" stroke="hsl(var(--primary))" />
+                    <Line type="monotone" dataKey="aderencia" name="Aderência" stroke="hsl(var(--secondary))" />
+                    <Line type="monotone" dataKey="divergencia" name="Divergência" stroke="hsl(var(--destructive))" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Tratamentos mais sugeridos x atribuídos</CardTitle></CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tratamento</TableHead>
+                      <TableHead className="text-right">Sugeridos</TableHead>
+                      <TableHead className="text-right">Atribuídos</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const atrMap = new Map(data.tratamentosMaisAtribuidos.map((t) => [t.nome, t.total]));
+                      const nomes = new Set([
+                        ...data.tratamentosMaisSugeridos.map((t) => t.nome),
+                        ...data.tratamentosMaisAtribuidos.map((t) => t.nome),
+                      ]);
+                      const sugMap = new Map(data.tratamentosMaisSugeridos.map((t) => [t.nome, t.total]));
+                      const rows = [...nomes].sort((a, b) => (sugMap.get(b) || 0) - (sugMap.get(a) || 0));
+                      if (rows.length === 0) {
+                        return <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">Sem dados</TableCell></TableRow>;
+                      }
+                      return rows.map((nome) => (
+                        <TableRow key={nome}>
+                          <TableCell>{nome}</TableCell>
+                          <TableCell className="text-right">{sugMap.get(nome) || 0}</TableCell>
+                          <TableCell className="text-right">{atrMap.get(nome) || 0}</TableCell>
+                        </TableRow>
+                      ));
+                    })()}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Queixas por assertividade</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={data.queixasMaiorAcerto}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="nome" fontSize={10} interval={0} angle={-15} textAnchor="end" height={50} />
+                    <YAxis fontSize={11} domain={[0, 100]} />
+                    <Tooltip />
+                    <Bar dataKey="taxa" name="% acerto" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {data.queixasMaiorDivergencia.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Queixas com maior divergência</CardTitle></CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {data.queixasMaiorDivergencia.map((q) => (
+                  <Badge key={q.nome} variant="destructive">
+                    {q.nome} · {q.taxa}% ({q.divergencias}/{q.total})
+                  </Badge>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }
