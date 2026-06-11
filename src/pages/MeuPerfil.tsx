@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
+import { WhatsappPreferenciaCard } from "@/components/notificacoes/WhatsappPreferenciaCard";
 import { maskPhone, maskCPF, isValidPhone, isValidEmail } from "@/lib/validators";
 import { User, Save } from "lucide-react";
 
