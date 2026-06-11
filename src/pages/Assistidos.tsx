@@ -226,15 +226,8 @@ export default function Assistidos() {
 
   const openNew = () => { setEditId(null); setForm(emptyForm); setErrors({}); setOpen(true); };
 
-  const filtered = assistidos.filter((a) => {
-    const s = search.toLowerCase();
-    const matchSearch = a.nome.toLowerCase().includes(s) ||
-      (a.cpf && a.cpf.includes(search.replace(/\D/g, ""))) ||
-      (a.celular && a.celular.includes(search.replace(/\D/g, ""))) ||
-      (a.telefone && a.telefone.includes(search));
-    const matchStatus = statusFilter === "todos" || a.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Busca e filtro de status são aplicados server-side (paginação real).
+  const filtered = assistidos;
 
   return (
     <div className="space-y-6">
