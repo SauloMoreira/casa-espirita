@@ -72,6 +72,10 @@ export default function Assistidos() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
   const [acessoOpen, setAcessoOpen] = useState(false);
   const [acessoAssistido, setAcessoAssistido] = useState<Assistido | null>(null);
   const [resetAssistido, setResetAssistido] = useState<Assistido | null>(null);
@@ -79,12 +83,46 @@ export default function Assistidos() {
   const { user, role } = useAuth();
   const { toast } = useToast();
 
-  const fetchAssistidos = async () => {
-    const { data } = await supabase.from("assistidos").select("*").is("deleted_at", null).order("nome");
-    if (data) setAssistidos(data as any);
+  // Paginação real (server-side) respeitando busca e filtro de status.
+  const fetchAssistidos = async (opts?: { page?: number }) => {
+    const targetPage = opts?.page ?? page;
+    setListLoading(true);
+    const { from, to } = getRange(targetPage, pageSize);
+    let q = supabase
+      .from("assistidos")
+      .select("*", { count: "exact" })
+      .is("deleted_at", null);
+
+    if (statusFilter !== "todos") q = q.eq("status", statusFilter);
+
+    const term = search.trim();
+    if (term) {
+      const digits = term.replace(/\D/g, "");
+      const ors = [`nome.ilike.%${term}%`];
+      if (digits) ors.push(`cpf.ilike.%${digits}%`, `celular.ilike.%${digits}%`);
+      q = q.or(ors.join(","));
+    }
+
+    const { data, count } = await q.order("nome").range(from, to);
+    setAssistidos((data as any) || []);
+    setTotal(count ?? 0);
+    setListLoading(false);
   };
 
-  useEffect(() => { fetchAssistidos(); }, []);
+  // Debounce de busca + reset de página ao mudar filtros.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPage(1);
+      fetchAssistidos({ page: 1 });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, pageSize]);
+
+  useEffect(() => {
+    fetchAssistidos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const validate = (): FormErrors => {
     const e: FormErrors = {};
