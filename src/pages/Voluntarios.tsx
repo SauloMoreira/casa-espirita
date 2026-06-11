@@ -5,6 +5,7 @@ import { VoluntariosList } from "@/components/voluntarios/VoluntariosList";
 import { VoluntarioFormDialog } from "@/components/voluntarios/VoluntarioFormDialog";
 import { TermoAdesao } from "@/components/voluntarios/TermoAdesao";
 import { FichaVoluntario } from "@/components/voluntarios/FichaVoluntario";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export default function Voluntarios() {
   const v = useVoluntarios();
