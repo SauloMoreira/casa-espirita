@@ -60,7 +60,7 @@ export default function MaterialRelacoesDialog({ materialId, materialTitulo, isA
       tipo_relacao: "apoio",
       created_by: user!.id,
     };
-    const { error } = await supabase.from("ia_biblioteca_relacoes").insert(payload);
+    const { error } = await supabase.from("ia_biblioteca_relacoes").insert([payload]);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Associação criada" });
     setAlvoId("");
