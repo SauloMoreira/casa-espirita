@@ -13,6 +13,7 @@ import { QrCode, Plus, Users, Search, UserPlus, Maximize2, Sparkles, Clock, Chev
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { withRetry, isTransientError } from "@/lib/resilience";
+import { contarNovos, modoLabel, checkinUrl } from "@/lib/sessoesPublicas";
 
 interface TratamentoPublico {
   id: string;
