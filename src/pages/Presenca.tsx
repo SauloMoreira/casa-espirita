@@ -103,30 +103,51 @@ export default function Presenca() {
       });
 
     setItems(result.sort((a, b) => a.tratamento_nome.localeCompare(b.tratamento_nome)));
+    setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, [data]);
 
   const registrarPresenca = async (atId: string, statusPresenca: "presente" | "ausente") => {
     setLoadingId(atId);
-    const { data: result, error } = await supabase.rpc("registrar_presenca", {
-      p_assistido_tratamento_id: atId,
-      p_data: data,
-      p_status_presenca: statusPresenca,
-      p_registrado_por: user!.id,
-    });
+    try {
+      const { error } = await withRetry(
+        () =>
+          supabase.rpc("registrar_presenca", {
+            p_assistido_tratamento_id: atId,
+            p_data: data,
+            p_status_presenca: statusPresenca,
+            p_registrado_por: user!.id,
+          }),
+        { retries: 3, baseDelayMs: 500, shouldRetry: (e) => isTransientError(e) },
+      );
 
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: statusPresenca === "presente" ? "Presença registrada" : "Ausência registrada" });
-      fetchData();
+      if (error) {
+        toast({ title: "Erro", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: statusPresenca === "presente" ? "Presença registrada" : "Ausência registrada" });
+        fetchData();
+      }
+    } catch (e: any) {
+      toast({
+        title: "Falha de conexão",
+        description: "Não foi possível registrar. Verifique a internet e tente novamente.",
+        variant: "destructive",
+      });
     }
     setLoadingId(null);
   };
 
   const tratamentosUnicos = [...new Set(items.map((i) => i.tratamento_nome))];
-  const filtered = tratamentoFilter === "todos" ? items : items.filter((i) => i.tratamento_nome === tratamentoFilter);
+  const porTratamento = tratamentoFilter === "todos" ? items : items.filter((i) => i.tratamento_nome === tratamentoFilter);
+  const buscaNorm = norm(busca);
+  const filtered = buscaNorm
+    ? porTratamento.filter(
+        (i) => norm(i.assistido_nome).includes(buscaNorm) || norm(i.tratamento_nome).includes(buscaNorm),
+      )
+    : porTratamento;
+  const totalRegistradas = filtered.filter((i) => i.presenca_registrada).length;
+
 
   return (
     <div className="space-y-6">
