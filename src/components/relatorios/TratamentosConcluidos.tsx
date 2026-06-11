@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMemo, useState } from "react";
 import ReportFilters, { FilterValues, defaultFilters } from "./ReportFilters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,22 +6,12 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { Download, CheckCircle, Users, Activity, Calendar, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { exportCsv } from "@/lib/exportCsv";
-
-interface Row {
-  id: string;
-  assistido: string;
-  tratamento: string;
-  tipoTratamento: string;
-  dataInicio: string;
-  dataConclusao: string;
-  total: number;
-  realizada: number;
-  status: string;
-  tarefeiro: string;
-  coordenador: string;
-}
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useTratamentosConcluidos } from "@/hooks/useTratamentosConcluidos";
+import { fetchTratamentosConcluidosParaExport } from "@/services/relatorios/tratamentosConcluidos";
+import type { TratamentosConcluidosFiltros } from "@/types/relatorios";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -33,104 +21,50 @@ const COLORS = [
   "hsl(var(--chart-5, 280 60% 55%))",
 ];
 
+function toFiltros(f: FilterValues): TratamentosConcluidosFiltros {
+  return {
+    dataInicio: f.dataInicio,
+    dataFim: f.dataFim,
+    tratamentoId: f.tratamentoId,
+    tipoTratamento: f.tipoTratamento,
+    tarefeiroId: f.tarefeiroId,
+    coordenadorId: f.coordenadorId,
+  };
+}
+
 export default function TratamentosConcluidos() {
   const [filters, setFilters] = useState<FilterValues>(defaultFilters());
-  const [rows, setRows] = useState<Row[]>([]);
-  const { role, user } = useAuth();
+  const filtros = useMemo(() => toFiltros(filters), [filters]);
+  const { data, page, pageSize, loading, setPage, onPageSizeChange } = useTratamentosConcluidos(filtros);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      let q = supabase
-        .from("assistido_tratamentos")
-        .select("id, data_inicio, quantidade_total, quantidade_realizada, status, updated_at, assistido:assistidos(nome), tratamento:tipos_tratamento(id, nome, tipo, tarefeiro_id, coordenador_responsavel_id)")
-        .eq("status", "concluido")
-        .gte("updated_at", filters.dataInicio)
-        .lte("updated_at", filters.dataFim + "T23:59:59")
-        .limit(5000);
+  const rows = data.rows;
+  const totais = data.totais;
 
-      if (filters.tratamentoId !== "todos") q = q.eq("tratamento_id", filters.tratamentoId);
-
-      const { data } = await q;
-      if (!data) { setRows([]); return; }
-
-      const filtered = data.filter((d: any) => {
-        const t = d.tratamento as any;
-        if (!t) return false;
-        if (filters.tarefeiroId !== "todos" && t.tarefeiro_id !== filters.tarefeiroId) return false;
-        if (filters.coordenadorId !== "todos" && t.coordenador_responsavel_id !== filters.coordenadorId) return false;
-        if (filters.tipoTratamento !== "todos" && t.tipo !== filters.tipoTratamento) return false;
-        if (role === "coordenador_de_tratamento" && t.coordenador_responsavel_id !== user?.id) return false;
-        if (role === "tarefeiro" && t.tarefeiro_id && t.tarefeiro_id !== user?.id) return false;
-        return true;
-      });
-
-      // Collect unique tarefeiro/coordenador IDs for name resolution
-      const tarefIds = new Set<string>();
-      const coordIds = new Set<string>();
-      filtered.forEach((d: any) => {
-        if (d.tratamento?.tarefeiro_id) tarefIds.add(d.tratamento.tarefeiro_id);
-        if (d.tratamento?.coordenador_responsavel_id) coordIds.add(d.tratamento.coordenador_responsavel_id);
-      });
-
-      const allIds = [...new Set([...tarefIds, ...coordIds])];
-      let nameMap = new Map<string, string>();
-      if (allIds.length > 0) {
-        const { data: profiles } = await supabase.rpc("staff_names", { _ids: allIds });
-        (profiles || []).forEach((p) => nameMap.set(p.user_id, p.nome_completo || "Sem nome"));
-      }
-
-      setRows(filtered.map((d: any) => ({
-        id: d.id,
-        assistido: d.assistido?.nome || "—",
-        tratamento: d.tratamento?.nome || "—",
-        tipoTratamento: d.tratamento?.tipo || "—",
-        dataInicio: d.data_inicio ? new Date(d.data_inicio + "T12:00:00").toLocaleDateString("pt-BR") : "—",
-        dataConclusao: new Date(d.updated_at).toLocaleDateString("pt-BR"),
-        total: d.quantidade_total,
-        realizada: d.quantidade_realizada,
-        status: d.status,
-        tarefeiro: d.tratamento?.tarefeiro_id ? nameMap.get(d.tratamento.tarefeiro_id) || "—" : "—",
-        coordenador: d.tratamento?.coordenador_responsavel_id ? nameMap.get(d.tratamento.coordenador_responsavel_id) || "—" : "—",
-      })));
-    };
-    fetchData();
-  }, [filters, role, user]);
-
-  const assistidosUnicos = new Set(rows.map((r) => r.assistido)).size;
-  const tratamentosUnicos = new Set(rows.map((r) => r.tratamento)).size;
-  const totalSessoes = rows.reduce((s, r) => s + r.realizada, 0);
-
-  // Por tipo de tratamento
-  const porTipo = rows.reduce<Record<string, number>>((acc, r) => {
-    acc[r.tipoTratamento] = (acc[r.tipoTratamento] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Por tratamento (para bar chart)
-  const porTratamento = rows.reduce<Record<string, number>>((acc, r) => {
-    acc[r.tratamento] = (acc[r.tratamento] || 0) + 1;
-    return acc;
-  }, {});
-
-  const barData = Object.entries(porTratamento)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([name, value]) => ({ name: name.length > 15 ? name.slice(0, 15) + "…" : name, Concluídos: value }));
-
-  const pieData = Object.entries(porTipo).map(([name, value]) => ({ name, value }));
-
-  // Tratamento com mais conclusões
+  const barData = data.porTratamento.map((t) => ({
+    name: t.nome.length > 15 ? t.nome.slice(0, 15) + "…" : t.nome,
+    Concluídos: t.count,
+  }));
+  const pieData = data.porTipo.map((t) => ({ name: t.nome, value: t.count }));
   const topTratamento = barData.length > 0 ? barData[0].name : "—";
+
+  const handleExport = async () => {
+    const all = await fetchTratamentosConcluidosParaExport(filtros);
+    exportCsv(
+      "tratamentos_concluidos.csv",
+      ["Assistido", "Tratamento", "Tipo", "Início", "Conclusão", "Total", "Realizada", "Tarefeiro", "Coordenador", "Status"],
+      all.rows.map((r) => [r.assistido, r.tratamento, r.tipoTratamento, r.dataInicio ?? "—", r.dataConclusao, String(r.total), String(r.realizada), r.tarefeiro, r.coordenador, "Concluído"]),
+    );
+  };
 
   return (
     <div className="space-y-6">
       <ReportFilters values={filters} onChange={setFilters} show={["dataInicio", "dataFim", "tratamentoId", "tipoTratamento", "tarefeiroId", "coordenadorId"]} />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title="Total Concluídos" value={rows.length} icon={CheckCircle} />
-        <StatCard title="Assistidos" value={assistidosUnicos} icon={Users} />
-        <StatCard title="Tipos Tratamento" value={Object.keys(porTipo).length} icon={Activity} />
-        <StatCard title="Sessões Realizadas" value={totalSessoes} icon={Calendar} />
+        <StatCard title="Total Concluídos" value={totais.total} icon={CheckCircle} />
+        <StatCard title="Assistidos" value={totais.assistidos} icon={Users} />
+        <StatCard title="Tipos Tratamento" value={totais.tipos} icon={Activity} />
+        <StatCard title="Sessões Realizadas" value={totais.sessoes} icon={Calendar} />
         <StatCard title="Mais Concluído" value={topTratamento} icon={Trophy} />
       </div>
 
@@ -176,7 +110,7 @@ export default function TratamentosConcluidos() {
       <Card>
         <CardHeader className="flex-row items-center justify-between pb-3">
           <CardTitle className="text-sm font-semibold">Detalhamento</CardTitle>
-          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => exportCsv("tratamentos_concluidos.csv", ["Assistido", "Tratamento", "Tipo", "Início", "Conclusão", "Total", "Realizada", "Tarefeiro", "Coordenador", "Status"], rows.map((r) => [r.assistido, r.tratamento, r.tipoTratamento, r.dataInicio, r.dataConclusao, String(r.total), String(r.realizada), r.tarefeiro, r.coordenador, r.status]))}>
+          <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleExport}>
             <Download className="h-3.5 w-3.5" /> CSV
           </Button>
         </CardHeader>
@@ -199,7 +133,7 @@ export default function TratamentosConcluidos() {
               </TableHeader>
               <TableBody>
                 {rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhum dado encontrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{loading ? "Carregando..." : "Nenhum dado encontrado"}</TableCell></TableRow>
                 ) : rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.assistido}</TableCell>
@@ -217,6 +151,14 @@ export default function TratamentosConcluidos() {
               </TableBody>
             </Table>
           </div>
+          <PaginationControls
+            page={page}
+            pageSize={pageSize}
+            total={data.registros}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={onPageSizeChange}
+          />
         </CardContent>
       </Card>
     </div>
