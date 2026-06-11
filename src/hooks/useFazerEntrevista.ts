@@ -587,6 +587,8 @@ export function useFazerEntrevista() {
     setAiOpen,
     aiLoading,
     aiSugestao,
+    aiEstruturada,
+    aiSugestaoId,
     isRecording,
     // derived
     filteredAssistidos,
@@ -603,6 +605,7 @@ export function useFazerEntrevista() {
     handleSaveNovoAssistido,
     handleSalvar,
     handleAiAssistant,
+    applySugestaoIA,
     toggleRecording,
   };
 }
