@@ -58,10 +58,12 @@ export async function fetchAdminDashboard(
 ): Promise<AdminDashboardData> {
   const range = getPeriodRange(period);
 
-  const { data, error } = await supabase.rpc("dashboard_admin", {
-    p_inicio: range.start,
-    p_fim: range.end,
-  });
+  const { data, error } = await measureAsync("rpc:dashboard_admin", async () =>
+    supabase.rpc("dashboard_admin", {
+      p_inicio: range.start,
+      p_fim: range.end,
+    }),
+  );
   if (error) throw error;
 
   const p = (data ?? {}) as any;
