@@ -233,6 +233,7 @@ export default function AssistidoDashboard() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }
