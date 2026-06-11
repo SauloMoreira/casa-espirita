@@ -47,6 +47,7 @@ export default function BibliotecaDoutrinaria() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [relacoesMaterial, setRelacoesMaterial] = useState<Material | null>(null);
 
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
