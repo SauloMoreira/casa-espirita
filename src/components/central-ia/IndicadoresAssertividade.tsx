@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { useIaIndicadores } from "@/hooks/useIaIndicadores";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle, X } from "lucide-react";
 import {
   BarChart,
   Bar,
