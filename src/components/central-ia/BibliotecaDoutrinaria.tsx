@@ -175,12 +175,17 @@ export default function BibliotecaDoutrinaria() {
                   <TableCell><Badge variant="secondary" className="capitalize">{m.tema}</Badge></TableCell>
                   <TableCell><Badge variant={m.usar_na_ia ? "default" : "secondary"}>{m.usar_na_ia ? "Sim" : "Não"}</Badge></TableCell>
                   <TableCell className="text-right">
-                    {isAdmin && (
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </div>
-                    )}
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setRelacoesMaterial(m)} title="Associações com queixas/tratamentos">
+                        <Link2 className="h-4 w-4" />
+                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(m)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
