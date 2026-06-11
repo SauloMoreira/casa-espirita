@@ -83,6 +83,7 @@ export function PhotoUpload({ currentUrl, onUrlChange, folder }: PhotoUploadProp
       if (!uid) {
         toast({ title: "Sessão expirada", description: "Faça login novamente para enviar a foto.", variant: "destructive" });
         setPreview(currentUrl);
+        setUploading(false);
         return;
       }
       const path = `${uid}/${folder}/${crypto.randomUUID()}.${ext}`;
