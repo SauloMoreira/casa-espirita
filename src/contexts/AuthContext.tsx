@@ -70,28 +70,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
         }),
       ]);
-      if (roleRes.ok) {
-        const rows = await roleRes.json();
-        const list = (rows ?? []).map((r: any) => r.role as AppRole);
-        setRoles(list);
-        // Master holds both 'administrador_master' and 'admin'; collapse any
-        // administrative role to 'admin' so existing route guards keep working.
-        if (list.includes("administrador_master") || list.includes("admin")) {
-          setRole("admin");
-        } else {
-          setRole((list[0] as AppRole) ?? "assistido");
-        }
-      } else {
+      // Fail-closed: if the role read itself fails we MUST NOT grant any access.
+      // Treat it as unresolved (no role) rather than defaulting to "assistido".
+      if (!roleRes.ok) {
         setRoles([]);
-        setRole("assistido");
+        setRole(null);
+        setRolesResolved(false);
+        return;
+      }
+      const rows = await roleRes.json();
+      const list = (rows ?? []).map((r: any) => r.role as AppRole);
+      setRoles(list);
+      // Master holds both 'administrador_master' and 'admin'; collapse any
+      // administrative role to 'admin' so existing route guards keep working.
+      if (list.includes("administrador_master") || list.includes("admin")) {
+        setRole("admin");
+      } else {
+        setRole((list[0] as AppRole) ?? "assistido");
       }
       if (profileRes.ok) {
-        const rows = await profileRes.json();
-        setProfile(rows?.[0] ?? null);
+        const profileRows = await profileRes.json();
+        setProfile(profileRows?.[0] ?? null);
       }
+      // Role read succeeded → authorization is now validly resolved.
+      setRolesResolved(true);
     } catch {
+      // Network/parse failure: stay fail-closed (no permissive fallback).
       setRoles([]);
-      setRole("assistido");
+      setRole(null);
+      setRolesResolved(false);
     }
   };
 
