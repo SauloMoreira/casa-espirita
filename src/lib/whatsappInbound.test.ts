@@ -6,7 +6,7 @@ import {
   resolverDataAlvo, detectarAtividade, montarRespostaExcecao,
   ehConversacional, montarRespostaConversacional, jaSaudadoRecentemente,
   gerarRespostaConversacional, escolherFrase, SAUDACAO_SUFIXOS, PONTE_FRASES,
-
+  extrairSaudacaoDoTexto,
 } from "./whatsappInbound";
 
 describe("whatsappInbound — camada conversacional básica", () => {
