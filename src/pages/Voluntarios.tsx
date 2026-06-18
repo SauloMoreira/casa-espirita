@@ -89,6 +89,16 @@ export default function Voluntarios() {
           onInactivate={(motivo) => v.deleteTarget && v.handleInactivate(v.deleteTarget, motivo)}
         />
       )}
+
+      {v.termoFlowVoluntario && (
+        <TermoVoluntarioDialog
+          open={v.termoFlowOpen}
+          onOpenChange={v.setTermoFlowOpen}
+          voluntario={v.termoFlowVoluntario}
+          onOpenPrint={v.openTermoPrint}
+          onChanged={v.onTermoChanged}
+        />
+      )}
     </div>
   );
 }
