@@ -340,7 +340,7 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     const jaSaudado = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "oi" });
     expect(jaSaudado).not.toMatch(/Bom dia|Boa tarde|Boa noite/);
     expect(jaSaudado).not.toMatch(/Sou Daniel/);
-    expect(jaSaudado).toMatch(/[✨🌿🙏💙]/);
+    expect(jaSaudado).toMatch(/[✨🌿🙏💙]/u);
     // First contact greeting presents the persona Daniel/FER.
     expect(gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "boa tarde" }))
       .toMatch(/^Boa tarde! [✨🌿🙏] Sou Daniel, assistente virtual da FER\./);
@@ -349,7 +349,7 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
   it("acolhe no início e encerra com gentileza da casa", () => {
     expect(gerarRespostaConversacional("saudacao", { horaLocal: 20, texto: "boa noite" }))
       .toMatch(/^Boa noite! [✨🌿🙏] Sou Daniel/);
-    expect(gerarRespostaConversacional("encerramento", { texto: "era só isso" })).toMatch(/[🙏🌿💙]/);
+    expect(gerarRespostaConversacional("encerramento", { texto: "era só isso" })).toMatch(/[🙏🌿💙]/u);
   });
 
   it("responde perguntas de bem-estar de forma natural", () => {
@@ -361,7 +361,7 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     const pessoais = new Set<string>();
     for (const txt of ["obrigado", "muito obrigado", "valeu demais", "agradeço"]) {
       const r = gerarRespostaConversacional("agradecimento", { texto: txt });
-      const m = r.match(/[✨🌿🙏💙]/);
+      const m = r.match(/[✨🌿🙏💙]/u);
       if (m) pessoais.add(m[0]);
     }
     // O sistema não fica preso a um único emoji.
@@ -370,9 +370,9 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
 
   it("não repete o mesmo emoji da última resposta", () => {
     const primeiro = gerarRespostaConversacional("encerramento", { texto: "era só isso" });
-    const emojiAnt = primeiro.match(/[✨🌿🙏💙]/)?.[0] ?? null;
+    const emojiAnt = primeiro.match(/[✨🌿🙏💙]/u)?.[0] ?? null;
     const segundo = gerarRespostaConversacional("encerramento", { texto: "era só isso", ultimaResposta: primeiro });
-    const emojiNovo = segundo.match(/[✨🌿🙏💙]/)?.[0] ?? null;
+    const emojiNovo = segundo.match(/[✨🌿🙏💙]/u)?.[0] ?? null;
     expect(emojiNovo).not.toBe(emojiAnt);
   });
 
@@ -420,20 +420,20 @@ describe("whatsappInbound — retribuição gentil de saudação", () => {
 
   it("retribui bom dia mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "bom dia" });
-    expect(r).toMatch(/^Bom dia! /); expect(r).toMatch(/[✨🌿🙏]/);
+    expect(r).toMatch(/^Bom dia! /); expect(r).toMatch(/[✨🌿🙏]/u);
     expect(r).not.toMatch(/Sou Daniel/);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("retribui boa tarde mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 9, jaSaudado: true, texto: "boa tarde" });
-    expect(r).toMatch(/^Boa tarde! /); expect(r).toMatch(/[✨🌿🙏]/);
+    expect(r).toMatch(/^Boa tarde! /); expect(r).toMatch(/[✨🌿🙏]/u);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("retribui boa noite mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 9, jaSaudado: true, texto: "boa noite" });
-    expect(r).toMatch(/^Boa noite! /); expect(r).toMatch(/[✨🌿🙏]/);
+    expect(r).toMatch(/^Boa noite! /); expect(r).toMatch(/[✨🌿🙏]/u);
     expect(r).toMatch(/ajudar/i);
   });
 
@@ -442,6 +442,6 @@ describe("whatsappInbound — retribuição gentil de saudação", () => {
     expect(r).not.toMatch(/^Bom dia/);
     expect(r).not.toMatch(/^Boa tarde/);
     expect(r).not.toMatch(/^Boa noite/);
-    expect(r).toMatch(/[✨🌿🙏💙]/);
+    expect(r).toMatch(/[✨🌿🙏💙]/u);
   });
 });
