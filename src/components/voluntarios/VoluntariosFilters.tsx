@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { STATUS_LABELS, TIPOS_VOLUNTARIO, FILTER_TODOS } from "@/constants/voluntarios";
+import { STATUS_LABELS, TIPOS_VOLUNTARIO, FILTER_TODOS, TERMO_STATUS_LABELS } from "@/constants/voluntarios";
 import type { FuncaoVoluntariado, VoluntarioFilterState } from "@/types/voluntarios";
 
 interface Props {
