@@ -17,6 +17,7 @@ const base: ApprovalContext = {
   approverIsActiveMaster: true,
   alreadyDecidedBy: [],
   status: "pendente",
+  aptAdmins: 2,
 };
 
 describe("computeRequiredApprovals", () => {
@@ -47,6 +48,16 @@ describe("canApprove", () => {
     const r = canApprove({ ...base, approverId: "requester-1" });
     expect(r.allowed).toBe(false);
     expect(r.reason).toMatch(/solicitante/i);
+  });
+
+  it("bootstrap: sole administrator may approve their own request", () => {
+    const r = canApprove({
+      ...base,
+      approverId: "requester-1",
+      requiredApprovals: 1,
+      aptAdmins: 1,
+    });
+    expect(r.allowed).toBe(true);
   });
 
   it("blocks self-approval by the target", () => {

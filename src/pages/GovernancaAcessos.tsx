@@ -61,6 +61,7 @@ export default function GovernancaAcessos() {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [approvals, setApprovals] = useState<ApprovalRow[]>([]);
   const [activeMasters, setActiveMasters] = useState<number>(0);
+  const [aptAdmins, setAptAdmins] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   const [open, setOpen] = useState(false);
@@ -77,16 +78,24 @@ export default function GovernancaAcessos() {
   );
 
   const fetchAll = useCallback(async () => {
-    const [{ data: profs }, { data: reqs }, { data: apps }, { count: mastersCount }] = await Promise.all([
+    const [{ data: profs }, { data: reqs }, { data: apps }, { count: mastersCount }, { data: adminRoles }] = await Promise.all([
       supabase.from("profiles").select("user_id, nome_completo").eq("status", "ativo"),
       supabase.from("admin_promotion_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("admin_promotion_approvals").select("*"),
       supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "administrador_master"),
+      supabase.from("user_roles").select("user_id").eq("role", "admin"),
     ]);
+    const activeIds = new Set(((profs as ProfileLite[]) || []).map((p) => p.user_id));
+    const distinctActiveAdmins = new Set(
+      ((adminRoles as { user_id: string }[]) || [])
+        .map((r) => r.user_id)
+        .filter((id) => activeIds.has(id)),
+    );
     setProfiles((profs as ProfileLite[]) || []);
     setRequests((reqs as RequestRow[]) || []);
     setApprovals((apps as ApprovalRow[]) || []);
     setActiveMasters(mastersCount || 0);
+    setAptAdmins(distinctActiveAdmins.size);
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -237,10 +246,13 @@ export default function GovernancaAcessos() {
             <p className="text-sm text-muted-foreground py-4">Nenhuma solicitação pendente.</p>
           ) : open_requests.map((r) => {
             const decided = myDecision(r.id);
+            const soleAdmin = aptAdmins <= 1;
             const isRequester = r.requested_by === user?.id;
             const isTarget = r.target_user_id === user?.id;
             const needsMaster = r.required_approvals === 1 && !isMaster;
-            const blocked = !!decided || isRequester || isTarget || needsMaster;
+            // Bootstrap: a sole administrator may approve their own request.
+            const requesterBlocked = isRequester && !soleAdmin;
+            const blocked = !!decided || requesterBlocked || isTarget || needsMaster;
             const approvedCount = approvalsFor(r.id).filter((a) => a.decision === "aprovar").length;
             return (
               <div key={r.id} className="rounded-xl border p-4 space-y-2">
@@ -258,10 +270,15 @@ export default function GovernancaAcessos() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">{r.justificativa}</p>
+                {isRequester && soleAdmin && !decided && (
+                  <p className="text-xs text-muted-foreground italic">
+                    Você é o único administrador ativo — sua aprovação única é permitida e auditada.
+                  </p>
+                )}
                 {blocked && (
                   <p className="text-xs text-muted-foreground italic">
                     {decided ? "Você já registrou sua decisão." :
-                     isRequester ? "Você é o solicitante e não pode aprovar." :
+                     requesterBlocked ? "Você é o solicitante e não pode aprovar." :
                      isTarget ? "Você é o indicado e não pode aprovar." :
                      "Apenas o Administrador Master pode aprovar este fluxo excepcional."}
                   </p>
