@@ -26,10 +26,10 @@ export function normalizeRecoveryCode(code: string): string {
   return (code || "").replace(/[\s-]/g, "").toUpperCase();
 }
 
-/** A recovery code is 10 chars from an unambiguous base32-like alphabet. */
+/** A recovery code is 10 chars from the unambiguous alphabet (no I, L, O, 0, 1). */
 export function isValidRecoveryCodeFormat(code: string): boolean {
   const n = normalizeRecoveryCode(code);
-  return new RegExp(`^[A-Z2-9]{${RECOVERY_CODE_LENGTH}}$`).test(n);
+  return new RegExp(`^[A-HJKMNP-Z2-9]{${RECOVERY_CODE_LENGTH}}$`).test(n);
 }
 
 /** Present a normalized code as "XXXXX-XXXXX" for display/copy. */
