@@ -52,6 +52,7 @@ const MeusDocumentos = lazy(() => import("./pages/MeusDocumentos"));
 const CentralIA = lazy(() => import("./pages/CentralIA"));
 const Voluntarios = lazy(() => import("./pages/Voluntarios"));
 const FuncoesVoluntariado = lazy(() => import("./pages/FuncoesVoluntariado"));
+const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
 const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
