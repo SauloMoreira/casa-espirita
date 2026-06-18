@@ -41,10 +41,31 @@ export interface Handoff {
   conversa_id: string;
   motivo: string | null;
   classificado_por_ia: boolean;
+  origem: string;
   status: string;
   atendente_id: string | null;
   opened_at: string;
   closed_at: string | null;
+}
+
+export interface HandoffEnriquecido extends Handoff {
+  telefone: string | null;
+  assistido_id: string | null;
+  assistido_nome: string | null;
+  identificado: boolean;
+  ultima_mensagem: string | null;
+  ultimo_contato_em: string | null;
+  atendente_nome: string | null;
+}
+
+export interface MensagemConversa {
+  id: string;
+  direcao: "entrada" | "saida";
+  texto: string;
+  autor: "assistido" | "ia" | "humano" | "sistema";
+  status: string | null;
+  erro: string | null;
+  created_at: string;
 }
 
 /** Preferência do assistido logado (cria default se não existir). */
