@@ -5,6 +5,8 @@ import {
   montarRespostaTratamentoHoje, montarRespostaProximaSessao, formatarDataCurta,
   resolverDataAlvo, detectarAtividade, montarRespostaExcecao,
   ehConversacional, montarRespostaConversacional, jaSaudadoRecentemente,
+  gerarRespostaConversacional, escolherFrase, SAUDACAO_SUFIXOS, PONTE_FRASES,
+
 } from "./whatsappInbound";
 
 describe("whatsappInbound — camada conversacional básica", () => {
@@ -329,21 +331,50 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
   });
 
   it("resposta de ponte convida a continuar, sem repetir saudação", () => {
-    const r = montarRespostaConversacional("pedido_informacao");
-    expect(r).toMatch(/programação|programa/i);
+    const r = gerarRespostaConversacional("pedido_informacao", { texto: "queria uma informação" });
+    expect(r).toMatch(/disposição|ajudar|consultar|saber/i);
     expect(r).not.toMatch(/Bom dia|Boa tarde|Boa noite/);
   });
 
   it("não repete a saudação quando o usuário já foi saudado", () => {
-    const jaSaudado = montarRespostaConversacional("saudacao", 14, true);
-    expect(jaSaudado).not.toMatch(/Bom dia|Boa tarde|Boa noite|Seja bem-vindo/);
+    const jaSaudado = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "oi" });
+    expect(jaSaudado).not.toMatch(/Bom dia|Boa tarde|Boa noite/);
     expect(jaSaudado).toMatch(/🌿/);
-    expect(montarRespostaConversacional("saudacao", 14, false)).toMatch(/Boa tarde! 🌿 Seja bem-vindo/);
+    expect(gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "boa tarde" })).toMatch(/Boa tarde! 🌿/);
   });
 
   it("acolhe no início e encerra com gentileza da casa", () => {
-    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/Boa noite! 🌿 Seja bem-vindo/);
-    expect(montarRespostaConversacional("encerramento")).toMatch(/casa está à disposição/);
+    expect(gerarRespostaConversacional("saudacao", { horaLocal: 20, texto: "boa noite" })).toMatch(/Boa noite! 🌿/);
+    expect(gerarRespostaConversacional("encerramento", { texto: "era só isso" })).toMatch(/🌿/);
+  });
+
+  it("responde perguntas de bem-estar de forma natural", () => {
+    const r = gerarRespostaConversacional("saudacao", { texto: "tudo bem?" });
+    expect(r).toMatch(/Tudo (bem|ótimo)/);
+  });
+
+  it("varia a formulação conforme a mensagem (não é frase fixa)", () => {
+    const a = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "bom dia" });
+    const b = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "olá, bom dia" });
+    expect(a.startsWith("Bom dia! 🌿")).toBe(true);
+    expect(b.startsWith("Bom dia! 🌿")).toBe(true);
+    // Different inbound text can map to different valid formulations.
+    expect([a, b].every((s) => SAUDACAO_SUFIXOS.some((suf) => s.endsWith(suf)))).toBe(true);
+  });
+
+  it("anti-repetição: não repete verbatim a última resposta enviada", () => {
+    const lista = PONTE_FRASES;
+    for (let seed = 0; seed < 12; seed++) {
+      const escolhido = escolherFrase(lista, seed);
+      const proximo = escolherFrase(lista, seed, escolhido);
+      expect(proximo).not.toBe(escolhido);
+    }
+  });
+
+  it("anti-repetição na geração conversacional com ultimaResposta", () => {
+    const primeiro = gerarRespostaConversacional("agradecimento", { texto: "obrigado" });
+    const segundo = gerarRespostaConversacional("agradecimento", { texto: "obrigado", ultimaResposta: primeiro });
+    expect(segundo).not.toBe(primeiro);
   });
 
   it("jaSaudadoRecentemente detecta contato recente dentro da janela", () => {

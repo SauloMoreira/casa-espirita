@@ -327,39 +327,138 @@ export function montarRespostaProximaSessao(sessao: SessaoPessoal | null): strin
   return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
 }
 
+// ===================== GERAÇÃO CONVERSACIONAL =====================
+// The conversational layer is NOT a fixed string per intent. Each "modo" has a
+// controlled REPERTOIRE of valid formulations; a deterministic seed (derived
+// from the current message) picks one, and an anti-repetition rule avoids
+// returning the exact same text that was sent in the previous turn. Data and
+// decisions stay rigid; only the wording varies — naturally and within bounds.
+
+/** Time-of-day greeting prefix ("Bom dia"/"Boa tarde"/"Boa noite"/"Olá"). */
+export function saudacaoPorHora(horaLocal?: number): string {
+  if (typeof horaLocal !== "number") return "Olá";
+  if (horaLocal < 12) return "Bom dia";
+  if (horaLocal < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+// Suffixes appended to the time-of-day greeting on the FIRST contact.
+export const SAUDACAO_SUFIXOS = [
+  "Como posso te ajudar hoje?",
+  "Fico à disposição. Em que posso ajudar?",
+  "Se quiser, posso te ajudar com informações da casa, entrevistas ou tratamentos.",
+  "Seja bem-vindo(a). Como posso te ajudar?",
+];
+
+// Continued conversation (already greeted): keep flowing WITHOUT a new greeting.
+export const CONTINUACAO_FRASES = [
+  "Claro, posso te ajudar com isso. 🌿 Sobre o que você gostaria de saber?",
+  "Fico à disposição. 🌿 Em que posso ajudar?",
+  "Se quiser, posso te orientar por aqui. 🌿",
+  "Pode me dizer o que você gostaria de saber? 🌿",
+];
+
+// Well-being questions ("tudo bem?", "como vai?").
+export const BEM_ESTAR_TERMOS = ["tudo bem", "tudo bom", "como vai", "como voce esta", "como você está"];
+export const BEM_ESTAR_FRASES = [
+  "Tudo bem, sim. 🌿 E com você?",
+  "Tudo bem, graças a Deus. 🌿 Em que posso te ajudar?",
+  "Tudo ótimo por aqui. 🌿 Como posso te ajudar hoje?",
+];
+
+// Generic request for help / information (bridge).
+export const PONTE_FRASES = [
+  "Claro, fico à disposição. Sobre o que você gostaria de saber? 🌿",
+  "Posso ajudar, sim. Você gostaria de saber sobre programação, entrevistas ou tratamentos? 🌿",
+  "Com prazer. Pode me dizer qual informação deseja consultar? 🌿",
+  "Com prazer! Você gostaria de saber sobre a programação da casa, entrevistas ou tratamentos? 🌿",
+];
+
+// Thanks.
+export const AGRADECIMENTO_FRASES = [
+  "Disponha! 🌿 Fico à disposição se precisar de mais alguma informação.",
+  "Por nada! 🌿 Se precisar, é só me chamar.",
+  "Imagina! 🌿 Estou por aqui se precisar de mais alguma coisa.",
+];
+
+// Gentle closing.
+export const ENCERRAMENTO_FRASES = [
+  "Conte conosco. 🌿 Se precisar de mais alguma orientação, a casa está à disposição para te acolher.",
+  "Fico à disposição se precisar de mais alguma informação. 🌿",
+  "Se precisar, posso continuar te ajudando por aqui. 🌿",
+  "Conte conosco. 🌿",
+];
+
+/** Small, stable string hash used as a deterministic seed for variation. */
+export function hashTexto(s: string): number {
+  let h = 0;
+  const t = s || "";
+  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+  return h;
+}
+
 /**
- * Builds a warm, brief, human social reply for the conversational layer
- * (greeting / thanks / bridge / closing). Greetings adapt to the time of day
- * when `horaLocal` (0-23) is provided. When `jaSaudado` is true the user was
- * already greeted in this ongoing conversation, so an isolated greeting is NOT
- * repeated — the IA simply offers to continue helping. These replies never
- * trigger a handoff.
+ * Picks a phrase from a repertoire deterministically (seed) while avoiding the
+ * exact `evitar` text from the previous turn (anti-repetition). Controlled, not
+ * random: same seed → same phrase, unless it would repeat the last one.
+ */
+export function escolherFrase(lista: string[], seed: number, evitar?: string | null): string {
+  if (!lista || lista.length === 0) return "";
+  if (lista.length === 1) return lista[0];
+  let idx = ((seed % lista.length) + lista.length) % lista.length;
+  if (evitar != null && lista[idx] === evitar) idx = (idx + 1) % lista.length;
+  return lista[idx];
+}
+
+function ehBemEstar(texto?: string): boolean {
+  const txt = (texto || "").toLowerCase();
+  return BEM_ESTAR_TERMOS.some((t) => txt.includes(t));
+}
+
+export interface ConversaContexto {
+  horaLocal?: number;
+  /** True when the user was already greeted recently in this conversation. */
+  jaSaudado?: boolean;
+  /** The current inbound message (used as the variation seed). */
+  texto?: string;
+  /** The exact last reply we sent, to avoid repeating it verbatim. */
+  ultimaResposta?: string | null;
+}
+
+/**
+ * Generates a natural, human conversational reply for the social/bridge/closing
+ * layer. Returns the chosen text — it is NOT a single fixed string per intent.
+ * Honors anti-repetition and short context (greet only once per conversation).
+ */
+export function gerarRespostaConversacional(
+  intencao: Intencao,
+  ctx: ConversaContexto = {},
+): string {
+  const seed = hashTexto(ctx.texto || "") + (ctx.jaSaudado ? 1 : 0);
+  const evitar = ctx.ultimaResposta ?? null;
+
+  if (intencao === "agradecimento") return escolherFrase(AGRADECIMENTO_FRASES, seed, evitar);
+  if (intencao === "encerramento") return escolherFrase(ENCERRAMENTO_FRASES, seed, evitar);
+  if (intencao === "pedido_informacao") return escolherFrase(PONTE_FRASES, seed, evitar);
+
+  // saudacao
+  if (ehBemEstar(ctx.texto)) return escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+  // Already greeted: continue the dialog without repeating a greeting.
+  if (ctx.jaSaudado) return escolherFrase(CONTINUACAO_FRASES, seed, evitar);
+  const saudacao = saudacaoPorHora(ctx.horaLocal);
+  const candidatos = SAUDACAO_SUFIXOS.map((s) => `${saudacao}! 🌿 ${s}`);
+  return escolherFrase(candidatos, seed, evitar);
+}
+
+/**
+ * Backwards-compatible thin wrapper. Prefer {@link gerarRespostaConversacional}.
  */
 export function montarRespostaConversacional(
   intencao: Intencao,
   horaLocal?: number,
   jaSaudado?: boolean,
 ): string {
-  if (intencao === "agradecimento") {
-    return "Disponha! 🌿 Fico à disposição se precisar de mais alguma informação.";
-  }
-  if (intencao === "encerramento") {
-    return "Conte conosco. 🌿 Se precisar de mais alguma orientação, a casa está à disposição para te acolher.";
-  }
-  if (intencao === "pedido_informacao") {
-    return "Com prazer! Você gostaria de saber sobre a programação da casa, entrevistas ou tratamentos? 🌿";
-  }
-  // saudacao — don't repeat the greeting if we already greeted in this conversation.
-  if (jaSaudado) {
-    return "Claro, posso te ajudar com isso. 🌿 Sobre o que você gostaria de saber?";
-  }
-  let saudacao = "Olá";
-  if (typeof horaLocal === "number") {
-    if (horaLocal < 12) saudacao = "Bom dia";
-    else if (horaLocal < 18) saudacao = "Boa tarde";
-    else saudacao = "Boa noite";
-  }
-  return `${saudacao}! 🌿 Seja bem-vindo(a). Como posso te ajudar hoje?`;
+  return gerarRespostaConversacional(intencao, { horaLocal, jaSaudado });
 }
 
 /**
