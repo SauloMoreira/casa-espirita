@@ -108,13 +108,15 @@ Deno.serve(async (req) => {
       conversaId = novaConv!.id;
     }
 
-    // Log inbound
+    const intencao = classificar(texto);
+
+    // Log inbound (the classified intent is stored for the operations panel
+    // metrics — "principais intents" and "intents resolvidas pela IA").
     await admin.from("notificacoes_log").insert({
       fila_id: null, direcao: "entrada",
-      payload_recebido: { telefone, texto }, status: "recebido",
+      payload_recebido: { telefone, texto, intencao }, status: "recebido",
     });
 
-    const intencao = classificar(texto);
     let resposta: string | null = null;
     let handoff = false;
 
