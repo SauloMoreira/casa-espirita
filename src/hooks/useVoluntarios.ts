@@ -27,6 +27,8 @@ import {
   isCpfDuplicado,
   replaceVoluntarioFuncoes,
   saveVoluntario,
+  inactivateVoluntario,
+  reactivateVoluntario,
 } from "@/services/voluntarios/voluntariosService";
 import type {
   FuncaoVoluntariado,
