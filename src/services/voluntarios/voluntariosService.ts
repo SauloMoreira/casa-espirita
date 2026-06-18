@@ -138,3 +138,58 @@ export const checkVoluntarioDeletion = (id: string) =>
 
 export const deleteVoluntario = (id: string, motivo?: string | null) =>
   manageVoluntario("delete", id, motivo);
+
+// ---- Termo de Adesão flow ----
+
+const TERMO_BUCKET = "termos-voluntarios";
+
+export interface TermoActionResult {
+  success?: boolean;
+  message?: string;
+  error?: string;
+}
+
+type TermoAction = "gerar" | "assinar" | "validar" | "rejeitar";
+
+async function manageTermo(
+  action: TermoAction,
+  voluntarioId: string,
+  opts: { path?: string | null; nome?: string | null; motivo?: string | null } = {},
+): Promise<TermoActionResult> {
+  const { data, error } = await supabase.rpc("gerenciar_termo_voluntario", {
+    p_action: action,
+    p_voluntario_id: voluntarioId,
+    p_path: opts.path ?? null,
+    p_nome: opts.nome ?? null,
+    p_motivo: opts.motivo ?? null,
+  });
+  if (error) throw error;
+  return (data ?? {}) as TermoActionResult;
+}
+
+export const marcarTermoGerado = (id: string) => manageTermo("gerar", id);
+
+export const validarTermo = (id: string) => manageTermo("validar", id);
+
+export const rejeitarTermo = (id: string, motivo: string) =>
+  manageTermo("rejeitar", id, { motivo });
+
+export async function uploadTermoAssinado(
+  voluntarioId: string,
+  path: string,
+  file: File,
+): Promise<TermoActionResult> {
+  const { error: upErr } = await supabase.storage
+    .from(TERMO_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) throw upErr;
+  return manageTermo("assinar", voluntarioId, { path, nome: file.name });
+}
+
+export async function getTermoSignedUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(TERMO_BUCKET)
+    .createSignedUrl(path, 60 * 5);
+  if (error) throw error;
+  return data.signedUrl;
+}
