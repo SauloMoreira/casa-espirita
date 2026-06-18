@@ -458,6 +458,52 @@ export default function Usuarios() {
           targetUserName={resetTarget.profile?.nome_completo || resetTarget.user_id.substring(0, 8)}
         />
       )}
+
+      {deleteTarget && (
+        <DeleteUserDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          targetUserId={deleteTarget.user_id}
+          targetUserName={deleteTarget.profile?.nome_completo || deleteTarget.user_id.substring(0, 8)}
+          onDeleted={fetchUsers}
+          onInactivate={(motivo) => changeStatus(deleteTarget.user_id, "inativo", motivo)}
+        />
+      )}
+
+      <AlertDialog open={!!statusTarget} onOpenChange={(o) => !o && setStatusTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusTarget?.toStatus === "inativo" ? "Inativar usuário?" : "Reativar usuário?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusTarget?.toStatus === "inativo" ? (
+                <>
+                  O usuário <span className="font-medium text-foreground">{statusTarget?.user.profile?.nome_completo || ""}</span> perderá
+                  o acesso ao sistema, mas todo o histórico e os vínculos serão preservados. Esta é a ação recomendada e reversível.
+                </>
+              ) : (
+                <>
+                  O usuário <span className="font-medium text-foreground">{statusTarget?.user.profile?.nome_completo || ""}</span> voltará
+                  a ter acesso ao sistema.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={statusBusy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={statusBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                if (statusTarget) changeStatus(statusTarget.user.user_id, statusTarget.toStatus);
+              }}
+            >
+              {statusBusy ? "Processando..." : statusTarget?.toStatus === "inativo" ? "Inativar" : "Reativar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
