@@ -457,6 +457,20 @@ export function gerarRespostaConversacional(
 
   // saudacao
   if (ehBemEstar(ctx.texto)) return escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+
+  // If the user explicitly greets with "bom dia" / "boa tarde" / "boa noite",
+  // we greet back with the SAME phrase — polite and human, even mid-conversation.
+  const saudacaoUsuario = extrairSaudacaoDoTexto(ctx.texto);
+  if (saudacaoUsuario) {
+    const candidatos = [
+      `${saudacaoUsuario}! 🌿 Como posso te ajudar?`,
+      `${saudacaoUsuario}! 🌿 Em que posso ajudar?`,
+      `${saudacaoUsuario}! 🌿 Seja bem-vindo(a). Como posso te ajudar?`,
+      `${saudacaoUsuario}! 🌿 Fico à disposição. Como posso te ajudar?`,
+    ];
+    return escolherFrase(candidatos, seed, evitar);
+  }
+
   // Already greeted: continue the dialog without repeating a greeting.
   if (ctx.jaSaudado) return escolherFrase(CONTINUACAO_FRASES, seed, evitar);
   const saudacao = saudacaoPorHora(ctx.horaLocal);
