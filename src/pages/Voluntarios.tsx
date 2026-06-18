@@ -22,7 +22,7 @@ export default function Voluntarios() {
         voluntarios={v.paginated}
         onEdit={v.openEdit}
         onFicha={v.openFicha}
-        onTermo={v.openTermo}
+        onTermo={v.openTermoFlow}
         onInactivate={(vol) => {
           if (window.confirm(`Inativar o voluntário ${vol.nome_completo}? O histórico será preservado.`)) {
             v.handleInactivate(vol);
