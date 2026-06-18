@@ -56,13 +56,22 @@ export function AppLayout() {
             <h1 className="text-sm font-medium text-foreground truncate flex-1">
               {nomeFantasia || "Casa Espírita"} — Sistema de Gestão
             </h1>
-            <NotificationBell />
+            <div className="flex items-center gap-1">
+              <HelpButton variant="ghost" size="icon" />
+              <Button asChild variant="ghost" size="icon" aria-label="Central de Ajuda">
+                <Link to={ROUTES.ajuda}>
+                  <LifeBuoy className="h-4 w-4" />
+                </Link>
+              </Button>
+              <NotificationBell />
+            </div>
           </header>
           <main className={`flex-1 overflow-auto p-4 md:p-6 ${isAssistido ? "pb-24 md:pb-6" : ""}`}>
             <Outlet />
           </main>
         </div>
         {isAssistido && <AssistidoMobileNav />}
+        <OnboardingTour />
       </div>
     </SidebarProvider>
   );
