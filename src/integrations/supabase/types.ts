@@ -1647,6 +1647,7 @@ export type Database = {
           id: string
           status_conversa: Database["public"]["Enums"]["conversa_status"]
           telefone: string
+          ultima_mensagem: string | null
           ultimo_contato_em: string
           updated_at: string
         }
@@ -1658,6 +1659,7 @@ export type Database = {
           id?: string
           status_conversa?: Database["public"]["Enums"]["conversa_status"]
           telefone: string
+          ultima_mensagem?: string | null
           ultimo_contato_em?: string
           updated_at?: string
         }
@@ -1669,6 +1671,7 @@ export type Database = {
           id?: string
           status_conversa?: Database["public"]["Enums"]["conversa_status"]
           telefone?: string
+          ultima_mensagem?: string | null
           ultimo_contato_em?: string
           updated_at?: string
         }
@@ -1692,6 +1695,7 @@ export type Database = {
           id: string
           motivo: string | null
           opened_at: string
+          origem: string
           status: Database["public"]["Enums"]["handoff_status"]
           updated_at: string
         }
@@ -1704,6 +1708,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           opened_at?: string
+          origem?: string
           status?: Database["public"]["Enums"]["handoff_status"]
           updated_at?: string
         }
@@ -1716,6 +1721,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           opened_at?: string
+          origem?: string
           status?: Database["public"]["Enums"]["handoff_status"]
           updated_at?: string
         }

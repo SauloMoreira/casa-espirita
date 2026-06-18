@@ -9,9 +9,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
 import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
+import { AtendimentoDrawer } from "@/components/notificacoes/AtendimentoDrawer";
 import {
-  listFila, listConversas, listHandoffs, assumirHandoff, fecharHandoff, processarFila,
-  type FilaItem, type Conversa, type Handoff,
+  listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
+  type FilaItem, type Conversa, type HandoffEnriquecido,
 } from "@/services/notificacoes/notificacoesService";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,6 +29,10 @@ const HANDOFF_COLORS: Record<string, string> = {
   fechado: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
 
+const ORIGEM_LABEL: Record<string, string> = {
+  ia: "IA", regra: "Regra", manual: "Manual",
+};
+
 function dt(value?: string | null) {
   if (!value) return "—";
   return format(new Date(value), "dd/MM/yy HH:mm", { locale: ptBR });
@@ -38,15 +43,18 @@ export default function CentralNotificacoes() {
   const { toast } = useToast();
   const [fila, setFila] = useState<FilaItem[]>([]);
   const [conversas, setConversas] = useState<Conversa[]>([]);
-  const [handoffs, setHandoffs] = useState<Handoff[]>([]);
+  const [handoffs, setHandoffs] = useState<HandoffEnriquecido[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [selecionado, setSelecionado] = useState<HandoffEnriquecido | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [f, c, h] = await Promise.all([listFila(), listConversas(), listHandoffs()]);
+      const [f, c, h] = await Promise.all([listFila(), listConversas(), listHandoffsEnriquecidos()]);
       setFila(f); setConversas(c); setHandoffs(h);
+      setSelecionado((prev) => (prev ? h.find((x) => x.id === prev.id) ?? prev : prev));
     } catch (e: any) {
       toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
     } finally {
@@ -69,17 +77,32 @@ export default function CentralNotificacoes() {
     }
   };
 
-  const handleAssumir = async (h: Handoff) => {
-    if (!user) return;
-    await assumirHandoff(h.id, user.id);
-    toast({ title: "Atendimento assumido" });
-    load();
+  const abrirDetalhe = (h: HandoffEnriquecido) => {
+    setSelecionado(h);
+    setDrawerOpen(true);
   };
 
-  const handleFechar = async (h: Handoff) => {
-    await fecharHandoff(h.id, h.conversa_id);
-    toast({ title: "Atendimento encerrado" });
-    load();
+  const handleAssumir = async (h: HandoffEnriquecido) => {
+    if (!user) return;
+    try {
+      await assumirHandoff(h.id, user.id, h.conversa_id);
+      toast({ title: "Atendimento assumido" });
+      await load();
+      setSelecionado({ ...h, status: "em_atendimento", atendente_id: user.id });
+      setDrawerOpen(true);
+    } catch (e: any) {
+      toast({ title: "Erro ao assumir", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleFechar = async (h: HandoffEnriquecido) => {
+    try {
+      await fecharHandoff(h.id, h.conversa_id);
+      toast({ title: "Atendimento encerrado" });
+      load();
+    } catch (e: any) {
+      toast({ title: "Erro ao encerrar", description: e.message, variant: "destructive" });
+    }
   };
 
   const handoffsAbertos = handoffs.filter((h) => h.status !== "fechado").length;
@@ -174,18 +197,43 @@ export default function CentralNotificacoes() {
               ) : (
                 <div className="space-y-2">
                   {handoffs.map((h) => (
-                    <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm">
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${HANDOFF_COLORS[h.status] || ""}`}>{h.status}</span>
-                      <span className="font-medium">{h.motivo || "—"}</span>
-                      {h.classificado_por_ia && <Badge variant="secondary" className="text-[10px]">IA</Badge>}
-                      <span className="ml-auto text-xs text-muted-foreground">aberto: {dt(h.opened_at)}</span>
-                      {h.status === "aberto" && (
-                        <Button size="sm" variant="outline" onClick={() => handleAssumir(h)}>Assumir</Button>
+                    <button
+                      key={h.id}
+                      onClick={() => abrirDetalhe(h)}
+                      className="w-full text-left rounded-xl border p-3 text-sm hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${HANDOFF_COLORS[h.status] || ""}`}>{h.status}</span>
+                        <span className="font-medium">
+                          {h.identificado ? (h.assistido_nome || "Assistido") : "Não identificado"}
+                        </span>
+                        {h.identificado
+                          ? <Badge variant="secondary" className="text-[10px]">Identificado</Badge>
+                          : <Badge variant="outline" className="text-[10px]">Não identificado</Badge>}
+                        <Badge variant="outline" className="text-[10px]">{ORIGEM_LABEL[h.origem] || h.origem}</Badge>
+                        <span className="ml-auto text-xs text-muted-foreground">aberto: {dt(h.opened_at)}</span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>{h.telefone || "sem telefone"}</span>
+                        {h.atendente_nome && <span>· Atend.: {h.atendente_nome}</span>}
+                        <span>· Motivo: {h.motivo || "—"}</span>
+                      </div>
+                      {h.ultima_mensagem && (
+                        <p className="mt-1.5 text-xs text-foreground/80 line-clamp-2">
+                          <span className="text-muted-foreground">Última: </span>“{h.ultima_mensagem}”
+                          <span className="text-muted-foreground"> · {dt(h.ultimo_contato_em)}</span>
+                        </p>
                       )}
-                      {h.status !== "fechado" && (
-                        <Button size="sm" onClick={() => handleFechar(h)}>Encerrar</Button>
-                      )}
-                    </div>
+                      <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        {h.status === "aberto" && (
+                          <Button size="sm" variant="outline" onClick={() => handleAssumir(h)}>Assumir</Button>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => abrirDetalhe(h)}>Abrir conversa</Button>
+                        {h.status !== "fechado" && (
+                          <Button size="sm" onClick={() => handleFechar(h)}>Encerrar</Button>
+                        )}
+                      </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -193,6 +241,13 @@ export default function CentralNotificacoes() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AtendimentoDrawer
+        handoff={selecionado}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onChanged={load}
+      />
     </div>
   );
 }
