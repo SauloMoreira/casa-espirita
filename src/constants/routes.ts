@@ -43,6 +43,7 @@ export const ROUTES = {
   usuarios: "/usuarios",
   solicitacoesCadastro: "/solicitacoes-cadastro",
   governancaAcessos: "/governanca-acessos",
+  segurancaConta: "/seguranca",
   voluntarios: "/voluntarios",
   funcoesVoluntariado: "/funcoes-voluntariado",
 
