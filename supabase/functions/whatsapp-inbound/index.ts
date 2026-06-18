@@ -423,6 +423,38 @@ function detectarAtividade(texto: string): string | null {
   return null;
 }
 
+/** True when the message itself carries an explicit date reference. */
+function temDataExplicita(texto: string): boolean {
+  const txt = (texto || "").toLowerCase();
+  if (/hoje|amanha|amanhã|depois de amanha|depois de amanhã/.test(txt)) return true;
+  for (const nome of Object.keys(DIAS_SEMANA)) if (txt.includes(nome)) return true;
+  return false;
+}
+
+/**
+ * Detects any known activity name (from the DB) inside the message, so the IA
+ * recognizes activities like "Apometria" that aren't in the static public list.
+ * Longest names first to avoid partial shadowing.
+ */
+function detectarAtividadePorNome(texto: string, nomes: string[]): string | null {
+  const txt = (texto || "").toLowerCase();
+  const ordenados = [...nomes].sort((a, b) => (b?.length || 0) - (a?.length || 0));
+  for (const nome of ordenados) {
+    const n = (nome || "").toLowerCase().trim();
+    if (n.length >= 4 && txt.includes(n)) return nome;
+  }
+  return null;
+}
+
+/** Builds an AlvoTempo from an explicit ISO date (used to inherit conversation context). */
+function alvoFromIso(iso: string, baseIso: string): AlvoTempo {
+  const d = new Date(iso + "T12:00:00Z");
+  const base = new Date(baseIso + "T12:00:00Z");
+  const diff = Math.round((d.getTime() - base.getTime()) / 86400000);
+  const label = diff === 0 ? "hoje" : diff === 1 ? "amanhã" : diff === 2 ? "depois de amanhã" : fmtData(iso);
+  return { iso, diaSemana: d.getUTCDay(), label };
+}
+
 function hojeSaoPaulo(): { data: string; diaSemana: number } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
@@ -534,9 +566,35 @@ Deno.serve(async (req) => {
     let respostaErro: string | null = null;
     let fallbackMotivo: string | null = null;
     let respostaFonte: string | null = null;
+    let ctxData: string | null = null;
+    let ctxAtividade: string | null = null;
 
     try {
       intencao = classificar(texto);
+
+      // Dynamic activity names from DB (exceptions, standard schedule, treatment
+      // types) so the IA recognizes ANY named activity (e.g. "Apometria"), not
+      // just the fixed public list — and never gets "lost" on a follow-up.
+      let atividadeMencionada: string | null = null;
+      try {
+        const [excA, progA, tiposA] = await Promise.all([
+          admin.from("excecoes_operacionais").select("atividade").eq("ativo", true),
+          admin.from("programacao_padrao").select("atividade").eq("ativo", true),
+          admin.from("tipos_tratamento").select("nome"),
+        ]);
+        const set = new Set<string>();
+        for (const r of (excA.data || [])) if ((r as any).atividade) set.add((r as any).atividade);
+        for (const r of (progA.data || [])) if ((r as any).atividade) set.add((r as any).atividade);
+        for (const r of (tiposA.data || [])) if ((r as any).nome) set.add((r as any).nome);
+        atividadeMencionada = detectarAtividadePorNome(texto, [...set]);
+      } catch (_) { /* fall back to static detection */ }
+
+      // A named activity that wasn't already routed to a data intent is a
+      // schedule question — answer it instead of escalating to a human.
+      if (atividadeMencionada && (intencao === "complexo" || intencao === "pedido_informacao")) {
+        intencao = "programacao_publica";
+      }
+
 
       if (intencao === "saudacao" || intencao === "agradecimento"
           || intencao === "pedido_informacao" || intencao === "encerramento") {
@@ -646,8 +704,15 @@ Deno.serve(async (req) => {
         // (1) operational exceptions, (2) real public sessions,
         // (3) standard recurring schedule, (4) legacy fallback rule.
         const { data: baseIso } = hojeSaoPaulo();
-        const alvo = resolverDataAlvo(texto, baseIso);
-        const atividade = detectarAtividade(texto);
+        // Inherit the date from recent conversation context when the follow-up
+        // doesn't carry its own ("e a Apometria?" right after "amanhã ...").
+        let alvo = resolverDataAlvo(texto, baseIso);
+        if (!temDataExplicita(texto) && jaSaudado && convExist?.contexto_data) {
+          alvo = alvoFromIso(String(convExist.contexto_data), baseIso);
+        }
+        const atividade = detectarAtividade(texto) || atividadeMencionada;
+        ctxData = alvo.iso;
+        ctxAtividade = atividade;
 
         // 1) EXCEPTIONS registered for the requested date.
         // When a specific activity is named (e.g. "evangelhoterapia"), match it by
@@ -745,6 +810,15 @@ Deno.serve(async (req) => {
       handoffMotivo = fallbackMotivo;
       resposta = null;
     }
+
+    // Persist short conversational context (last date/activity) for follow-ups.
+    if (ctxData || ctxAtividade) {
+      await admin.from("whatsapp_conversas").update({
+        contexto_data: ctxData,
+        contexto_atividade: ctxAtividade,
+      }).eq("id", conversaId);
+    }
+
 
     // Log inbound with full audit context (identification + intent + fallback).
     await admin.from("notificacoes_log").insert({

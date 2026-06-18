@@ -1769,6 +1769,8 @@ export type Database = {
         Row: {
           assistido_id: string | null
           atendente_responsavel: string | null
+          contexto_atividade: string | null
+          contexto_data: string | null
           created_at: string
           em_handoff: boolean
           id: string
@@ -1784,6 +1786,8 @@ export type Database = {
         Insert: {
           assistido_id?: string | null
           atendente_responsavel?: string | null
+          contexto_atividade?: string | null
+          contexto_data?: string | null
           created_at?: string
           em_handoff?: boolean
           id?: string
@@ -1799,6 +1803,8 @@ export type Database = {
         Update: {
           assistido_id?: string | null
           atendente_responsavel?: string | null
+          contexto_atividade?: string | null
+          contexto_data?: string | null
           created_at?: string
           em_handoff?: boolean
           id?: string
