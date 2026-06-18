@@ -704,8 +704,15 @@ Deno.serve(async (req) => {
         // (1) operational exceptions, (2) real public sessions,
         // (3) standard recurring schedule, (4) legacy fallback rule.
         const { data: baseIso } = hojeSaoPaulo();
-        const alvo = resolverDataAlvo(texto, baseIso);
-        const atividade = detectarAtividade(texto);
+        // Inherit the date from recent conversation context when the follow-up
+        // doesn't carry its own ("e a Apometria?" right after "amanhã ...").
+        let alvo = resolverDataAlvo(texto, baseIso);
+        if (!temDataExplicita(texto) && jaSaudado && convExist?.contexto_data) {
+          alvo = alvoFromIso(String(convExist.contexto_data), baseIso);
+        }
+        const atividade = detectarAtividade(texto) || atividadeMencionada;
+        ctxData = alvo.iso;
+        ctxAtividade = atividade;
 
         // 1) EXCEPTIONS registered for the requested date.
         // When a specific activity is named (e.g. "evangelhoterapia"), match it by
