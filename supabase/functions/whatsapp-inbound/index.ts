@@ -699,6 +699,11 @@ Deno.serve(async (req) => {
       const send = await adapter.send(telefone, resposta);
       respostaOk = send.ok;
       respostaErro = send.error ?? null;
+      // Remember the exact reply we sent (short context) for anti-repetition.
+      if (send.ok) {
+        await admin.from("whatsapp_conversas")
+          .update({ ultima_resposta_ia: resposta }).eq("id", conversaId);
+      }
       await admin.from("notificacoes_log").insert({
         fila_id: null, direcao: "saida",
         payload_enviado: { telefone, mensagem: resposta, autor: handoff ? "sistema" : "ia" },
