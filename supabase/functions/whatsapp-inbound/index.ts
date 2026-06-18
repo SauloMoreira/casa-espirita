@@ -98,7 +98,47 @@ function montarRespostaProgramacao(itens: ItemProgramacao[]): string {
   return `Hoje temos:\n${linhas}\n🌿`;
 }
 
-/** Returns today's date (YYYY-MM-DD) and weekday (0=Sun..6=Sat) in America/Sao_Paulo. */
+interface SessaoPessoal { nome: string; data: string; horario?: string | null; status?: string | null; }
+
+function formatarDataCurta(d: string | null | undefined): string {
+  if (!d) return "";
+  const [y, m, day] = d.split("-");
+  if (!day) return d;
+  return `${day}/${m}`;
+}
+
+function montarRespostaTratamentoHoje(sessoes: SessaoPessoal[]): string {
+  const lista = (sessoes || []).filter((s) => s && s.nome);
+  const ativas = lista.filter((s) => !CANCELADO_STATUS.includes((s.status || "").toLowerCase()));
+  const canceladas = lista.filter((s) => CANCELADO_STATUS.includes((s.status || "").toLowerCase()));
+  if (ativas.length === 0 && canceladas.length > 0) {
+    const c = canceladas[0];
+    return `Hoje sua sessão de ${c.nome} consta como ${(c.status || "").toLowerCase()}. Em caso de dúvida, nossa equipe pode confirmar. 🌿`;
+  }
+  if (ativas.length === 0) return "Hoje você não tem tratamento agendado. 🌿";
+  if (ativas.length === 1) {
+    const s = ativas[0];
+    const hora = formatarHorario(s.horario);
+    return `Sim, hoje você tem ${s.nome}${hora ? " às " + hora : ""}. 🌿`;
+  }
+  const linhas = ativas
+    .map((s) => `• ${s.nome}${s.horario ? " às " + formatarHorario(s.horario) : ""}`)
+    .join("\n");
+  return `Hoje você tem:\n${linhas}\n🌿`;
+}
+
+function montarRespostaProximaSessao(sessao: SessaoPessoal | null): string {
+  if (!sessao || !sessao.nome) {
+    return "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar. 🌿";
+  }
+  const st = (sessao.status || "").toLowerCase();
+  const hora = formatarHorario(sessao.horario);
+  const data = formatarDataCurta(sessao.data);
+  if (CANCELADO_STATUS.includes(st)) {
+    return `Sua próxima sessão de ${sessao.nome} em ${data} consta como ${st}. Nossa equipe pode confirmar a nova data. 🌿`;
+  }
+  return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
+}
 function hojeSaoPaulo(): { data: string; diaSemana: number } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
