@@ -28,6 +28,7 @@ import {
   Landmark,
   Palette,
   QrCode,
+  UserPlus,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -105,6 +106,7 @@ const navGroups: NavGroup[] = [
     icon: Users,
     items: [
       { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin"] },
+      { title: "Solicitações de Cadastro", url: "/solicitacoes-cadastro", icon: UserPlus, roles: ["admin"] },
       { title: "Governança de Acessos", url: "/governanca-acessos", icon: ShieldCheck, roles: ["admin"] },
       { title: "Voluntários", url: "/voluntarios", icon: UserCheck, roles: ["admin"] },
       { title: "Funções Voluntariado", url: "/funcoes-voluntariado", icon: ClipboardCheck, roles: ["admin"] },

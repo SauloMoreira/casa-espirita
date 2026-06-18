@@ -15,12 +15,14 @@ import { ROUTES } from "@/constants";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import SolicitarCadastro from "./pages/SolicitarCadastro";
 
 // Lazy: route-split the heavier authenticated pages to lighten the initial bundle.
 const CheckinPublico = lazy(() => import("./pages/CheckinPublico"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const GovernancaAcessos = lazy(() => import("./pages/GovernancaAcessos"));
+const SolicitacoesCadastro = lazy(() => import("./pages/SolicitacoesCadastro"));
 const Tratamentos = lazy(() => import("./pages/Tratamentos"));
 const Assistidos = lazy(() => import("./pages/Assistidos"));
 const Entrevistas = lazy(() => import("./pages/Entrevistas"));
@@ -75,6 +77,7 @@ const App = () => (
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path={ROUTES.login} element={<Login />} />
+                <Route path={ROUTES.solicitarCadastro} element={<SolicitarCadastro />} />
                 <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
                 <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
                 <Route path={ROUTES.checkinPublico()} element={guard(<CheckinPublico />, "Check-in Público")} />
@@ -83,6 +86,7 @@ const App = () => (
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route path={ROUTES.dashboard} element={guard(<Dashboard />, "Dashboard")} />
                   <Route path={ROUTES.usuarios} element={<ProtectedRoute allowedRoles={["admin"]}><Usuarios /></ProtectedRoute>} />
+                  <Route path={ROUTES.solicitacoesCadastro} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<SolicitacoesCadastro />, "Solicitações de Cadastro")}</ProtectedRoute>} />
                   <Route path={ROUTES.governancaAcessos} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<GovernancaAcessos />, "Governança de Acessos")}</ProtectedRoute>} />
 
                   <Route path={ROUTES.tratamentos} element={<ProtectedRoute allowedRoles={["admin"]}><Tratamentos /></ProtectedRoute>} />

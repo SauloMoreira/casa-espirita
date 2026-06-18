@@ -6,6 +6,7 @@
 export const ROUTES = {
   // Public / auth
   login: "/login",
+  solicitarCadastro: "/cadastro",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   checkinPublico: (token = ":token") => `/checkin-publico/${token}`,
@@ -39,6 +40,7 @@ export const ROUTES = {
 
   // Pessoas
   usuarios: "/usuarios",
+  solicitacoesCadastro: "/solicitacoes-cadastro",
   governancaAcessos: "/governanca-acessos",
   voluntarios: "/voluntarios",
   funcoesVoluntariado: "/funcoes-voluntariado",

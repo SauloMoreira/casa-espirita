@@ -146,6 +146,18 @@ export default function Login() {
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+
+            <div className="mt-6 border-t border-border/60 pt-5 text-center">
+              <p className="text-sm text-muted-foreground">
+                Ainda não tem acesso?{" "}
+                <Link
+                  to="/cadastro"
+                  className="font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                >
+                  Solicitar cadastro
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
 
