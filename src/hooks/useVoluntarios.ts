@@ -93,6 +93,13 @@ export function useVoluntarios() {
     [],
   );
 
+  // Keep the open termo-flow dialog in sync with refreshed data.
+  useEffect(() => {
+    setTermoFlowVoluntario((prev) =>
+      prev ? voluntarios.find((v) => v.id === prev.id) ?? prev : prev,
+    );
+  }, [voluntarios]);
+
   const validate = useCallback((): boolean => {
     const e: VoluntarioFormErrors = {};
     const m = VOLUNTARIO_MESSAGES;
