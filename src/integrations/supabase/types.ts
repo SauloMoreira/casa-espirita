@@ -1924,6 +1924,10 @@ export type Database = {
         Returns: undefined
       }
       fn_normalize_phone: { Args: { p: string }; Returns: string }
+      gerenciar_voluntario: {
+        Args: { p_action: string; p_motivo?: string; p_voluntario_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
