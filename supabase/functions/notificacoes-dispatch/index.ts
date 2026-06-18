@@ -50,9 +50,10 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceRoleKey);
     const adapter = getAdapter({
-      EVOLUTION_API_URL: Deno.env.get("EVOLUTION_API_URL"),
-      EVOLUTION_API_KEY: Deno.env.get("EVOLUTION_API_KEY"),
-      EVOLUTION_INSTANCE: Deno.env.get("EVOLUTION_INSTANCE"),
+      ZAPI_INSTANCE_ID: Deno.env.get("ZAPI_INSTANCE_ID"),
+      ZAPI_INSTANCE_TOKEN: Deno.env.get("ZAPI_INSTANCE_TOKEN"),
+      ZAPI_BASE_URL: Deno.env.get("ZAPI_BASE_URL"),
+      ZAPI_CLIENT_TOKEN: Deno.env.get("ZAPI_CLIENT_TOKEN"),
     });
 
     const nowIso = new Date().toISOString();
