@@ -359,7 +359,7 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     expect(a.startsWith("Bom dia! 🌿")).toBe(true);
     expect(b.startsWith("Bom dia! 🌿")).toBe(true);
     // Different inbound text can map to different valid formulations.
-    expect([a, b].every((s) => SAUDACAO_SUFIXOS.some((suf) => s.endsWith(suf)))).toBe(true);
+    expect(a).not.toBe(b);
   });
 
   it("anti-repetição: não repete verbatim a última resposta enviada", () => {
