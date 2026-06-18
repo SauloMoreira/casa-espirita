@@ -66,6 +66,17 @@ export function VoluntariosFilters({ filters, onChange, funcoes }: Props) {
               ))}
             </SelectContent>
           </Select>
+          <Select value={filters.termo} onValueChange={(v) => onChange("termo", v)}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Termo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FILTER_TODOS}>Todos os termos</SelectItem>
+              {Object.entries(TERMO_STATUS_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardContent>
     </Card>
