@@ -37,6 +37,10 @@ export default function SegurancaConta() {
   const [disableCode, setDisableCode] = useState("");
   const [masterConfirm, setMasterConfirm] = useState(false);
 
+  // Master-only: administrative reset of another user's MFA.
+  const [profiles, setProfiles] = useState<{ user_id: string; nome_completo: string | null }[]>([]);
+  const [resetTarget, setResetTarget] = useState("");
+
   const loadStatus = useCallback(async () => {
     const { data } = await supabase.auth.mfa.listFactors();
     const verified = (data?.totp || []).some((f) => f.status === "verified");
