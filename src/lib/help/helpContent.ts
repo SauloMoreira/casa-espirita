@@ -186,18 +186,19 @@ export const HELP_ARTICLES: HelpArticle[] = [
     module: "presenca",
     roles: ["tarefeiro"],
     active: true,
-    summary: "Registro de presença e sessões públicas.",
-    tags: ["tarefeiro", "presença", "plantão"],
+    summary: "Presença, sessões públicas e agendamento de entrevistas.",
+    tags: ["tarefeiro", "presença", "plantão", "entrevista", "agenda"],
     body: [
       {
         heading: "Visão geral",
-        text: "O Tarefeiro registra presenças do plantão e apoia as sessões públicas.",
+        text: "O Tarefeiro registra presenças do plantão, apoia as sessões públicas e pode marcar (agendar) entrevistas fraternas para os assistidos.",
       },
       {
         heading: "O que você consegue fazer",
         bullets: [
           "Lançar presença dos assistidos no plantão",
           "Apoiar o check-in das sessões públicas",
+          "Agendar entrevistas e consultar a Agenda para ver a disponibilidade de horários",
         ],
       },
       {
@@ -206,11 +207,21 @@ export const HELP_ARTICLES: HelpArticle[] = [
           "Abra Presença e selecione o plantão do dia",
           "Marque os presentes e salve",
           "Para sessões públicas, use o QR do dia ou o registro manual",
+          "Para marcar entrevista: abra Agendar Entrevista, escolha o tipo, selecione o assistido, defina data e hora e salve",
         ],
       },
-      { heading: "Erros comuns", bullets: ["Marcar presença em dia/sessão errados", "Duplicar check-in público"] },
-      { heading: "Boas práticas", bullets: ["Confira o nome/foto do assistido antes de confirmar"] },
-      { note: "Relatórios de produtividade não são acessíveis ao tarefeiro. Dúvidas, fale com a coordenação." },
+      {
+        heading: "Agendar entrevista — quando e o que conferir",
+        bullets: [
+          "Marque a entrevista quando o assistido estiver apto (entrevista regular exige o mínimo de palestras; a tela só lista quem está apto)",
+          "Antes de salvar confira: assistido correto, tipo (Regular ou Livre) e data/hora sem conflito na Agenda",
+          "Use a Agenda para checar a disponibilidade de horários antes de confirmar",
+          "Você marca a entrevista, mas não a realiza: registrar a entrevista e designar tratamentos é da entrevista/coordenação",
+        ],
+      },
+      { heading: "Erros comuns", bullets: ["Marcar presença em dia/sessão errados", "Duplicar check-in público", "Agendar entrevista em horário já ocupado"] },
+      { heading: "Boas práticas", bullets: ["Confira o nome/foto do assistido antes de confirmar", "Na dúvida sobre aptidão ou horário, peça apoio à coordenação"] },
+      { note: "Relatórios de produtividade não são acessíveis ao tarefeiro. Parametrizações e regras estruturais da agenda continuam com coordenação/admin. Dúvidas, fale com a coordenação." },
     ],
   },
   {
