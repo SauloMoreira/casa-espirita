@@ -331,7 +331,7 @@ export function useVoluntarios() {
 
   useEffect(() => {
     setPage(1);
-  }, [filters.search, filters.status, filters.tipo, filters.funcao, pageSize]);
+  }, [filters.search, filters.status, filters.tipo, filters.funcao, filters.termo, pageSize]);
 
   const total = filtered.length;
   const paginated = useMemo(() => {
