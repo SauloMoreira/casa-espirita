@@ -420,27 +420,28 @@ describe("whatsappInbound — retribuição gentil de saudação", () => {
 
   it("retribui bom dia mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "bom dia" });
-    expect(r).toMatch(/^Bom dia! 🌿/);
+    expect(r).toMatch(/^Bom dia! [✨🌿🙏]/);
+    expect(r).not.toMatch(/Sou Daniel/);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("retribui boa tarde mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 9, jaSaudado: true, texto: "boa tarde" });
-    expect(r).toMatch(/^Boa tarde! 🌿/);
+    expect(r).toMatch(/^Boa tarde! [✨🌿🙏]/);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("retribui boa noite mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 9, jaSaudado: true, texto: "boa noite" });
-    expect(r).toMatch(/^Boa noite! 🌿/);
+    expect(r).toMatch(/^Boa noite! [✨🌿🙏]/);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("não retribui saudação de tempo para saudação genérica (oi)", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "oi" });
-    expect(r).not.toMatch(/^Bom dia! 🌿/);
-    expect(r).not.toMatch(/^Boa tarde! 🌿/);
-    expect(r).not.toMatch(/^Boa noite! 🌿/);
-    expect(r).toMatch(/🌿/);
+    expect(r).not.toMatch(/^Bom dia/);
+    expect(r).not.toMatch(/^Boa tarde/);
+    expect(r).not.toMatch(/^Boa noite/);
+    expect(r).toMatch(/[✨🌿🙏💙]/);
   });
 });
