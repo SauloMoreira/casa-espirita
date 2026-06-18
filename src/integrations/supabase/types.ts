@@ -1769,6 +1769,18 @@ export type Database = {
         Args: { p_fim: string; p_inicio: string }
         Returns: Json
       }
+      painel_whatsapp_v2: {
+        Args: {
+          p_assistido?: string
+          p_fim: string
+          p_inicio: string
+          p_optout?: boolean
+          p_resolucao?: string
+          p_status?: string
+          p_template?: string
+        }
+        Returns: Json
+      }
       registrar_presenca: {
         Args: {
           p_assistido_tratamento_id: string
