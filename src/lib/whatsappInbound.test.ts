@@ -41,12 +41,12 @@ describe("whatsappInbound — camada conversacional básica", () => {
     expect(classificarIntencao("bom dia, quando é minha próxima sessão?")).toBe("proxima_sessao");
   });
 
-  it("monta resposta social humana e breve, adaptada ao período do dia", () => {
-    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/Bom dia! 🌿/);
-    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/Boa tarde! 🌿/);
-    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/Boa noite! 🌿/);
-    expect(montarRespostaConversacional("saudacao")).toMatch(/Olá! 🌿/);
-    expect(montarRespostaConversacional("agradecimento")).toMatch(/Disponha! 🌿/);
+  it("monta resposta social humana, com persona Daniel/FER e período do dia", () => {
+    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel, assistente virtual da FER\./);
+    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/^Boa tarde! [✨🌿🙏] Sou Daniel/);
+    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/^Boa noite! [✨🌿🙏] Sou Daniel/);
+    expect(montarRespostaConversacional("saudacao")).toMatch(/^Olá! [✨🌿🙏] Sou Daniel/);
+    expect(montarRespostaConversacional("agradecimento")).toMatch(/^Disponha!/);
   });
 });
 
