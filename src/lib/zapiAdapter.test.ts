@@ -83,4 +83,25 @@ describe("ZApiAdapter", () => {
   it("getAdapter returns a Z-API adapter named 'zapi'", () => {
     expect(getAdapter(baseEnv).name).toBe("zapi");
   });
+
+  it("sanitizes a base url that wrongly includes the full path + /send-text", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messageId: "M" }) });
+    vi.stubGlobal("fetch", fetchSpy);
+    const a = new ZApiAdapter({
+      ZAPI_BASE_URL:
+        "https://api.z-api.io/instances/INST123/token/TOKEN456/send-text",
+    });
+    await a.send("5511999999999", "Olá");
+    // Must NOT produce a duplicated /send-text/send-text URL.
+    expect(fetchSpy.mock.calls[0][0]).toBe(
+      "https://api.z-api.io/instances/INST123/token/TOKEN456/send-text",
+    );
+  });
+
+  it("strips trailing slashes and endpoint segments from base url", () => {
+    expect(ZApiAdapter.sanitizeBaseUrl("https://api.z-api.io/")).toBe("https://api.z-api.io");
+    expect(ZApiAdapter.sanitizeBaseUrl("https://api.z-api.io/instances/A/token/B/send-text"))
+      .toBe("https://api.z-api.io/instances/A/token/B");
+    expect(ZApiAdapter.sanitizeBaseUrl(undefined)).toBe("https://api.z-api.io");
+  });
 });
