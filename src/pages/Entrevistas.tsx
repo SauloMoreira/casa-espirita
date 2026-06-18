@@ -164,18 +164,18 @@ export default function Entrevistas() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("entrevistas_fraternas").insert({
-      assistido_id: form.assistido_id,
-      entrevistador_id: user!.id,
-      data: form.data,
-      tipo_entrevista: form.tipo_entrevista,
-      observacoes: form.observacoes || null,
-      status: "agendada",
+    // Scheduling goes through a role-scoped security-definer RPC so that
+    // tarefeiros can create the interview and flag the assistido as
+    // "entrevista_agendada" without holding broad write access on assistidos.
+    const { error } = await supabase.rpc("agendar_entrevista_fraterna", {
+      _assistido_id: form.assistido_id,
+      _data: form.data,
+      _tipo: form.tipo_entrevista,
+      _observacoes: form.observacoes || "",
     });
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      await supabase.from("assistidos").update({ status: "entrevista_agendada" }).eq("id", form.assistido_id);
       toast({ title: "Entrevista agendada" });
       setAgendarOpen(false);
       setForm({ assistido_id: "", data: "", tipo_entrevista: "regular", observacoes: "" });
