@@ -269,6 +269,10 @@ export function montarRespostaProximaSessao(sessao: SessaoPessoal | null): strin
   return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
 }
 
+/** Warm, precise fallback shown to the user whenever a handoff is opened. */
+export const MENSAGEM_HANDOFF =
+  "Não consegui confirmar isso com segurança agora. Vou encaminhar para atendimento para te orientarmos corretamente. 🌿";
+
 export interface DecisaoFallback {
   handoff: boolean;
   origem: "ia" | "regra" | "manual";
