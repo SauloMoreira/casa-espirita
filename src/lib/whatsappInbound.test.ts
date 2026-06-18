@@ -38,7 +38,72 @@ describe("whatsappInbound — classificação de intenção", () => {
     expect(classificarIntencao("quais trabalhos públicos tem hoje?")).toBe("programacao_publica");
     expect(classificarIntencao("que horas começa a palestra?")).toBe("programacao_publica");
     expect(classificarIntencao("tem atendimento público hoje?")).toBe("programacao_publica");
+});
+
+describe("whatsappInbound — distinção entre pergunta pública e pessoal", () => {
+  it("classifica perguntas pessoais sobre tratamento de hoje", () => {
+    expect(classificarIntencao("tenho tratamento hoje?")).toBe("tratamento_hoje");
+    expect(classificarIntencao("tenho sessão hoje?")).toBe("tratamento_hoje");
+    expect(classificarIntencao("tenho atendimento hoje?")).toBe("tratamento_hoje");
   });
+
+  it("classifica perguntas pessoais sobre próxima sessão/tratamento", () => {
+    expect(classificarIntencao("qual meu próximo tratamento?")).toBe("proxima_sessao");
+    expect(classificarIntencao("quando é minha próxima sessão?")).toBe("proxima_sessao");
+    expect(classificarIntencao("quando é meu próximo atendimento?")).toBe("proxima_sessao");
+    expect(classificarIntencao("que horas é minha sessão?")).toBe("proxima_sessao");
+  });
+
+  it("classifica perguntas pessoais sobre entrevista", () => {
+    expect(classificarIntencao("tenho entrevista marcada?")).toBe("horario_entrevista");
+    expect(classificarIntencao("quando é minha entrevista?")).toBe("horario_entrevista");
+  });
+
+  it("perguntas públicas continuam públicas", () => {
+    expect(classificarIntencao("tem palestra hoje?")).toBe("programacao_publica");
+    expect(classificarIntencao("amanhã tem evangelhoterapia?")).toBe("programacao_publica");
+    expect(classificarIntencao("que horas é a palestra?")).toBe("programacao_publica");
+  });
+
+  it("marca corretamente intenções pessoais", () => {
+    expect(ehPerguntaPessoal("tratamento_hoje")).toBe(true);
+    expect(ehPerguntaPessoal("proxima_sessao")).toBe(true);
+    expect(ehPerguntaPessoal("horario_entrevista")).toBe(true);
+    expect(ehPerguntaPessoal("programacao_publica")).toBe(false);
+  });
+
+  it("perguntas pessoais exigem assistido identificado (handoff sem identificação)", () => {
+    expect(decidirHandoff("tratamento_hoje", { assistidoIdentificado: false, respostaGerada: false }).handoff).toBe(true);
+    expect(decidirHandoff("tratamento_hoje", { assistidoIdentificado: true, respostaGerada: true }).handoff).toBe(false);
+  });
+});
+
+describe("whatsappInbound — respostas pessoais com dados reais", () => {
+  it("responde tratamento de hoje a partir da agenda real", () => {
+    expect(montarRespostaTratamentoHoje([{ nome: "Passe", data: "2026-06-18", horario: "19:00", status: "agendado" }]))
+      .toMatch(/hoje você tem Passe às 19h/i);
+    expect(montarRespostaTratamentoHoje([])).toMatch(/não tem tratamento agendado/i);
+  });
+
+  it("considera exceção operacional (cancelamento) no tratamento de hoje", () => {
+    const r = montarRespostaTratamentoHoje([{ nome: "Passe", data: "2026-06-18", status: "cancelado" }]);
+    expect(r).toMatch(/cancelado/i);
+  });
+
+  it("responde próxima sessão real com nome e data", () => {
+    const r = montarRespostaProximaSessao({ nome: "Evangelhoterapia", data: "2026-06-25", horario: "20:00", status: "agendado" });
+    expect(r).toMatch(/Evangelhoterapia em 25\/06 às 20h/);
+  });
+
+  it("não inventa quando não há próxima sessão", () => {
+    expect(montarRespostaProximaSessao(null)).toMatch(/não encontrei sessões futuras/i);
+  });
+
+  it("formata data curta", () => {
+    expect(formatarDataCurta("2026-06-18")).toBe("18/06");
+    expect(formatarDataCurta(null)).toBe("");
+  });
+});
 });
 
 describe("whatsappInbound — programação pública (intent público, sem identificação)", () => {
