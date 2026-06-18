@@ -227,6 +227,131 @@ export async function vincularAssistidoConversa(conversaId: string, assistidoId:
   if (error) throw error;
 }
 
+// ===== Histórico e gestão de conversas (aba Conversas) =====
+
+export interface ConversaEnriquecida {
+  id: string;
+  telefone: string;
+  assistido_id: string | null;
+  assistido_nome: string | null;
+  identificado: boolean;
+  status_conversa: string;
+  em_handoff: boolean;
+  ultimo_contato_em: string | null;
+  ultima_mensagem: string | null;
+  total_mensagens: number;
+  ultimo_autor: "assistido" | "ia" | "humano" | "sistema" | null;
+  intencao: string | null;
+  respondida_ia: boolean;
+  handoff_motivo: string | null;
+  handoff_origem: string | null;
+  handoff_status: string | null;
+  handoff_atendente_id: string | null;
+  tem_handoff: boolean;
+  atendente_nome: string | null;
+  canal: string;
+}
+
+export interface ConversasFiltros {
+  inicio?: string | null;
+  fim?: string | null;
+  status?: string | null;
+  identificado?: boolean | null;
+  handoff?: boolean | null;
+  resolucaoIa?: boolean | null;
+  atendente?: string | null;
+  busca?: string | null;
+  pendente?: boolean | null;
+}
+
+export interface ConversasResultado {
+  autorizado: boolean;
+  total: number;
+  rows: ConversaEnriquecida[];
+}
+
+/** Lista o histórico de conversas WhatsApp enriquecido, com filtros server-side. */
+export async function listConversasEnriquecidas(filtros: ConversasFiltros = {}): Promise<ConversasResultado> {
+  const { data, error } = await (supabase.rpc as any)("painel_conversas", {
+    p_inicio: filtros.inicio ?? null,
+    p_fim: filtros.fim ?? null,
+    p_status: filtros.status ?? null,
+    p_identificado: filtros.identificado ?? null,
+    p_handoff: filtros.handoff ?? null,
+    p_resolucao_ia: filtros.resolucaoIa ?? null,
+    p_atendente: filtros.atendente ?? null,
+    p_busca: filtros.busca?.trim() ? filtros.busca.trim() : null,
+    p_pendente: filtros.pendente ?? null,
+    p_limit: 300,
+  });
+  if (error) throw error;
+  const r = (data as unknown as ConversasResultado) ?? { autorizado: false, total: 0, rows: [] };
+  return { autorizado: r.autorizado, total: r.total ?? 0, rows: r.rows ?? [] };
+}
+
+/** Assume uma conversa: define atendente e garante um handoff em atendimento. */
+export async function assumirConversa(conversaId: string, atendenteId: string): Promise<void> {
+  await supabase.from("whatsapp_conversas")
+    .update({ atendente_responsavel: atendenteId, em_handoff: true }).eq("id", conversaId);
+
+  const { data: aberto } = await supabase
+    .from("whatsapp_handoffs")
+    .select("id")
+    .eq("conversa_id", conversaId)
+    .neq("status", "fechado")
+    .order("opened_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (aberto?.id) {
+    await supabase.from("whatsapp_handoffs")
+      .update({ status: "em_atendimento", atendente_id: atendenteId }).eq("id", aberto.id);
+  } else {
+    await supabase.from("whatsapp_handoffs").insert({
+      conversa_id: conversaId,
+      motivo: "Intervenção manual do atendente",
+      origem: "manual",
+      classificado_por_ia: false,
+      status: "em_atendimento",
+      atendente_id: atendenteId,
+    });
+  }
+}
+
+/** Encerra a conversa e fecha eventuais handoffs abertos. */
+export async function encerrarConversa(conversaId: string): Promise<void> {
+  await supabase.from("whatsapp_handoffs")
+    .update({ status: "fechado", closed_at: new Date().toISOString() })
+    .eq("conversa_id", conversaId).neq("status", "fechado");
+  const { error } = await supabase.from("whatsapp_conversas")
+    .update({ em_handoff: false, status_conversa: "encerrada" }).eq("id", conversaId);
+  if (error) throw error;
+}
+
+/** Reabre uma conversa encerrada. */
+export async function reabrirConversa(conversaId: string): Promise<void> {
+  const { error } = await supabase.from("whatsapp_conversas")
+    .update({ status_conversa: "ativa" }).eq("id", conversaId);
+  if (error) throw error;
+}
+
+/** Atualiza o status da conversa (ativa/encerrada). */
+export async function atualizarStatusConversa(conversaId: string, status: "ativa" | "encerrada"): Promise<void> {
+  const { error } = await supabase.from("whatsapp_conversas")
+    .update({ status_conversa: status }).eq("id", conversaId);
+  if (error) throw error;
+}
+
+/** Marca/desmarca a conversa como revisada para fins de governança. */
+export async function marcarConversaRevisada(conversaId: string, atendenteId: string, revisada: boolean): Promise<void> {
+  const { error } = await supabase.from("whatsapp_conversas")
+    .update({
+      revisada_em: revisada ? new Date().toISOString() : null,
+      revisada_por: revisada ? atendenteId : null,
+    } as any).eq("id", conversaId);
+  if (error) throw error;
+}
+
 /** Envia uma resposta manual do atendente via Z-API (edge function autenticada). */
 export async function responderConversa(conversaId: string, mensagem: string): Promise<{ ok: boolean; erro: string | null }> {
   const { data, error } = await supabase.functions.invoke("whatsapp-responder", {
