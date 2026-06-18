@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
-  const { session, role, roles, profile, loading, signOut, mfaPending } = useAuth();
+  const { session, role, roles, profile, loading, rolesResolved, signOut, mfaPending } = useAuth();
   const location = useLocation();
 
   // Accounts that are not active lose access immediately:
