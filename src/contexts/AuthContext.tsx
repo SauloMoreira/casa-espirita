@@ -22,6 +22,11 @@ interface AuthContextType {
   isMaster: boolean;
   profile: UserProfile | null;
   loading: boolean;
+  /** True when the account has a verified second factor but the current session
+   *  is still aal1 — i.e. the TOTP step must be completed before access. */
+  mfaPending: boolean;
+  /** Re-evaluate the assurance level (call after completing/disabling MFA). */
+  refreshMfa: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -41,6 +46,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mfaPending, setMfaPending] = useState(false);
+
+  const refreshMfa = async () => {
+    try {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      setMfaPending(data?.currentLevel === "aal1" && data?.nextLevel === "aal2");
+    } catch {
+      setMfaPending(false);
+    }
+  };
 
   const fetchRoleAndProfile = async (userId: string, accessToken: string) => {
     try {
@@ -84,8 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         if (session?.user && session.access_token) {
           await fetchRoleAndProfile(session.user.id, session.access_token);
+          // Defer AAL lookup to avoid deadlocks inside the auth callback.
+          setTimeout(() => { refreshMfa(); }, 0);
         } else {
           setRole(null);
+          setMfaPending(false);
         }
         setLoading(false);
       }
@@ -96,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.user && session.access_token) {
         fetchRoleAndProfile(session.user.id, session.access_token);
+        refreshMfa();
       } else {
         setLoading(false);
       }
@@ -114,12 +133,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole(null);
     setRoles([]);
     setProfile(null);
+    setMfaPending(false);
   };
 
   const isMaster = roles.includes("administrador_master");
 
   return (
-    <AuthContext.Provider value={{ session, user, role, roles, isMaster, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, role, roles, isMaster, profile, loading, mfaPending, refreshMfa, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

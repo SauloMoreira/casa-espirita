@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
-  const { session, role, roles, profile, loading, signOut } = useAuth();
+  const { session, role, roles, profile, loading, signOut, mfaPending } = useAuth();
   const location = useLocation();
 
   // Accounts that are not active lose access immediately:
@@ -38,6 +38,12 @@ export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   // Force temporary-password users to change it before anything else.
   if (profile?.senha_temporaria && location.pathname !== "/reset-password") {
     return <Navigate to="/reset-password" replace />;
+  }
+
+  // Second factor pending: the account has a verified MFA factor but the session
+  // is still aal1. Force the TOTP step before any protected content renders.
+  if (mfaPending && location.pathname !== "/mfa-verify") {
+    return <Navigate to="/mfa-verify" replace />;
   }
 
   // Fail-closed: a route that requires roles must NEVER render until a
