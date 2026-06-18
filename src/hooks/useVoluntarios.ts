@@ -29,6 +29,7 @@ import {
   saveVoluntario,
   inactivateVoluntario,
   reactivateVoluntario,
+  marcarTermoGerado,
 } from "@/services/voluntarios/voluntariosService";
 import type {
   FuncaoVoluntariado,
@@ -53,6 +54,7 @@ export function useVoluntarios() {
     status: FILTER_TODOS,
     tipo: FILTER_TODOS,
     funcao: FILTER_TODOS,
+    termo: FILTER_TODOS,
   });
 
   const [open, setOpen] = useState(false);
@@ -64,6 +66,9 @@ export function useVoluntarios() {
   const [termoOpen, setTermoOpen] = useState(false);
   const [fichaOpen, setFichaOpen] = useState(false);
   const [selectedVoluntario, setSelectedVoluntario] = useState<VoluntarioListItem | null>(null);
+
+  const [termoFlowOpen, setTermoFlowOpen] = useState(false);
+  const [termoFlowVoluntario, setTermoFlowVoluntario] = useState<VoluntarioListItem | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<VoluntarioListItem | null>(null);
@@ -88,6 +93,13 @@ export function useVoluntarios() {
       setFilters((prev) => ({ ...prev, [key]: value })),
     [],
   );
+
+  // Keep the open termo-flow dialog in sync with refreshed data.
+  useEffect(() => {
+    setTermoFlowVoluntario((prev) =>
+      prev ? voluntarios.find((v) => v.id === prev.id) ?? prev : prev,
+    );
+  }, [voluntarios]);
 
   const validate = useCallback((): boolean => {
     const e: VoluntarioFormErrors = {};
@@ -216,6 +228,29 @@ export function useVoluntarios() {
     setTermoOpen(true);
   }, []);
 
+  // Opens the full termo-flow dialog (status, upload, validate/reject, view).
+  const openTermoFlow = useCallback((v: VoluntarioListItem) => {
+    setTermoFlowVoluntario(v);
+    setTermoFlowOpen(true);
+  }, []);
+
+  // From inside the flow: open the printable filled termo and mark it generated.
+  const openTermoPrint = useCallback(async () => {
+    if (!termoFlowVoluntario) return;
+    setSelectedVoluntario(termoFlowVoluntario);
+    setTermoOpen(true);
+    try {
+      const res = await marcarTermoGerado(termoFlowVoluntario.id);
+      if (!res?.error) await reloadVoluntarios();
+    } catch {
+      /* generation marking is best-effort; printing still works */
+    }
+  }, [termoFlowVoluntario, reloadVoluntarios]);
+
+  const onTermoChanged = useCallback(async () => {
+    await reloadVoluntarios();
+  }, [reloadVoluntarios]);
+
   const handleInactivate = useCallback(
     async (v: VoluntarioListItem, motivo?: string | null) => {
       try {
@@ -284,7 +319,9 @@ export function useVoluntarios() {
       const matchesFuncao =
         filters.funcao === FILTER_TODOS ||
         (voluntarioFuncoesMap[v.id] || []).includes(filters.funcao);
-      return matchesSearch && matchesStatus && matchesTipo && matchesFuncao;
+      const matchesTermo =
+        filters.termo === FILTER_TODOS || (v.termo_status || "nao_gerado") === filters.termo;
+      return matchesSearch && matchesStatus && matchesTipo && matchesFuncao && matchesTermo;
     });
   }, [voluntarios, filters, voluntarioFuncoesMap]);
 
@@ -294,7 +331,7 @@ export function useVoluntarios() {
 
   useEffect(() => {
     setPage(1);
-  }, [filters.search, filters.status, filters.tipo, filters.funcao, pageSize]);
+  }, [filters.search, filters.status, filters.tipo, filters.funcao, filters.termo, pageSize]);
 
   const total = filtered.length;
   const paginated = useMemo(() => {
@@ -358,6 +395,13 @@ export function useVoluntarios() {
     selectedVoluntario,
     openFicha,
     openTermo,
+    // termo flow
+    termoFlowOpen,
+    setTermoFlowOpen,
+    termoFlowVoluntario,
+    openTermoFlow,
+    openTermoPrint,
+    onTermoChanged,
     // lifecycle
     handleInactivate,
     handleReactivate,

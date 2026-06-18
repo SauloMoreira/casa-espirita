@@ -17,6 +17,39 @@ export const STATUS_COLORS: Record<string, string> = {
 
 export const TIPOS_VOLUNTARIO = ["Médium", "Tarefeiro"];
 
+/** Termo de Adesão lifecycle status. */
+export const TERMO_STATUS = {
+  NAO_GERADO: "nao_gerado",
+  GERADO: "gerado",
+  ASSINADO_ENVIADO: "assinado_enviado",
+  VALIDADO: "validado",
+  REJEITADO: "rejeitado",
+} as const;
+
+export const TERMO_STATUS_LABELS: Record<string, string> = {
+  nao_gerado: "Não gerado",
+  gerado: "Pendente de assinatura",
+  assinado_enviado: "Assinado enviado",
+  validado: "Validado",
+  rejeitado: "Rejeitado",
+};
+
+export const TERMO_STATUS_COLORS: Record<string, string> = {
+  nao_gerado: "bg-gray-100 text-gray-700",
+  gerado: "bg-amber-100 text-amber-800",
+  assinado_enviado: "bg-blue-100 text-blue-800",
+  validado: "bg-green-100 text-green-800",
+  rejeitado: "bg-red-100 text-red-800",
+};
+
+/** Signed-term upload constraints. */
+export const TERMO_UPLOAD = {
+  maxBytes: 15 * 1024 * 1024, // 15MB
+  accepted: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+  acceptAttr: "application/pdf,image/jpeg,image/png,image/webp",
+} as const;
+
+
 export const FILTER_TODOS = "todos";
 
 export const VOLUNTARIO_MESSAGES = {

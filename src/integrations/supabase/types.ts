@@ -1724,6 +1724,15 @@ export type Database = {
           observacoes: string | null
           rg: string | null
           status: string
+          termo_assinado_em: string | null
+          termo_assinado_nome: string | null
+          termo_assinado_path: string | null
+          termo_gerado_em: string | null
+          termo_gerado_por: string | null
+          termo_rejeitado_motivo: string | null
+          termo_status: string
+          termo_validado_em: string | null
+          termo_validado_por: string | null
           tipos_voluntario: string[]
           updated_at: string
         }
@@ -1751,6 +1760,15 @@ export type Database = {
           observacoes?: string | null
           rg?: string | null
           status?: string
+          termo_assinado_em?: string | null
+          termo_assinado_nome?: string | null
+          termo_assinado_path?: string | null
+          termo_gerado_em?: string | null
+          termo_gerado_por?: string | null
+          termo_rejeitado_motivo?: string | null
+          termo_status?: string
+          termo_validado_em?: string | null
+          termo_validado_por?: string | null
           tipos_voluntario?: string[]
           updated_at?: string
         }
@@ -1778,6 +1796,15 @@ export type Database = {
           observacoes?: string | null
           rg?: string | null
           status?: string
+          termo_assinado_em?: string | null
+          termo_assinado_nome?: string | null
+          termo_assinado_path?: string | null
+          termo_gerado_em?: string | null
+          termo_gerado_por?: string | null
+          termo_rejeitado_motivo?: string | null
+          termo_status?: string
+          termo_validado_em?: string | null
+          termo_validado_por?: string | null
           tipos_voluntario?: string[]
           updated_at?: string
         }
@@ -1924,6 +1951,16 @@ export type Database = {
         Returns: undefined
       }
       fn_normalize_phone: { Args: { p: string }; Returns: string }
+      gerenciar_termo_voluntario: {
+        Args: {
+          p_action: string
+          p_motivo?: string
+          p_nome?: string
+          p_path?: string
+          p_voluntario_id: string
+        }
+        Returns: Json
+      }
       gerenciar_voluntario: {
         Args: { p_action: string; p_motivo?: string; p_voluntario_id: string }
         Returns: Json

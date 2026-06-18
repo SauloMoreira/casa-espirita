@@ -22,6 +22,7 @@ import {
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { VOLUNTARIO_MESSAGES } from "@/constants/voluntarios";
 import { VoluntarioStatusBadge } from "./VoluntarioStatusBadge";
+import { TermoStatusBadge } from "./TermoStatusBadge";
 import { isVoluntarioAtivo } from "@/lib/voluntarioManagement";
 import type { VoluntarioListItem } from "@/types/voluntarios";
 
@@ -49,6 +50,7 @@ export function VoluntariosList({
               <TableHead className="hidden md:table-cell">Celular</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Termo</TableHead>
               <TableHead className="hidden lg:table-cell">Ingresso</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -56,7 +58,7 @@ export function VoluntariosList({
           <TableBody>
             {voluntarios.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   {VOLUNTARIO_MESSAGES.emptyList}
                 </TableCell>
               </TableRow>
@@ -77,6 +79,9 @@ export function VoluntariosList({
                     </TableCell>
                     <TableCell>
                       <VoluntarioStatusBadge status={v.status} />
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <TermoStatusBadge status={v.termo_status} />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {v.data_ingresso_sistema

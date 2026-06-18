@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { STATUS_LABELS, TIPOS_VOLUNTARIO, FILTER_TODOS } from "@/constants/voluntarios";
+import { STATUS_LABELS, TIPOS_VOLUNTARIO, FILTER_TODOS, TERMO_STATUS_LABELS } from "@/constants/voluntarios";
 import type { FuncaoVoluntariado, VoluntarioFilterState } from "@/types/voluntarios";
 
 interface Props {
@@ -63,6 +63,17 @@ export function VoluntariosFilters({ filters, onChange, funcoes }: Props) {
                 <SelectItem key={f.id} value={f.id}>
                   {f.nome_funcao} ({f.tipo_voluntario})
                 </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filters.termo} onValueChange={(v) => onChange("termo", v)}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Termo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FILTER_TODOS}>Todos os termos</SelectItem>
+              {Object.entries(TERMO_STATUS_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
               ))}
             </SelectContent>
           </Select>

@@ -6,6 +6,7 @@ import { VoluntarioFormDialog } from "@/components/voluntarios/VoluntarioFormDia
 import { TermoAdesao } from "@/components/voluntarios/TermoAdesao";
 import { FichaVoluntario } from "@/components/voluntarios/FichaVoluntario";
 import { DeleteVoluntarioDialog } from "@/components/voluntarios/DeleteVoluntarioDialog";
+import { TermoVoluntarioDialog } from "@/components/voluntarios/TermoVoluntarioDialog";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export default function Voluntarios() {
@@ -21,7 +22,7 @@ export default function Voluntarios() {
         voluntarios={v.paginated}
         onEdit={v.openEdit}
         onFicha={v.openFicha}
-        onTermo={v.openTermo}
+        onTermo={v.openTermoFlow}
         onInactivate={(vol) => {
           if (window.confirm(`Inativar o voluntário ${vol.nome_completo}? O histórico será preservado.`)) {
             v.handleInactivate(vol);
@@ -86,6 +87,16 @@ export default function Voluntarios() {
           voluntarioNome={v.deleteTarget.nome_completo}
           onDeleted={v.onDeleted}
           onInactivate={(motivo) => v.deleteTarget && v.handleInactivate(v.deleteTarget, motivo)}
+        />
+      )}
+
+      {v.termoFlowVoluntario && (
+        <TermoVoluntarioDialog
+          open={v.termoFlowOpen}
+          onOpenChange={v.setTermoFlowOpen}
+          voluntario={v.termoFlowVoluntario}
+          onOpenPrint={v.openTermoPrint}
+          onChanged={v.onTermoChanged}
         />
       )}
     </div>
