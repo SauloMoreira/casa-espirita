@@ -7,11 +7,23 @@ const corsHeaders = {
 };
 
 type Intencao =
+  | "saudacao" | "agradecimento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
 const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
+
+// Basic conversational / social messages handled by a friendly layer BEFORE
+// business logic, so an isolated greeting/thanks never becomes a handoff.
+const SAUDACAO_TERMOS = [
+  "bom dia", "boa tarde", "boa noite", "ola", "olá", "oi", "oie", "opa",
+  "eai", "e ai", "e aí", "tudo bem", "tudo bom", "como vai", "saudacoes", "saudações",
+];
+const AGRADECIMENTO_TERMOS = [
+  "obrigado", "obrigada", "valeu", "vlw", "agradeço", "agradecido",
+  "agradecida", "muito obrigado", "muito obrigada", "ok", "okay", "certo", "blz", "beleza",
+];
 
 // Personal intents must win over public-schedule intents so any message using
 // personal markers is answered from the assistido's REAL data, not the generic
