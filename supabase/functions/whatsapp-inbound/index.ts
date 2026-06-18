@@ -8,7 +8,7 @@ const corsHeaders = {
 
 type Intencao =
   | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
-  | "onde_ver_app" | "opt_out" | "reativar" | "complexo";
+  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
 const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
@@ -16,6 +16,12 @@ const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "hor
 const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
   { intent: "opt_out", terms: ["parar", "cancelar mensagens", "nao quero", "não quero", "sair", "descadastr", "remover"] },
   { intent: "reativar", terms: ["voltar a receber", "reativar", "quero receber"] },
+  { intent: "programacao_publica", terms: [
+    "palestra", "evangelhoterapia", "evangelho terapia", "passe",
+    "trabalho publico", "trabalho público", "trabalhos publicos", "trabalhos públicos",
+    "atendimento publico", "atendimento público", "programacao", "programação",
+    "tem hoje", "tera hoje", "terá hoje", "tem culto", "abre hoje", "vai abrir",
+  ] },
   { intent: "proxima_sessao", terms: ["proxima sessao", "próxima sessão", "minha sessao", "quando e minha sessao", "quando é minha sessão"] },
   { intent: "horario_entrevista", terms: ["entrevista"] },
   { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
@@ -31,7 +37,13 @@ function classificar(msg: string): Intencao {
 }
 
 const AUTORESOLVIVEIS: Intencao[] = [
-  "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app", "opt_out", "reativar",
+  "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
+  "programacao_publica", "opt_out", "reativar",
+];
+
+// Intents that can only be answered automatically when we know who is asking.
+const PRECISA_ASSISTIDO: Intencao[] = [
+  "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
 ];
 
 function normalizePhone(p: string): string {
@@ -42,6 +54,45 @@ function resumo(texto: string, max = 160): string {
   const t = (texto || "").trim();
   return t.length > max ? t.slice(0, max - 1) + "…" : t;
 }
+
+function formatarHorario(h: string | null | undefined): string {
+  if (!h) return "";
+  const [hh, mm] = h.split(":");
+  if (mm && mm !== "00") return `${parseInt(hh, 10)}h${mm}`;
+  return `${parseInt(hh, 10)}h`;
+}
+
+interface ItemProgramacao { nome: string; horario?: string | null; }
+
+function montarRespostaProgramacao(itens: ItemProgramacao[]): string {
+  const lista = (itens || []).filter((i) => i && i.nome);
+  if (lista.length === 0) {
+    return "Hoje não encontrei programação pública agendada. Em caso de dúvida, nossa equipe pode ajudar. 🌿";
+  }
+  if (lista.length === 1) {
+    const i = lista[0];
+    const hora = formatarHorario(i.horario);
+    return `Sim, hoje temos ${i.nome}${hora ? " às " + hora : ""}. 🌿`;
+  }
+  const linhas = lista
+    .map((i) => `• ${i.nome}${i.horario ? " às " + formatarHorario(i.horario) : ""}`)
+    .join("\n");
+  return `Hoje temos:\n${linhas}\n🌿`;
+}
+
+/** Returns today's date (YYYY-MM-DD) and weekday (0=Sun..6=Sat) in America/Sao_Paulo. */
+function hojeSaoPaulo(): { data: string; diaSemana: number } {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+  });
+  const data = fmt.format(new Date());
+  const weekdayName = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", weekday: "short",
+  }).format(new Date());
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { data, diaSemana: map[weekdayName] ?? new Date().getDay() };
+}
+
 
 function fmtData(value: string, withTime = false): string {
   const d = new Date(value);
