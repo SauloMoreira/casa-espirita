@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
     const adapter = getAdapter(env);
 
-    const baseUrl = (env.ZAPI_BASE_URL || "https://api.z-api.io").replace(/\/+$/, "");
+    const baseUrl = ZApiAdapter.sanitizeBaseUrl(env.ZAPI_BASE_URL);
     const instanceRoot =
       /\/instances\/[^/]+\/token\/[^/]+/.test(baseUrl)
         ? baseUrl
