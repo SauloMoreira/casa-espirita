@@ -371,7 +371,7 @@ export function escolherEmoji(
   seed: number,
   evitar?: string | null,
 ): string {
-  const lista = EMOJI_PALETA[contexto];
+  const lista = EMOJI_PALETA[contexto] as readonly string[];
   if (!lista || lista.length === 0) return "";
   let idx = ((seed % lista.length) + lista.length) % lista.length;
   if (evitar != null && lista[idx] === evitar) idx = (idx + 1) % lista.length;
