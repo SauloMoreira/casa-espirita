@@ -46,6 +46,19 @@ export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
     return <Navigate to="/mfa-verify" replace />;
   }
 
+  // Fail-closed: with a live session, never render protected content until the
+  // role/profile resolution has actually SUCCEEDED. A read failure leaves
+  // rolesResolved=false, so we wait (showing a loader) instead of falling
+  // through to a permissive default.
+  if (!rolesResolved) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+
+
   // Fail-closed: a route that requires roles must NEVER render until a
   // valid role has been resolved AND the user holds one of the allowed roles.
   //
