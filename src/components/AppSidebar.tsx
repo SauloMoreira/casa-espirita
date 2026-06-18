@@ -135,6 +135,7 @@ const navGroups: NavGroup[] = [
 
 const roleLabels: Record<AppRole, string> = {
   admin: "Administrador",
+  administrador_master: "Administrador Master",
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
