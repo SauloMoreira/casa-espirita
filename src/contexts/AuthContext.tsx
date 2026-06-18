@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole((list[0] as AppRole) ?? "assistido");
       }
       if (profileRes.ok) {
-        const profileRows = await profileRes.json();
+        const profileRows = (await profileRes.json()) as UserProfile[] | null;
         setProfile(profileRows?.[0] ?? null);
       }
       // Role read succeeded → authorization is now validly resolved.
