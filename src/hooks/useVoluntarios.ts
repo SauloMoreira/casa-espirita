@@ -54,6 +54,7 @@ export function useVoluntarios() {
     status: FILTER_TODOS,
     tipo: FILTER_TODOS,
     funcao: FILTER_TODOS,
+    termo: FILTER_TODOS,
   });
 
   const [open, setOpen] = useState(false);
