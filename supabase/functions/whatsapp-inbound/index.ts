@@ -154,6 +154,14 @@ interface ConversaContexto {
   horaLocal?: number; jaSaudado?: boolean; texto?: string; ultimaResposta?: string | null;
 }
 
+function extrairSaudacaoDoTexto(texto: string): string | null {
+  const txt = (texto || "").toLowerCase();
+  if (txt.includes("bom dia")) return "Bom dia";
+  if (txt.includes("boa tarde")) return "Boa tarde";
+  if (txt.includes("boa noite")) return "Boa noite";
+  return null;
+}
+
 function gerarRespostaConversacional(intencao: Intencao, ctx: ConversaContexto = {}): string {
   const seed = hashTexto(ctx.texto || "") + (ctx.jaSaudado ? 1 : 0);
   const evitar = ctx.ultimaResposta ?? null;
