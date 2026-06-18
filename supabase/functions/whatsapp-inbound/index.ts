@@ -170,6 +170,20 @@ function gerarRespostaConversacional(intencao: Intencao, ctx: ConversaContexto =
   if (intencao === "pedido_informacao") return escolherFrase(PONTE_FRASES, seed, evitar);
   const txt = (ctx.texto || "").toLowerCase();
   if (BEM_ESTAR_TERMOS.some((t) => txt.includes(t))) return escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+
+  // If the user explicitly greets with "bom dia" / "boa tarde" / "boa noite",
+  // we greet back with the SAME phrase — polite and human, even mid-conversation.
+  const saudacaoUsuario = extrairSaudacaoDoTexto(ctx.texto);
+  if (saudacaoUsuario) {
+    const candidatos = [
+      `${saudacaoUsuario}! 🌿 Como posso te ajudar?`,
+      `${saudacaoUsuario}! 🌿 Em que posso ajudar?`,
+      `${saudacaoUsuario}! 🌿 Seja bem-vindo(a). Como posso te ajudar?`,
+      `${saudacaoUsuario}! 🌿 Fico à disposição. Como posso te ajudar?`,
+    ];
+    return escolherFrase(candidatos, seed, evitar);
+  }
+
   if (ctx.jaSaudado) return escolherFrase(CONTINUACAO_FRASES, seed, evitar);
   let saudacao = "Olá";
   if (typeof ctx.horaLocal === "number") {
