@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -16,7 +17,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Users as UsersIcon, Pencil, KeyRound, MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Plus, Search, Users as UsersIcon, Pencil, KeyRound, MoreVertical, UserX, UserCheck, Trash2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
