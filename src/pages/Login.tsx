@@ -5,9 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Heart, Eye, EyeOff } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Mail, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ferIcon from "@/assets/fer-icon.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -38,41 +39,74 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full gradient-primary mb-2">
-            <Heart className="h-7 w-7 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            Casa Espírita
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Sistema de Gestão de Tratamentos
-          </p>
-        </div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10">
+      {/* Soft serene background */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-background to-background" />
+        <div className="absolute -top-32 -right-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
+      </div>
 
-        <Card className="glass-card">
-          <CardHeader className="pb-4">
-            <h2 className="text-lg font-semibold text-foreground text-center">Entrar</h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="relative z-10 w-full max-w-md space-y-8">
+        {/* Brand header */}
+        <header className="text-center space-y-4">
+          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-3xl bg-card/70 shadow-lg ring-1 ring-border/60 backdrop-blur-sm">
+            <img
+              src={ferIcon}
+              alt="Tratamentos FER"
+              width={112}
+              height={112}
+              className="h-24 w-24 object-contain"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+              Tratamentos <span className="text-primary">FER</span>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Sistema de Gestão de Tratamentos e Acompanhamentos
+            </p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent/90">
+              Harmonia · Equilíbrio · Renovação
+            </p>
+          </div>
+        </header>
+
+        {/* Login card */}
+        <Card className="rounded-2xl border-border/60 bg-card/85 shadow-xl backdrop-blur-md">
+          <CardContent className="p-7 sm:p-8">
+            <div className="mb-6 text-center">
+              <h2 className="font-display text-xl font-semibold text-foreground">
+                Bem-vindo de volta
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Acesse sua conta para continuar
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    className="h-11 pl-10"
+                  />
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -81,31 +115,47 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
+                    className="h-11 pl-10 pr-10"
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Entrando..." : "Entrar"}
-              </Button>
-              <div className="text-center">
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                >
                   Esqueceu a senha?
                 </Link>
               </div>
+
+              <Button
+                type="submit"
+                size="lg"
+                className="h-12 w-full text-base font-semibold shadow-md transition-all hover:shadow-lg"
+                disabled={loading}
+              >
+                {loading ? "Entrando..." : "Entrar"}
+              </Button>
             </form>
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">
-          Acesso restrito. Contate o administrador para obter credenciais.
-        </p>
+        {/* Footer note */}
+        <div className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5 text-primary/70" />
+          <span>
+            Acesso restrito a usuários autorizados. Em caso de necessidade, contate a administração.
+          </span>
+        </div>
       </div>
     </div>
   );
