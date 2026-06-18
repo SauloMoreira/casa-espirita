@@ -28,7 +28,7 @@ export interface FileValidationResult {
 
 /** Validate a signed-term file by type and size. */
 export function validateTermoFile(file: { type: string; size: number }): FileValidationResult {
-  if (!TERMO_UPLOAD.accepted.includes(file.type)) {
+  if (!(TERMO_UPLOAD.accepted as readonly string[]).includes(file.type)) {
     return { ok: false, error: "Formato inválido. Envie um PDF ou imagem (JPG, PNG, WEBP)." };
   }
   if (file.size > TERMO_UPLOAD.maxBytes) {
