@@ -326,28 +326,52 @@ Deno.serve(async (req) => {
         }, { onConflict: "assistido_id" });
         resposta = "Pronto! Voltamos a enviar seus lembretes por aqui. 🌿";
       } else if (intencao === "tratamento_hoje" && assistido) {
-        // Personal question: does the assistido have a session TODAY? Uses the
-        // real agenda and honors operational exceptions via the session status.
-        const { data: hojeData } = hojeSaoPaulo();
-        const { data: sessoesHoje } = await admin
+        // Personal question about the assistido's own session on the requested
+        // day. Order: identify -> operational exceptions -> real agenda.
+        const { data: baseIso } = hojeSaoPaulo();
+        const alvo = resolverDataAlvo(texto, baseIso);
+        const { data: sessoesDia } = await admin
           .from("agenda_tratamentos_assistido")
-          .select("horario, status, tipos_tratamento ( nome )")
+          .select("horario, status, tratamento_id, tipos_tratamento ( nome )")
           .eq("assistido_id", assistido.id)
-          .eq("data_sessao", hojeData)
+          .eq("data_sessao", alvo.iso)
           .order("horario", { ascending: true });
-        const itensHoje: SessaoPessoal[] = (sessoesHoje || []).map((s: any) => ({
-          nome: s?.tipos_tratamento?.nome || "Tratamento",
-          data: hojeData,
-          horario: s?.horario ?? null,
-          status: s?.status ?? null,
-        }));
-        respostaFonte = "agenda_real_assistido";
-        resposta = montarRespostaTratamentoHoje(itensHoje);
+
+        const tratIds = [...new Set((sessoesDia || []).map((s: any) => s.tratamento_id).filter(Boolean))];
+        // Exceptions that affect those treatments on the requested date.
+        let excPorTrat: Record<string, any> = {};
+        if (tratIds.length > 0) {
+          const { data: excs } = await admin
+            .from("excecoes_operacionais")
+            .select("tratamento_id, atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado")
+            .eq("ativo", true)
+            .eq("data_excecao", alvo.iso)
+            .in("tratamento_id", tratIds);
+          for (const e of (excs || [])) if (e.tratamento_id) excPorTrat[e.tratamento_id] = e;
+        }
+
+        const itensDia: SessaoPessoal[] = (sessoesDia || []).map((s: any) => {
+          const ex = excPorTrat[s.tratamento_id];
+          return {
+            nome: s?.tipos_tratamento?.nome || ex?.atividade || "Tratamento",
+            data: alvo.iso,
+            horario: s?.horario ?? null,
+            status: ex ? ex.status : (s?.status ?? null),
+          };
+        });
+
+        const aplicouExcecao = Object.keys(excPorTrat).length > 0;
+        respostaFonte = aplicouExcecao ? "excecao_operacional" : "agenda_real_assistido";
+        // Prefer an admin-authored message when there is a single exception.
+        const exUnica = Object.values(excPorTrat)[0] as any;
+        resposta = (aplicouExcecao && exUnica?.mensagem_ia && Object.keys(excPorTrat).length === 1)
+          ? montarRespostaExcecao(exUnica, alvo.label)
+          : montarRespostaTratamentoHoje(itensDia, alvo.label);
       } else if (intencao === "proxima_sessao" && assistido) {
         const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin
           .from("agenda_tratamentos_assistido")
-          .select("data_sessao, horario, status, tipos_tratamento ( nome )")
+          .select("data_sessao, horario, status, tratamento_id, tipos_tratamento ( nome )")
           .eq("assistido_id", assistido.id)
           .neq("status", "realizado")
           .gte("data_sessao", hoje)
@@ -355,11 +379,22 @@ Deno.serve(async (req) => {
           .order("horario", { ascending: true })
           .limit(1).maybeSingle();
         respostaFonte = "agenda_real_assistido";
+        let statusFinal = sess?.status ?? null;
+        if (sess?.tratamento_id) {
+          const { data: ex } = await admin
+            .from("excecoes_operacionais")
+            .select("status, mensagem_ia")
+            .eq("ativo", true)
+            .eq("data_excecao", sess.data_sessao)
+            .eq("tratamento_id", sess.tratamento_id)
+            .maybeSingle();
+          if (ex) { statusFinal = ex.status; respostaFonte = "excecao_operacional"; }
+        }
         resposta = montarRespostaProximaSessao(sess ? {
           nome: (sess as any)?.tipos_tratamento?.nome || "Tratamento",
           data: sess.data_sessao,
           horario: sess.horario,
-          status: sess.status,
+          status: statusFinal,
         } : null);
       } else if (intencao === "horario_entrevista" && assistido) {
         const { data: ent } = await admin
@@ -367,6 +402,7 @@ Deno.serve(async (req) => {
           .select("data, status")
           .eq("assistido_id", assistido.id).eq("status", "agendada")
           .order("data", { ascending: true }).limit(1).maybeSingle();
+        respostaFonte = "agenda_real_assistido";
         resposta = ent
           ? `Sua entrevista está agendada para ${fmtData(ent.data, true)}. 🌿`
           : "Não encontrei entrevista agendada no momento. Nossa equipe pode confirmar para você.";
@@ -375,64 +411,78 @@ Deno.serve(async (req) => {
       } else if (intencao === "onde_ver_app") {
         resposta = "Você pode ver seus agendamentos, tratamentos e avisos direto no app, na área 'Painel' e 'Agenda'. 🌿";
       } else if (intencao === "programacao_publica") {
-        // Public, identity-free question about today's public schedule.
-        // Lookup order: (1) operational exceptions, (2) real public sessions,
-        // (3) recurring default rule, otherwise a safe "no programming" answer.
-        const { data: hojeData, diaSemana } = hojeSaoPaulo();
+        // Public question. Mandatory lookup order:
+        // (1) operational exceptions, (2) real public sessions,
+        // (3) standard recurring schedule, (4) legacy fallback rule.
+        const { data: baseIso } = hojeSaoPaulo();
+        const alvo = resolverDataAlvo(texto, baseIso);
+        const atividade = detectarAtividade(texto);
 
-        // Fetch ALL of today's public sessions (including cancelled/rescheduled)
-        // so operational exceptions can be reported with clarity.
-        const { data: sessoes } = await admin
-          .from("sessoes_publicas")
-          .select("horario_inicio, status, tipos_tratamento ( nome, trabalho_publico )")
-          .eq("data_sessao", hojeData);
+        // 1) EXCEPTIONS registered for the requested date (public scope).
+        let excQuery = admin
+          .from("excecoes_operacionais")
+          .select("atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado, prioridade")
+          .eq("ativo", true)
+          .eq("data_excecao", alvo.iso)
+          .eq("tipo", "publico")
+          .order("prioridade", { ascending: false });
+        if (atividade) excQuery = excQuery.ilike("atividade", `%${atividade}%`);
+        const { data: excecoesCad } = await excQuery;
 
-        const publicas = (sessoes || [])
-          .filter((s: any) => s?.tipos_tratamento?.trabalho_publico !== false);
-
-        // 1) EXCEPTIONS: cancelled/rescheduled public sessions for today.
-        const excecoes = publicas.filter((s: any) =>
-          CANCELADO_STATUS.includes(String(s?.status || "").toLowerCase()));
-        // 2) REAL active public sessions for today.
-        const ativas: ItemProgramacao[] = publicas
-          .filter((s: any) => !CANCELADO_STATUS.includes(String(s?.status || "").toLowerCase()))
-          .map((s: any) => ({
-            nome: s?.tipos_tratamento?.nome || "Trabalho público",
-            horario: s?.horario_inicio ?? null,
-          }));
-
-        let itens: ItemProgramacao[] = ativas;
-
-        if (ativas.length === 0 && excecoes.length > 0) {
-          // Only exceptions today: inform the cancellation/reschedule clearly.
+        if (excecoesCad && excecoesCad.length > 0) {
           respostaFonte = "excecao_operacional";
-          const e = excecoes[0] as any;
-          const nomeEx = e?.tipos_tratamento?.nome || "o trabalho público";
-          resposta = `Atenção: hoje ${nomeEx} consta como ${String(e?.status).toLowerCase()}. Em caso de dúvida, nossa equipe pode confirmar. 🌿`;
+          resposta = montarRespostaExcecao(excecoesCad[0] as any, alvo.label);
         } else {
-          if (ativas.length > 0) {
+          // 2) Real public sessions for the requested date.
+          const { data: sessoes } = await admin
+            .from("sessoes_publicas")
+            .select("horario_inicio, status, tipos_tratamento ( nome, trabalho_publico )")
+            .eq("data_sessao", alvo.iso)
+            .neq("status", "cancelada");
+          let itens: ItemProgramacao[] = (sessoes || [])
+            .filter((s: any) => s?.tipos_tratamento?.trabalho_publico !== false)
+            .map((s: any) => ({
+              nome: s?.tipos_tratamento?.nome || "Trabalho público",
+              horario: s?.horario_inicio ?? null,
+            }));
+
+          if (itens.length > 0) {
             respostaFonte = "agenda_publica_real";
           } else {
-            // 3) SECONDARY: configurable operational rule (fallback by weekday).
-            const { data: regra } = await admin
-              .from("regras_operacionais")
-              .select("valor, ativo")
-              .eq("chave", "programacao_publica_fallback")
+            // 3) Standard recurring schedule (fallback) for the weekday.
+            let progQuery = admin
+              .from("programacao_padrao")
+              .select("atividade, horario")
               .eq("ativo", true)
-              .maybeSingle();
-            if (regra?.valor) {
-              try {
-                const cfg = JSON.parse(regra.valor);
-                const doDia = cfg?.[String(diaSemana)] ?? cfg?.dias?.[String(diaSemana)] ?? [];
-                itens = (Array.isArray(doDia) ? doDia : [])
-                  .map((i: any) => ({ nome: i?.nome, horario: i?.horario ?? null }))
-                  .filter((i: ItemProgramacao) => i.nome);
-                if (itens.length > 0) respostaFonte = "regra_operacional";
-              } catch (_) { /* malformed rule -> treated as no programming */ }
+              .eq("dia_semana", alvo.diaSemana)
+              .eq("tipo", "publico");
+            if (atividade) progQuery = progQuery.ilike("atividade", `%${atividade}%`);
+            const { data: prog } = await progQuery;
+            itens = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
+            if (itens.length > 0) {
+              respostaFonte = "programacao_padrao";
+            } else {
+              // 4) Legacy JSON fallback rule (backward compatibility).
+              const { data: regra } = await admin
+                .from("regras_operacionais")
+                .select("valor, ativo")
+                .eq("chave", "programacao_publica_fallback")
+                .eq("ativo", true)
+                .maybeSingle();
+              if (regra?.valor) {
+                try {
+                  const cfg = JSON.parse(regra.valor);
+                  const doDia = cfg?.[String(alvo.diaSemana)] ?? cfg?.dias?.[String(alvo.diaSemana)] ?? [];
+                  itens = (Array.isArray(doDia) ? doDia : [])
+                    .map((i: any) => ({ nome: i?.nome, horario: i?.horario ?? null }))
+                    .filter((i: ItemProgramacao) => i.nome);
+                  if (itens.length > 0) respostaFonte = "regra_operacional";
+                } catch (_) { /* malformed rule -> treated as no programming */ }
+              }
             }
           }
           // Always a safe, valid answer (even "no programming") -> no handoff needed.
-          resposta = montarRespostaProgramacao(itens);
+          resposta = montarRespostaProgramacao(itens, alvo.label);
         }
       }
 
