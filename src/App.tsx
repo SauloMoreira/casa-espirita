@@ -52,6 +52,7 @@ const MeusDocumentos = lazy(() => import("./pages/MeusDocumentos"));
 const CentralIA = lazy(() => import("./pages/CentralIA"));
 const Voluntarios = lazy(() => import("./pages/Voluntarios"));
 const FuncoesVoluntariado = lazy(() => import("./pages/FuncoesVoluntariado"));
+const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
 const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -104,6 +105,7 @@ const App = () => (
                   <Route path={ROUTES.meuPerfil} element={<ProtectedRoute allowedRoles={["assistido"]}><MeuPerfil /></ProtectedRoute>} />
                   <Route path={ROUTES.meusDocumentos} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MeusDocumentos />, "Meus Documentos")}</ProtectedRoute>} />
                   <Route path={ROUTES.notificacoes} element={<Notificacoes />} />
+                  <Route path={ROUTES.ajuda} element={guard(<CentralAjuda />, "Central de Ajuda")} />
                   <Route path={ROUTES.centralNotificacoes} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<CentralNotificacoes />, "Central de Notificações")}</ProtectedRoute>} />
                   <Route path={ROUTES.listaEspera} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorListaEspera /></ProtectedRoute>} />
                   <Route path={ROUTES.coordenadorTratamentos} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorTratamentos /></ProtectedRoute>} />

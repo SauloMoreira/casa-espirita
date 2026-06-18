@@ -30,6 +30,7 @@ import {
   QrCode,
   UserPlus,
   KeyRound,
+  LifeBuoy,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -74,6 +75,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["admin", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
       { title: "Notificações", url: "/notificacoes", icon: Bell, roles: ["admin", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
+      { title: "Central de Ajuda", url: "/ajuda", icon: LifeBuoy, roles: ["admin", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
     ],
   },
   {
