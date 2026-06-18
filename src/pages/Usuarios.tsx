@@ -26,11 +26,23 @@ import { DeleteUserDialog } from "@/components/DeleteUserDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
+  administrador_master: "Administrador Master",
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
   coordenador_de_tratamento: "Coordenador de Tratamento",
 };
+
+// Roles that can be assigned directly here. Administrative roles are granted
+// ONLY through the approval-gated workflow in Governança de Acessos.
+const ASSIGNABLE_ROLE_LABELS: Record<string, string> = {
+  entrevistador: "Entrevistador",
+  tarefeiro: "Tarefeiro",
+  assistido: "Assistido",
+  coordenador_de_tratamento: "Coordenador de Tratamento",
+};
+
+const isAdminRole = (r?: string | null) => r === "admin" || r === "administrador_master";
 
 interface UserRow {
   user_id: string;
