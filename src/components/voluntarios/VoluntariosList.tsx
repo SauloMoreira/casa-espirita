@@ -22,6 +22,7 @@ import {
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { VOLUNTARIO_MESSAGES } from "@/constants/voluntarios";
 import { VoluntarioStatusBadge } from "./VoluntarioStatusBadge";
+import { TermoStatusBadge } from "./TermoStatusBadge";
 import { isVoluntarioAtivo } from "@/lib/voluntarioManagement";
 import type { VoluntarioListItem } from "@/types/voluntarios";
 
