@@ -3,6 +3,7 @@ import {
   classificarIntencao, decidirHandoff, resumoMensagem,
   montarRespostaProgramacao, formatarHorario, ehPerguntaPessoal,
   montarRespostaTratamentoHoje, montarRespostaProximaSessao, formatarDataCurta,
+  resolverDataAlvo, detectarAtividade, montarRespostaExcecao,
 } from "./whatsappInbound";
 
 describe("whatsappInbound — classificação de intenção", () => {
