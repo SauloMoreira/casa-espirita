@@ -3,7 +3,7 @@
 // (every inbound produces either an IA answer or a handoff) are verifiable.
 
 export type Intencao =
-  | "saudacao" | "agradecimento"
+  | "saudacao" | "agradecimento" | "pedido_informacao" | "encerramento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
