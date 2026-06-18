@@ -9,6 +9,7 @@ export const ROUTES = {
   solicitarCadastro: "/cadastro",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
+  mfaVerify: "/mfa-verify",
   checkinPublico: (token = ":token") => `/checkin-publico/${token}`,
 
   // Shared
