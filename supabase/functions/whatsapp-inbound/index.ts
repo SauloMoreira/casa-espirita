@@ -7,11 +7,23 @@ const corsHeaders = {
 };
 
 type Intencao =
+  | "saudacao" | "agradecimento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
 const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
+
+// Basic conversational / social messages handled by a friendly layer BEFORE
+// business logic, so an isolated greeting/thanks never becomes a handoff.
+const SAUDACAO_TERMOS = [
+  "bom dia", "boa tarde", "boa noite", "ola", "olá", "oi", "oie", "opa",
+  "eai", "e ai", "e aí", "tudo bem", "tudo bom", "como vai", "saudacoes", "saudações",
+];
+const AGRADECIMENTO_TERMOS = [
+  "obrigado", "obrigada", "valeu", "vlw", "agradeço", "agradecido",
+  "agradecida", "muito obrigado", "muito obrigada", "ok", "okay", "certo", "blz", "beleza",
+];
 
 // Personal intents must win over public-schedule intents so any message using
 // personal markers is answered from the assistido's REAL data, not the generic
@@ -44,15 +56,35 @@ const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
   { intent: "onde_ver_app", terms: ["app", "aplicativo", "onde vejo", "onde ver", "sistema", "site"] },
 ];
 
+function contemTermo(txt: string, termos: string[]): boolean {
+  return termos.some((t) => txt === t || txt.startsWith(t + " ") || txt.includes(" " + t) || txt.includes(t));
+}
+
 function classificar(msg: string): Intencao {
   const txt = (msg || "").toLowerCase().trim();
   if (!txt) return "complexo";
   if (SENSITIVE.some((t) => txt.includes(t))) return "complexo";
+  // Business intents win first (greeting + operational request -> operational).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
+  // Isolated social messages -> friendly conversational layer (no handoff).
+  if (contemTermo(txt, AGRADECIMENTO_TERMOS)) return "agradecimento";
+  if (contemTermo(txt, SAUDACAO_TERMOS)) return "saudacao";
   return "complexo";
 }
 
+function montarRespostaConversacional(intencao: Intencao, horaLocal?: number): string {
+  if (intencao === "agradecimento") return "Disponha! 🌿 Se precisar de algo, é só me chamar.";
+  let saudacao = "Olá";
+  if (typeof horaLocal === "number") {
+    if (horaLocal < 12) saudacao = "Bom dia";
+    else if (horaLocal < 18) saudacao = "Boa tarde";
+    else saudacao = "Boa noite";
+  }
+  return `${saudacao}! 🌿 Como posso te ajudar hoje?`;
+}
+
 const AUTORESOLVIVEIS: Intencao[] = [
+  "saudacao", "agradecimento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
   "programacao_publica", "opt_out", "reativar",
 ];
@@ -225,6 +257,15 @@ function hojeSaoPaulo(): { data: string; diaSemana: number } {
   return { data, diaSemana: map[weekdayName] ?? new Date().getDay() };
 }
 
+function horaSaoPaulo(): number {
+  const h = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false,
+  }).format(new Date());
+  const n = parseInt(h, 10);
+  return isNaN(n) ? new Date().getHours() : n;
+}
+
+
 
 function fmtData(value: string, withTime = false): string {
   const d = new Date(value);
@@ -314,7 +355,11 @@ Deno.serve(async (req) => {
     try {
       intencao = classificar(texto);
 
-      if (intencao === "opt_out" && assistido) {
+      if (intencao === "saudacao" || intencao === "agradecimento") {
+        // Basic conversational layer: friendly, brief, human. Never a handoff.
+        respostaFonte = "conversa_basica";
+        resposta = montarRespostaConversacional(intencao, horaSaoPaulo());
+      } else if (intencao === "opt_out" && assistido) {
         await admin.from("notificacoes_preferencias").upsert({
           assistido_id: assistido.id, whatsapp_ativo: false,
           opt_out_at: new Date().toISOString(), opt_out_motivo: "solicitado_via_whatsapp",

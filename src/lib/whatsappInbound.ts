@@ -3,11 +3,25 @@
 // (every inbound produces either an IA answer or a handoff) are verifiable.
 
 export type Intencao =
+  | "saudacao" | "agradecimento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
 export const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
+
+// Basic conversational / social messages (greetings, thanks, acknowledgements).
+// These are handled by a friendly social layer BEFORE any business logic, so an
+// isolated "oi" or "boa tarde" is never escalated to a human handoff.
+export const SAUDACAO_TERMOS = [
+  "bom dia", "boa tarde", "boa noite", "ola", "olá", "oi", "oie", "opa",
+  "eai", "e ai", "e aí", "tudo bem", "tudo bom", "como vai", "saudacoes", "saudações",
+];
+
+export const AGRADECIMENTO_TERMOS = [
+  "obrigado", "obrigada", "obrigado!", "valeu", "vlw", "agradeço", "agradecido",
+  "agradecida", "muito obrigado", "muito obrigada", "ok", "okay", "certo", "blz", "beleza",
+];
 
 // Personal intents (about the assistido's own treatments/appointments) MUST win
 // over the public schedule intents, so any message that uses personal markers
@@ -44,6 +58,7 @@ export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
 ];
 
 export const AUTORESOLVIVEIS: Intencao[] = [
+  "saudacao", "agradecimento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
   "programacao_publica", "opt_out", "reativar",
 ];
@@ -62,11 +77,26 @@ export function ehPerguntaPessoal(intencao: Intencao): boolean {
   return PESSOAIS.includes(intencao);
 }
 
+/** True for the basic social/conversational intents (greeting, thanks). */
+export const CONVERSACIONAIS: Intencao[] = ["saudacao", "agradecimento"];
+export function ehConversacional(intencao: Intencao): boolean {
+  return CONVERSACIONAIS.includes(intencao);
+}
+
+function contemTermo(txt: string, termos: string[]): boolean {
+  return termos.some((t) => txt === t || txt.startsWith(t + " ") || txt.includes(" " + t) || txt.includes(t));
+}
+
 export function classificarIntencao(msg: string): Intencao {
   const txt = (msg || "").toLowerCase().trim();
   if (!txt) return "complexo";
   if (SENSITIVE.some((t) => txt.includes(t))) return "complexo";
+  // Business intents win first, so "boa tarde, tem palestra hoje?" is answered
+  // as an operational question (greeting + request → operational content).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
+  // Isolated social messages → friendly conversational layer (no handoff).
+  if (contemTermo(txt, AGRADECIMENTO_TERMOS)) return "agradecimento";
+  if (contemTermo(txt, SAUDACAO_TERMOS)) return "saudacao";
   return "complexo";
 }
 
@@ -268,6 +298,29 @@ export function montarRespostaProximaSessao(sessao: SessaoPessoal | null): strin
   }
   return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
 }
+
+/**
+ * Builds a warm, brief, human social reply for basic conversational intents
+ * (greeting / thanks). Greetings adapt to the time of day when `horaLocal`
+ * (0-23) is provided. These replies never trigger a handoff.
+ */
+export function montarRespostaConversacional(
+  intencao: Intencao,
+  horaLocal?: number,
+): string {
+  if (intencao === "agradecimento") {
+    return "Disponha! 🌿 Se precisar de algo, é só me chamar.";
+  }
+  // saudacao
+  let saudacao = "Olá";
+  if (typeof horaLocal === "number") {
+    if (horaLocal < 12) saudacao = "Bom dia";
+    else if (horaLocal < 18) saudacao = "Boa tarde";
+    else saudacao = "Boa noite";
+  }
+  return `${saudacao}! 🌿 Como posso te ajudar hoje?`;
+}
+
 
 /** Warm, precise fallback shown to the user whenever a handoff is opened. */
 export const MENSAGEM_HANDOFF =
