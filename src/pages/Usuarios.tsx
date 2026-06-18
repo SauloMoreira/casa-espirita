@@ -78,8 +78,34 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(false);
   const [resetTarget, setResetTarget] = useState<MergedUser | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MergedUser | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<{ user: MergedUser; toStatus: "ativo" | "inativo" } | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
   const { user, role } = useAuth();
   const { toast } = useToast();
+
+  const changeStatus = async (targetUserId: string, toStatus: "ativo" | "inativo", motivo?: string) => {
+    setStatusBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-user", {
+        body: {
+          action: toStatus === "inativo" ? "inactivate" : "reactivate",
+          target_user_id: targetUserId,
+          motivo: motivo || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: data?.message || (toStatus === "inativo" ? "Usuário inativado" : "Usuário reativado") });
+      fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setStatusBusy(false);
+      setStatusTarget(null);
+    }
+  };
 
   const fetchUsers = async () => {
     const { data: roles } = await supabase.from("user_roles").select("user_id, role");
