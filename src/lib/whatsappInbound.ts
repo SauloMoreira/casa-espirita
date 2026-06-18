@@ -70,6 +70,57 @@ export function classificarIntencao(msg: string): Intencao {
   return "complexo";
 }
 
+// ===================== CONTEXTO TEMPORAL =====================
+// Each inbound message is classified independently (stateless), so the IA never
+// reuses a previous message's intent or date. The requested date is extracted
+// from the CURRENT message only.
+
+const DIAS_SEMANA: Record<string, number> = {
+  domingo: 0, segunda: 1, terca: 2, "terça": 2, quarta: 3,
+  quinta: 4, sexta: 5, sabado: 6, "sábado": 6,
+};
+
+export interface AlvoTempo { iso: string; diaSemana: number; label: string; }
+
+/**
+ * Resolves the date a public/personal question refers to, based ONLY on the
+ * current message ("hoje", "amanhã", "depois de amanhã", weekday names).
+ * `baseIso` is today's date (YYYY-MM-DD) in the house timezone.
+ */
+export function resolverDataAlvo(texto: string, baseIso: string): AlvoTempo {
+  const txt = (texto || "").toLowerCase();
+  const base = new Date(baseIso + "T12:00:00Z");
+  const mk = (offset: number, label: string): AlvoTempo => {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() + offset);
+    return { iso: d.toISOString().slice(0, 10), diaSemana: d.getUTCDay(), label };
+  };
+  if (txt.includes("depois de amanha") || txt.includes("depois de amanhã")) return mk(2, "depois de amanhã");
+  if (txt.includes("amanha") || txt.includes("amanhã")) return mk(1, "amanhã");
+  if (txt.includes("hoje")) return mk(0, "hoje");
+  for (const [nome, dow] of Object.entries(DIAS_SEMANA)) {
+    if (txt.includes(nome)) {
+      let offset = (dow - base.getUTCDay() + 7) % 7;
+      if (offset === 0 && (txt.includes("proxima") || txt.includes("próxima") || txt.includes("que vem"))) offset = 7;
+      return mk(offset, nome.replace("terca", "terça").replace("sabado", "sábado"));
+    }
+  }
+  return mk(0, "hoje");
+}
+
+// Known public activities for entity detection (used to match exceptions/sessions).
+export const ATIVIDADES_PUBLICAS: Array<{ nome: string; termos: string[] }> = [
+  { nome: "Palestra Pública", termos: ["palestra"] },
+  { nome: "Evangelhoterapia", termos: ["evangelhoterapia", "evangelho terapia"] },
+  { nome: "Passe", termos: ["passe"] },
+];
+
+/** Detects which public activity a message is about (null when generic). */
+export function detectarAtividade(texto: string): string | null {
+  const txt = (texto || "").toLowerCase();
+  for (const a of ATIVIDADES_PUBLICAS) if (a.termos.some((t) => txt.includes(t))) return a.nome;
+  return null;
+
 /** Formats a "HH:MM[:SS]" string as a friendly Brazilian time (e.g. "19h", "20h30"). */
 export function formatarHorario(h: string | null | undefined): string {
   if (!h) return "";
