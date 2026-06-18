@@ -516,7 +516,7 @@ export default function Entrevistas() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {e.status === "agendada" && (
+                          {e.status === "agendada" && canRealizar && (
                             <>
                               <Button variant="ghost" size="icon" title="Realizar" onClick={() => openRealizar(e)}>
                                 <BookOpen className="h-4 w-4" />
@@ -525,6 +525,9 @@ export default function Entrevistas() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
+                          )}
+                          {e.status === "agendada" && !canRealizar && (
+                            <span className="text-xs text-muted-foreground">Agendada</span>
                           )}
                           {e.status === "realizada" && (
                             <>
