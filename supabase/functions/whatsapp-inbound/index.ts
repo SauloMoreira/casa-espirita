@@ -215,6 +215,48 @@ Deno.serve(async (req) => {
         resposta = "Obrigado por confirmar! Esperamos por você. 🌿";
       } else if (intencao === "onde_ver_app") {
         resposta = "Você pode ver seus agendamentos, tratamentos e avisos direto no app, na área 'Painel' e 'Agenda'. 🌿";
+      } else if (intencao === "programacao_publica") {
+        // Public, identity-free question about today's public schedule.
+        const { data: hojeData, diaSemana } = hojeSaoPaulo();
+
+        // 1) PRIMARY: real public sessions registered for today.
+        const { data: sessoes } = await admin
+          .from("sessoes_publicas")
+          .select("horario_inicio, status, tipos_tratamento ( nome, trabalho_publico )")
+          .eq("data_sessao", hojeData)
+          .neq("status", "cancelada");
+
+        let itens: ItemProgramacao[] = (sessoes || [])
+          .filter((s: any) => s?.tipos_tratamento?.trabalho_publico !== false)
+          .map((s: any) => ({
+            nome: s?.tipos_tratamento?.nome || "Trabalho público",
+            horario: s?.horario_inicio ?? null,
+          }));
+
+        if (itens.length > 0) {
+          respostaFonte = "agenda_publica_real";
+        } else {
+          // 2) SECONDARY: configurable operational rule (fallback by weekday).
+          const { data: regra } = await admin
+            .from("regras_operacionais")
+            .select("valor, ativo")
+            .eq("chave", "programacao_publica_fallback")
+            .eq("ativo", true)
+            .maybeSingle();
+          if (regra?.valor) {
+            try {
+              const cfg = JSON.parse(regra.valor);
+              const doDia = cfg?.[String(diaSemana)] ?? cfg?.dias?.[String(diaSemana)] ?? [];
+              itens = (Array.isArray(doDia) ? doDia : [])
+                .map((i: any) => ({ nome: i?.nome, horario: i?.horario ?? null }))
+                .filter((i: ItemProgramacao) => i.nome);
+              if (itens.length > 0) respostaFonte = "regra_operacional";
+            } catch (_) { /* malformed rule -> treated as no programming */ }
+          }
+        }
+
+        // Always a safe, valid answer (even "no programming") -> no handoff needed.
+        resposta = montarRespostaProgramacao(itens);
       }
 
       // Decide handoff: anything the IA cannot auto-resolve, or that needs an
@@ -225,10 +267,7 @@ Deno.serve(async (req) => {
       } else if (!AUTORESOLVIVEIS.includes(intencao)) {
         handoff = true; handoffOrigem = "regra";
         handoffMotivo = "Intenção sem resposta automática disponível";
-      } else if (
-        (intencao === "proxima_sessao" || intencao === "horario_entrevista" ||
-         intencao === "opt_out" || intencao === "reativar") && !assistido
-      ) {
+      } else if (PRECISA_ASSISTIDO.includes(intencao) && !assistido) {
         handoff = true; handoffOrigem = "regra";
         handoffMotivo = "Assistido não identificado";
       } else if (!resposta) {
@@ -236,6 +275,7 @@ Deno.serve(async (req) => {
         handoff = true; handoffOrigem = "regra";
         handoffMotivo = "IA não produziu uma resposta válida";
       }
+
     } catch (procErr) {
       // Any technical failure during classification/response building -> handoff.
       fallbackMotivo = `Falha técnica no processamento da IA: ${String(procErr)}`;
