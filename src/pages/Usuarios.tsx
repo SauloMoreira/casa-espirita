@@ -9,12 +9,20 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users as UsersIcon, Pencil, KeyRound } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, Users as UsersIcon, Pencil, KeyRound, MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
+import { DeleteUserDialog } from "@/components/DeleteUserDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
@@ -70,8 +78,34 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(false);
   const [resetTarget, setResetTarget] = useState<MergedUser | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MergedUser | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<{ user: MergedUser; toStatus: "ativo" | "inativo" } | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
   const { user, role } = useAuth();
   const { toast } = useToast();
+
+  const changeStatus = async (targetUserId: string, toStatus: "ativo" | "inativo", motivo?: string) => {
+    setStatusBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-user", {
+        body: {
+          action: toStatus === "inativo" ? "inactivate" : "reactivate",
+          target_user_id: targetUserId,
+          motivo: motivo || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: data?.message || (toStatus === "inativo" ? "Usuário inativado" : "Usuário reativado") });
+      fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setStatusBusy(false);
+      setStatusTarget(null);
+    }
+  };
 
   const fetchUsers = async () => {
     const { data: roles } = await supabase.from("user_roles").select("user_id, role");
@@ -368,15 +402,44 @@ export default function Usuarios() {
                           {u.profile?.status === "ativo" ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="flex items-center gap-1">
-                        {role === "admin" && (
-                          <Button variant="ghost" size="icon" title="Redefinir senha" onClick={() => { setResetTarget(u); setResetOpen(true); }}>
-                            <KeyRound className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(u)}>
+                      <TableCell className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(u)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {role === "admin" && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" title="Mais ações">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuItem onClick={() => { setResetTarget(u); setResetOpen(true); }}>
+                                <KeyRound className="h-4 w-4 mr-2" /> Redefinir senha
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {u.profile?.status === "inativo" ? (
+                                <DropdownMenuItem onClick={() => setStatusTarget({ user: u, toStatus: "ativo" })}>
+                                  <UserCheck className="h-4 w-4 mr-2" /> Reativar usuário
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  disabled={u.user_id === user?.id}
+                                  onClick={() => setStatusTarget({ user: u, toStatus: "inativo" })}
+                                >
+                                  <UserX className="h-4 w-4 mr-2" /> Inativar usuário
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                disabled={u.user_id === user?.id}
+                                onClick={() => { setDeleteTarget(u); setDeleteOpen(true); }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Excluir usuário
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -395,6 +458,52 @@ export default function Usuarios() {
           targetUserName={resetTarget.profile?.nome_completo || resetTarget.user_id.substring(0, 8)}
         />
       )}
+
+      {deleteTarget && (
+        <DeleteUserDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          targetUserId={deleteTarget.user_id}
+          targetUserName={deleteTarget.profile?.nome_completo || deleteTarget.user_id.substring(0, 8)}
+          onDeleted={fetchUsers}
+          onInactivate={(motivo) => changeStatus(deleteTarget.user_id, "inativo", motivo)}
+        />
+      )}
+
+      <AlertDialog open={!!statusTarget} onOpenChange={(o) => !o && setStatusTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusTarget?.toStatus === "inativo" ? "Inativar usuário?" : "Reativar usuário?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusTarget?.toStatus === "inativo" ? (
+                <>
+                  O usuário <span className="font-medium text-foreground">{statusTarget?.user.profile?.nome_completo || ""}</span> perderá
+                  o acesso ao sistema, mas todo o histórico e os vínculos serão preservados. Esta é a ação recomendada e reversível.
+                </>
+              ) : (
+                <>
+                  O usuário <span className="font-medium text-foreground">{statusTarget?.user.profile?.nome_completo || ""}</span> voltará
+                  a ter acesso ao sistema.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={statusBusy}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={statusBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                if (statusTarget) changeStatus(statusTarget.user.user_id, statusTarget.toStatus);
+              }}
+            >
+              {statusBusy ? "Processando..." : statusTarget?.toStatus === "inativo" ? "Inativar" : "Reativar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
