@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 type Intencao =
-  | "saudacao" | "agradecimento"
+  | "saudacao" | "agradecimento" | "pedido_informacao" | "encerramento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
@@ -23,6 +23,25 @@ const SAUDACAO_TERMOS = [
 const AGRADECIMENTO_TERMOS = [
   "obrigado", "obrigada", "valeu", "vlw", "agradeço", "agradecido",
   "agradecida", "muito obrigado", "muito obrigada", "ok", "okay", "certo", "blz", "beleza",
+];
+// Bridge layer: generic requests for help/information that keep the conversation
+// flowing naturally (instead of repeating a greeting or escalating to a human).
+const PEDIDO_INFO_TERMOS = [
+  "gostaria de informa", "gostaria de algumas informa", "gostaria de saber",
+  "gostaria de uma informa", "gostaria de tirar", "queria saber", "queria uma informa",
+  "quero uma informa", "queria tirar uma duvida", "queria tirar uma dúvida",
+  "tirar uma duvida", "tirar uma dúvida", "tirar duvida", "tirar dúvida",
+  "uma duvida", "uma dúvida", "uma pergunta", "fazer uma pergunta", "posso fazer uma pergunta",
+  "preciso de ajuda", "pode me ajudar", "voce pode me ajudar", "você pode me ajudar",
+  "me ajuda", "preciso de uma informa", "uma informacao", "uma informação",
+  "algumas informacoes", "algumas informações", "quero saber", "preciso saber",
+  "informacoes", "informações",
+];
+// Simple, natural closings — a friendly sign-off, no handoff.
+const ENCERRAMENTO_TERMOS = [
+  "tchau", "ate logo", "até logo", "ate mais", "até mais", "ate breve", "até breve",
+  "ate a proxima", "até a próxima", "era so isso", "era só isso", "so isso", "só isso",
+  "nada mais", "por enquanto e so", "por enquanto é só", "fica com deus",
 ];
 
 // Personal intents must win over public-schedule intents so any message using
