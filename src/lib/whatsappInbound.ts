@@ -80,7 +80,7 @@ export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
 ];
 
 export const AUTORESOLVIVEIS: Intencao[] = [
-  "saudacao", "agradecimento",
+  "saudacao", "agradecimento", "pedido_informacao", "encerramento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
   "programacao_publica", "opt_out", "reativar",
 ];
