@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchRoleAndProfile = async (userId: string, accessToken: string) => {
     try {
       const [roleRes, profileRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role&limit=1`, {
+        fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role`, {
           headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=nome_completo,foto_url,senha_temporaria,status&limit=1`, {
@@ -54,8 +54,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
       if (roleRes.ok) {
         const rows = await roleRes.json();
-        setRole((rows?.[0]?.role as AppRole) ?? "assistido");
+        const list = (rows ?? []).map((r: any) => r.role as AppRole);
+        setRoles(list);
+        // Master holds both 'administrador_master' and 'admin'; collapse any
+        // administrative role to 'admin' so existing route guards keep working.
+        if (list.includes("administrador_master") || list.includes("admin")) {
+          setRole("admin");
+        } else {
+          setRole((list[0] as AppRole) ?? "assistido");
+        }
       } else {
+        setRoles([]);
         setRole("assistido");
       }
       if (profileRes.ok) {
@@ -63,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(rows?.[0] ?? null);
       }
     } catch {
+      setRoles([]);
       setRole("assistido");
     }
   };
