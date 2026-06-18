@@ -101,8 +101,9 @@ export default function CentralNotificacoes() {
         </div>
       </div>
 
-      <Tabs defaultValue="fila">
+      <Tabs defaultValue="painel">
         <TabsList>
+          <TabsTrigger value="painel"><BarChart3 className="h-4 w-4 mr-1" /> Painel</TabsTrigger>
           <TabsTrigger value="fila"><ListChecks className="h-4 w-4 mr-1" /> Fila</TabsTrigger>
           <TabsTrigger value="conversas"><MessageSquare className="h-4 w-4 mr-1" /> Conversas</TabsTrigger>
           <TabsTrigger value="handoffs">
@@ -110,6 +111,12 @@ export default function CentralNotificacoes() {
             {handoffsAbertos > 0 && <Badge variant="secondary" className="ml-1">{handoffsAbertos}</Badge>}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="painel" className="mt-4">
+          <PainelWhatsapp />
+        </TabsContent>
+
+
 
         <TabsContent value="fila" className="mt-4">
           <Card className="glass-card">
