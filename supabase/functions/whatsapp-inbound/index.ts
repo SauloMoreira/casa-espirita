@@ -355,7 +355,11 @@ Deno.serve(async (req) => {
     try {
       intencao = classificar(texto);
 
-      if (intencao === "opt_out" && assistido) {
+      if (intencao === "saudacao" || intencao === "agradecimento") {
+        // Basic conversational layer: friendly, brief, human. Never a handoff.
+        respostaFonte = "conversa_basica";
+        resposta = montarRespostaConversacional(intencao, horaSaoPaulo());
+      } else if (intencao === "opt_out" && assistido) {
         await admin.from("notificacoes_preferencias").upsert({
           assistido_id: assistido.id, whatsapp_ativo: false,
           opt_out_at: new Date().toISOString(), opt_out_motivo: "solicitado_via_whatsapp",
