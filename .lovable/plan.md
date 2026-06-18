@@ -1,4 +1,4 @@
-# Central de Notificações + WhatsApp (Evolution API)
+# Central de Notificações + WhatsApp (Z-API)
 
 Integração de WhatsApp como canal operacional, desacoplada do provedor, com fila, templates, opt-out, triagem por IA e handoff humano. Nenhum fluxo atual é alterado — tudo novo é aditivo.
 
@@ -11,17 +11,17 @@ Evento do sistema (entrevista/sessão criada, lembrete, remarcação, cancelamen
 notificacoes_fila ──► motor de envio (edge function "notificacoes-dispatch", cron a cada X min)
         │  valida: opt-out, janela horária, limite diário, 1 lembrete/evento, dedupe
         ▼
-   Adaptador de canal (interface ChannelAdapter) ──► EvolutionAdapter ──► Evolution API
+   Adaptador de canal (interface ChannelAdapter) ──► ZApiAdapter ──► Z-API
         │                                            (troca futura = novo adaptador)
         ▼
 notificacoes_log (saída) + atualização de status/retry/external_message_id
 
-Inbound: Evolution webhook ──► edge function "whatsapp-inbound"
+Inbound: Z-API webhook ──► edge function "whatsapp-inbound"
    identifica conversa/assistido ► classifica intenção (IA) ►
      caso simples: IA responde   │  caso complexo: cria whatsapp_handoffs (humano)
 ```
 
-A camada de negócio nunca chama a Evolution diretamente: fala com o **motor de notificações** e com um **adaptador de canal** atrás de uma interface, garantindo a troca futura (ex.: Cloud API oficial) sem reescrever regras.
+A camada de negócio nunca chama a Z-API diretamente: fala com o **motor de notificações** e com um **adaptador de canal** atrás de uma interface, garantindo a troca futura (ex.: Cloud API oficial) sem reescrever regras.
 
 ## Banco de dados (migração aditiva)
 
@@ -45,8 +45,8 @@ Seed dos 6 templates (acolhedores, curtos, sem cobrança).
 
 ## Edge functions
 - `notificacoes-dispatch` — lê fila elegível, renderiza template, chama adaptador, grava log/status/retry. Disparada por pg_cron (a cada 5 min) e invocável manualmente.
-- `whatsapp-inbound` — webhook da Evolution: identifica conversa/assistido, classifica intenção via Lovable AI, responde casos simples (próxima sessão, horário entrevista, confirmação, onde ver no app, opt-out) ou abre handoff.
-- `_shared/channel-adapter.ts` — interface `ChannelAdapter` + `EvolutionAdapter` (envio via Evolution).
+- `whatsapp-inbound` — webhook da Z-API: identifica conversa/assistido, classifica intenção via Lovable AI, responde casos simples (próxima sessão, horário entrevista, confirmação, onde ver no app, opt-out) ou abre handoff.
+- `_shared/channel-adapter.ts` — interface `ChannelAdapter` + `ZApiAdapter` (envio via Z-API).
 
 ## Frontend
 - `src/services/notificacoes/*` + `src/lib/notificacoes.ts` (lógica pura: dedupe_key, validação de janela, limite diário, render de template) com testes.
@@ -58,11 +58,9 @@ Lógica pura: geração de fila, dedupe, opt-out, render de template, janela hor
 
 ## Decisões que preciso de você
 
-1. **Credenciais Evolution API** — vou precisar de 3 segredos para o adaptador e webhook funcionarem de verdade:
-   - `EVOLUTION_API_URL` (URL base da sua instância Evolution)
-   - `EVOLUTION_API_KEY` (apikey)
-   - `EVOLUTION_INSTANCE` (nome da instância conectada ao número da empresa)
-   Posso construir tudo e deixar o adaptador pronto; o envio real só funciona após você inserir esses segredos. Confirma que tem acesso a uma instância Evolution?
+1. **Credenciais Z-API** — segredos necessários:
+   - `ZAPI_INSTANCE_ID`, `ZAPI_INSTANCE_TOKEN`, `ZAPI_BASE_URL` e `ZAPI_CLIENT_TOKEN` (opcional)
+   Posso construir tudo e deixar o adaptador pronto; o envio real só funciona após você inserir esses segredos. Confirma que tem acesso a uma instância Z-API?
 
 2. **Quem acessa a Central de Notificações** (fila/conversas/handoffs)? Sugiro admin + coordenação. Atendentes de handoff = mesmos perfis ou um perfil específico?
 

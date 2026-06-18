@@ -2,8 +2,8 @@
  * Channel adapter abstraction for the Central de Notificações.
  *
  * The notification engine talks to this interface only — never to a concrete
- * provider — so the WhatsApp provider (Evolution today) can be swapped for the
- * official Cloud API later without touching business rules.
+ * provider — so the WhatsApp provider (Z-API today) can be swapped for another
+ * provider (e.g. official Cloud API) later without touching business rules.
  */
 
 export interface SendResult {
@@ -15,52 +15,82 @@ export interface SendResult {
 
 export interface ChannelAdapter {
   readonly name: string;
+  isConfigured(): boolean;
   send(telefone: string, mensagem: string): Promise<SendResult>;
 }
 
-/**
- * Evolution API adapter. Reads configuration from environment secrets:
- *   EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE
- */
-export class EvolutionAdapter implements ChannelAdapter {
-  readonly name = "evolution";
-  private url: string;
-  private apiKey: string;
-  private instance: string;
+export interface AdapterEnv {
+  ZAPI_INSTANCE_ID?: string;
+  ZAPI_INSTANCE_TOKEN?: string;
+  ZAPI_BASE_URL?: string;
+  ZAPI_CLIENT_TOKEN?: string;
+}
 
-  constructor(env: {
-    EVOLUTION_API_URL?: string;
-    EVOLUTION_API_KEY?: string;
-    EVOLUTION_INSTANCE?: string;
-  }) {
-    this.url = (env.EVOLUTION_API_URL || "").replace(/\/+$/, "");
-    this.apiKey = env.EVOLUTION_API_KEY || "";
-    this.instance = env.EVOLUTION_INSTANCE || "";
+/**
+ * Z-API adapter. Reads configuration from environment secrets:
+ *   ZAPI_INSTANCE_ID, ZAPI_INSTANCE_TOKEN, ZAPI_BASE_URL, ZAPI_CLIENT_TOKEN
+ *
+ * Base URL pattern:
+ *   https://api.z-api.io/instances/{instanceId}/token/{token}
+ *
+ * ZAPI_CLIENT_TOKEN is optional: only sent as the `Client-Token` header when
+ * the account-level security token is enabled in the Z-API panel.
+ */
+export class ZApiAdapter implements ChannelAdapter {
+  readonly name = "zapi";
+  private baseUrl: string;
+  private instanceId: string;
+  private token: string;
+  private clientToken: string;
+
+  constructor(env: AdapterEnv) {
+    this.baseUrl = (env.ZAPI_BASE_URL || "https://api.z-api.io").replace(/\/+$/, "");
+    this.instanceId = env.ZAPI_INSTANCE_ID || "";
+    this.token = env.ZAPI_INSTANCE_TOKEN || "";
+    this.clientToken = env.ZAPI_CLIENT_TOKEN || "";
+  }
+
+  /** Resolve the instance endpoint root, honoring a full base URL if provided. */
+  private instanceRoot(): string {
+    // Allow ZAPI_BASE_URL to already contain the /instances/.../token/... path.
+    if (/\/instances\/[^/]+\/token\/[^/]+/.test(this.baseUrl)) {
+      return this.baseUrl;
+    }
+    return `${this.baseUrl}/instances/${this.instanceId}/token/${this.token}`;
   }
 
   isConfigured(): boolean {
-    return Boolean(this.url && this.apiKey && this.instance);
+    if (/\/instances\/[^/]+\/token\/[^/]+/.test(this.baseUrl)) return true;
+    return Boolean(this.instanceId && this.token);
+  }
+
+  private headers(): Record<string, string> {
+    const h: Record<string, string> = { "Content-Type": "application/json" };
+    if (this.clientToken) h["Client-Token"] = this.clientToken;
+    return h;
   }
 
   async send(telefone: string, mensagem: string): Promise<SendResult> {
     if (!this.isConfigured()) {
-      return { ok: false, error: "evolution_not_configured" };
+      return { ok: false, error: "zapi_not_configured" };
     }
     try {
-      const res = await fetch(`${this.url}/message/sendText/${this.instance}`, {
+      const res = await fetch(`${this.instanceRoot()}/send-text`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: this.apiKey,
-        },
-        body: JSON.stringify({ number: telefone, text: mensagem }),
+        headers: this.headers(),
+        body: JSON.stringify({ phone: telefone, message: mensagem }),
       });
       const raw = await res.json().catch(() => ({}));
       if (!res.ok) {
-        return { ok: false, error: `evolution_http_${res.status}`, raw };
+        return {
+          ok: false,
+          error: `zapi_http_${res.status}${raw?.error ? `:${raw.error}` : ""}`,
+          raw,
+        };
       }
+      // Z-API returns { zaapId, messageId, id }
       const externalMessageId =
-        raw?.key?.id || raw?.message?.key?.id || raw?.id || undefined;
+        raw?.messageId || raw?.zaapId || raw?.id || undefined;
       return { ok: true, externalMessageId, raw };
     } catch (e) {
       return { ok: false, error: String(e) };
@@ -69,6 +99,6 @@ export class EvolutionAdapter implements ChannelAdapter {
 }
 
 /** Resolve the active adapter. Single switch point for future providers. */
-export function getAdapter(env: Record<string, string | undefined>): EvolutionAdapter {
-  return new EvolutionAdapter(env);
+export function getAdapter(env: AdapterEnv): ChannelAdapter {
+  return new ZApiAdapter(env);
 }
