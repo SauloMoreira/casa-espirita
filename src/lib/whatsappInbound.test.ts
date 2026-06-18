@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   classificarIntencao, decidirHandoff, resumoMensagem,
+  montarRespostaProgramacao, formatarHorario,
 } from "./whatsappInbound";
 
 describe("whatsappInbound — classificação de intenção", () => {
