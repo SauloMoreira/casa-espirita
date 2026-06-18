@@ -1765,6 +1765,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      painel_whatsapp: {
+        Args: { p_fim: string; p_inicio: string }
+        Returns: Json
+      }
       registrar_presenca: {
         Args: {
           p_assistido_tratamento_id: string
