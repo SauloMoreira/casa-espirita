@@ -246,10 +246,13 @@ export default function GovernancaAcessos() {
             <p className="text-sm text-muted-foreground py-4">Nenhuma solicitação pendente.</p>
           ) : open_requests.map((r) => {
             const decided = myDecision(r.id);
+            const soleAdmin = aptAdmins <= 1;
             const isRequester = r.requested_by === user?.id;
             const isTarget = r.target_user_id === user?.id;
             const needsMaster = r.required_approvals === 1 && !isMaster;
-            const blocked = !!decided || isRequester || isTarget || needsMaster;
+            // Bootstrap: a sole administrator may approve their own request.
+            const requesterBlocked = isRequester && !soleAdmin;
+            const blocked = !!decided || requesterBlocked || isTarget || needsMaster;
             const approvedCount = approvalsFor(r.id).filter((a) => a.decision === "aprovar").length;
             return (
               <div key={r.id} className="rounded-xl border p-4 space-y-2">
@@ -267,10 +270,15 @@ export default function GovernancaAcessos() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">{r.justificativa}</p>
+                {isRequester && soleAdmin && !decided && (
+                  <p className="text-xs text-muted-foreground italic">
+                    Você é o único administrador ativo — sua aprovação única é permitida e auditada.
+                  </p>
+                )}
                 {blocked && (
                   <p className="text-xs text-muted-foreground italic">
                     {decided ? "Você já registrou sua decisão." :
-                     isRequester ? "Você é o solicitante e não pode aprovar." :
+                     requesterBlocked ? "Você é o solicitante e não pode aprovar." :
                      isTarget ? "Você é o indicado e não pode aprovar." :
                      "Apenas o Administrador Master pode aprovar este fluxo excepcional."}
                   </p>
