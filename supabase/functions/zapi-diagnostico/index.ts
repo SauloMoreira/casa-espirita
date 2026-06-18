@@ -1,5 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { getAdapter } from "../_shared/channel-adapter.ts";
+import { getAdapter, ZApiAdapter } from "../_shared/channel-adapter.ts";
 
 /**
  * Diagnostic-only endpoint for Z-API homologation.
