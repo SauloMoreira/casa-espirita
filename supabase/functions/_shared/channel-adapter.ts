@@ -88,6 +88,16 @@ export class ZApiAdapter implements ChannelAdapter {
           raw,
         };
       }
+      // Z-API may answer HTTP 200 while signalling a failure in the body
+      // (e.g. { error: "NOT_FOUND", message: "..." } when the instance/token
+      // or endpoint is wrong). Treat any body-level error as a failed send.
+      if (raw?.error) {
+        return {
+          ok: false,
+          error: `zapi_error:${raw.error}${raw?.message ? `:${raw.message}` : ""}`,
+          raw,
+        };
+      }
       // Z-API returns { zaapId, messageId, id }
       const externalMessageId =
         raw?.messageId || raw?.zaapId || raw?.id || undefined;
