@@ -85,15 +85,9 @@ export default function SessoesPublicas() {
           }
         },
       )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "sessoes_publicas", filter: `id=eq.${sessaoId}` },
-        (payload) => {
-          const row = payload.new as Sessao;
-          setSessoes((prev) => prev.map((s) => (s.id === sessaoId ? { ...s, total_presentes: row.total_presentes } : s)));
-          setSelectedSessao((prev) => (prev && prev.id === sessaoId ? { ...prev, total_presentes: row.total_presentes } : prev));
-        },
-      )
+      // Note: sessoes_publicas is intentionally NOT subscribed via realtime — its
+      // rows contain the secret QR check-in token, so the table is no longer
+      // broadcast. Live counts are derived from the checkins_publicos channel above.
       .subscribe();
 
     return () => {
