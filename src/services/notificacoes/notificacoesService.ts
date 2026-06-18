@@ -189,3 +189,78 @@ export async function getPainelWhatsapp(inicio: string, fim: string): Promise<Pa
   if (error) throw error;
   return (data as unknown as PainelWhatsapp) ?? { autorizado: false };
 }
+
+// ===== Painel de métricas v2 (5 blocos + filtros) =====
+
+export interface PainelV2Filtros {
+  template?: string | null;
+  status?: string | null;
+  assistido?: string | null;
+  resolucao?: "ia" | "handoff" | null;
+  optout?: boolean | null;
+}
+
+export interface SeriePonto {
+  dia: string;
+  geradas: number;
+  enviadas: number;
+  falhas: number;
+  inbound: number;
+}
+
+export interface PainelV2 {
+  autorizado: boolean;
+  periodo?: { inicio: string; fim: string; dias: number };
+  periodo_anterior?: { inicio: string; fim: string };
+  entrega?: {
+    geradas: number; enviadas: number; falhas: number;
+    pendentes: number; agendados: number; canceladas: number;
+    retries: number; tempo_medio_envio_seg: number; sem_telefone: number; inbound: number;
+    falhas_por_evento: { evento: string; falhas: number; total: number }[];
+    falhas_recentes: { tipo: string; evento: string; telefone: string | null; erro: string | null; retries: number; quando: string | null }[];
+  };
+  engajamento?: {
+    inbound: number; optout: number; reativacoes: number;
+    assistidos_impactados: number; media_msgs_por_assistido: number;
+    horarios: { hora: number; total: number }[];
+    resposta_por_tipo: { tipo: string; enviadas: number }[];
+  };
+  efetividade?: {
+    presenca_atual_pct: number; presenca_anterior_pct: number;
+    faltas_atual: number; faltas_anterior: number;
+    presentes_atual: number; ausentes_atual: number;
+    comparecimento_apos_lembrete_pct: number; comparecimento_base: number;
+  };
+  ia_humano?: {
+    inbound: number; resolvidas_ia: number; handoffs: number; handoffs_resolvidos: number;
+    tempo_medio_resolucao_seg: number;
+    motivos: { motivo: string; total: number }[];
+    intents: { intent: string; total: number; resolvida: boolean }[];
+  };
+  qualidade?: {
+    fora_janela: number; dedup_bloqueadas: number; limite_diario_barradas: number;
+    canceladas: number; sem_telefone: number; retries: number;
+    por_tipo: { tipo: string; geradas: number; enviadas: number; falhas: number; taxa_entrega: number }[];
+    optout_por_tipo: { tipo: string; total: number }[];
+  };
+  serie?: SeriePonto[];
+}
+
+/** Painel completo de métricas do canal WhatsApp (5 blocos) com filtros. */
+export async function getPainelWhatsappV2(
+  inicio: string,
+  fim: string,
+  filtros: PainelV2Filtros = {},
+): Promise<PainelV2> {
+  const { data, error } = await supabase.rpc("painel_whatsapp_v2", {
+    p_inicio: inicio,
+    p_fim: fim,
+    p_template: filtros.template ?? null,
+    p_status: filtros.status ?? null,
+    p_assistido: filtros.assistido ?? null,
+    p_resolucao: filtros.resolucao ?? null,
+    p_optout: filtros.optout ?? null,
+  });
+  if (error) throw error;
+  return (data as unknown as PainelV2) ?? { autorizado: false };
+}
