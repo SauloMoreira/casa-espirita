@@ -292,6 +292,7 @@ Deno.serve(async (req) => {
         telefone, texto, intencao,
         assistido_identificado: !!assistido,
         assistido_id: assistido?.id ?? null,
+        resposta_fonte: respostaFonte,
         fallback_motivo: fallbackMotivo,
       },
       status: "recebido",
