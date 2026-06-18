@@ -22,6 +22,11 @@ interface AuthContextType {
   isMaster: boolean;
   profile: UserProfile | null;
   loading: boolean;
+  /** True when the account has a verified second factor but the current session
+   *  is still aal1 — i.e. the TOTP step must be completed before access. */
+  mfaPending: boolean;
+  /** Re-evaluate the assurance level (call after completing/disabling MFA). */
+  refreshMfa: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
