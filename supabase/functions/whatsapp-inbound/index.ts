@@ -82,20 +82,54 @@ function formatarHorario(h: string | null | undefined): string {
 
 interface ItemProgramacao { nome: string; horario?: string | null; }
 
-function montarRespostaProgramacao(itens: ItemProgramacao[]): string {
+function capitalizar(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+const MENSAGEM_HANDOFF =
+  "Não consegui confirmar isso com segurança agora. Vou encaminhar para atendimento para te orientarmos corretamente. 🌿";
+
+function montarRespostaProgramacao(itens: ItemProgramacao[], label = "hoje"): string {
+  const quando = capitalizar(label);
   const lista = (itens || []).filter((i) => i && i.nome);
   if (lista.length === 0) {
-    return "Hoje não encontrei programação pública agendada. Em caso de dúvida, nossa equipe pode ajudar. 🌿";
+    return `${quando} não encontrei programação pública agendada. Em caso de dúvida, nossa equipe pode ajudar. 🌿`;
   }
   if (lista.length === 1) {
     const i = lista[0];
     const hora = formatarHorario(i.horario);
-    return `Sim, hoje temos ${i.nome}${hora ? " às " + hora : ""}. 🌿`;
+    return `Sim, ${label} temos ${i.nome}${hora ? " às " + hora : ""}. 🌿`;
   }
   const linhas = lista
     .map((i) => `• ${i.nome}${i.horario ? " às " + formatarHorario(i.horario) : ""}`)
     .join("\n");
-  return `Hoje temos:\n${linhas}\n🌿`;
+  return `${quando} temos:\n${linhas}\n🌿`;
+}
+
+interface ExcecaoOperacional {
+  atividade: string; status: string; mensagem_ia?: string | null; motivo?: string | null;
+  nova_data?: string | null; novo_horario?: string | null; horario_afetado?: string | null;
+}
+
+function montarRespostaExcecao(ex: ExcecaoOperacional, label = "hoje"): string {
+  if (ex.mensagem_ia && ex.mensagem_ia.trim()) return ex.mensagem_ia.trim();
+  const st = (ex.status || "").toLowerCase();
+  const quando = capitalizar(label);
+  if (st === "cancelado" || st === "cancelada") {
+    const motivo = ex.motivo && ex.motivo.trim() ? ` Motivo: ${ex.motivo.trim()}.` : "";
+    return `${quando} não haverá ${ex.atividade}.${motivo} Se quiser, posso verificar a próxima data para você. 🌿`;
+  }
+  if (st === "remarcado" || st === "remarcada") {
+    const nd = ex.nova_data ? formatarDataCurta(ex.nova_data) : null;
+    const nh = formatarHorario(ex.novo_horario);
+    return `${quando} ${ex.atividade} foi remarcada${nd ? " para " + nd : ""}${nh ? " às " + nh : ""}. 🌿`;
+  }
+  if (st === "excepcional") {
+    const motivo = ex.motivo && ex.motivo.trim() ? ` ${ex.motivo.trim()}.` : "";
+    return `${quando} há uma alteração em ${ex.atividade}.${motivo} Nossa equipe pode confirmar os detalhes. 🌿`;
+  }
+  const h = formatarHorario(ex.horario_afetado);
+  return `Sim, ${label} teremos ${ex.atividade}${h ? " às " + h : ""}. 🌿`;
 }
 
 interface SessaoPessoal { nome: string; data: string; horario?: string | null; status?: string | null; }
@@ -107,24 +141,25 @@ function formatarDataCurta(d: string | null | undefined): string {
   return `${day}/${m}`;
 }
 
-function montarRespostaTratamentoHoje(sessoes: SessaoPessoal[]): string {
+function montarRespostaTratamentoHoje(sessoes: SessaoPessoal[], label = "hoje"): string {
+  const quando = capitalizar(label);
   const lista = (sessoes || []).filter((s) => s && s.nome);
   const ativas = lista.filter((s) => !CANCELADO_STATUS.includes((s.status || "").toLowerCase()));
   const canceladas = lista.filter((s) => CANCELADO_STATUS.includes((s.status || "").toLowerCase()));
   if (ativas.length === 0 && canceladas.length > 0) {
     const c = canceladas[0];
-    return `Hoje sua sessão de ${c.nome} consta como ${(c.status || "").toLowerCase()}. Em caso de dúvida, nossa equipe pode confirmar. 🌿`;
+    return `${quando} sua sessão de ${c.nome} consta como ${(c.status || "").toLowerCase()}. Em caso de dúvida, nossa equipe pode confirmar. 🌿`;
   }
-  if (ativas.length === 0) return "Hoje você não tem tratamento agendado. 🌿";
+  if (ativas.length === 0) return `${quando} você não tem tratamento agendado. 🌿`;
   if (ativas.length === 1) {
     const s = ativas[0];
     const hora = formatarHorario(s.horario);
-    return `Sim, hoje você tem ${s.nome}${hora ? " às " + hora : ""}. 🌿`;
+    return `Sim, ${label} você tem ${s.nome}${hora ? " às " + hora : ""}. 🌿`;
   }
   const linhas = ativas
     .map((s) => `• ${s.nome}${s.horario ? " às " + formatarHorario(s.horario) : ""}`)
     .join("\n");
-  return `Hoje você tem:\n${linhas}\n🌿`;
+  return `${quando} você tem:\n${linhas}\n🌿`;
 }
 
 function montarRespostaProximaSessao(sessao: SessaoPessoal | null): string {
@@ -139,6 +174,45 @@ function montarRespostaProximaSessao(sessao: SessaoPessoal | null): string {
   }
   return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
 }
+
+// ===== Contexto temporal: resolve a data referida pela mensagem ATUAL =====
+const DIAS_SEMANA: Record<string, number> = {
+  domingo: 0, segunda: 1, terca: 2, "terça": 2, quarta: 3,
+  quinta: 4, sexta: 5, sabado: 6, "sábado": 6,
+};
+interface AlvoTempo { iso: string; diaSemana: number; label: string; }
+function resolverDataAlvo(texto: string, baseIso: string): AlvoTempo {
+  const txt = (texto || "").toLowerCase();
+  const base = new Date(baseIso + "T12:00:00Z");
+  const mk = (offset: number, label: string): AlvoTempo => {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() + offset);
+    return { iso: d.toISOString().slice(0, 10), diaSemana: d.getUTCDay(), label };
+  };
+  if (txt.includes("depois de amanha") || txt.includes("depois de amanhã")) return mk(2, "depois de amanhã");
+  if (txt.includes("amanha") || txt.includes("amanhã")) return mk(1, "amanhã");
+  if (txt.includes("hoje")) return mk(0, "hoje");
+  for (const [nome, dow] of Object.entries(DIAS_SEMANA)) {
+    if (txt.includes(nome)) {
+      let offset = (dow - base.getUTCDay() + 7) % 7;
+      if (offset === 0 && (txt.includes("proxima") || txt.includes("próxima") || txt.includes("que vem"))) offset = 7;
+      return mk(offset, nome.replace("terca", "terça").replace("sabado", "sábado"));
+    }
+  }
+  return mk(0, "hoje");
+}
+
+const ATIVIDADES_PUBLICAS: Array<{ nome: string; termos: string[] }> = [
+  { nome: "Palestra Pública", termos: ["palestra"] },
+  { nome: "Evangelhoterapia", termos: ["evangelhoterapia", "evangelho terapia"] },
+  { nome: "Passe", termos: ["passe"] },
+];
+function detectarAtividade(texto: string): string | null {
+  const txt = (texto || "").toLowerCase();
+  for (const a of ATIVIDADES_PUBLICAS) if (a.termos.some((t) => txt.includes(t))) return a.nome;
+  return null;
+}
+
 function hojeSaoPaulo(): { data: string; diaSemana: number } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
