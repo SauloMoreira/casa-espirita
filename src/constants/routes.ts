@@ -39,6 +39,7 @@ export const ROUTES = {
 
   // Pessoas
   usuarios: "/usuarios",
+  governancaAcessos: "/governanca-acessos",
   voluntarios: "/voluntarios",
   funcoesVoluntariado: "/funcoes-voluntariado",
 
