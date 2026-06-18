@@ -220,6 +220,29 @@ export function useVoluntarios() {
     setTermoOpen(true);
   }, []);
 
+  // Opens the full termo-flow dialog (status, upload, validate/reject, view).
+  const openTermoFlow = useCallback((v: VoluntarioListItem) => {
+    setTermoFlowVoluntario(v);
+    setTermoFlowOpen(true);
+  }, []);
+
+  // From inside the flow: open the printable filled termo and mark it generated.
+  const openTermoPrint = useCallback(async () => {
+    if (!termoFlowVoluntario) return;
+    setSelectedVoluntario(termoFlowVoluntario);
+    setTermoOpen(true);
+    try {
+      const res = await marcarTermoGerado(termoFlowVoluntario.id);
+      if (!res?.error) await reloadVoluntarios();
+    } catch {
+      /* generation marking is best-effort; printing still works */
+    }
+  }, [termoFlowVoluntario, reloadVoluntarios]);
+
+  const onTermoChanged = useCallback(async () => {
+    await reloadVoluntarios();
+  }, [reloadVoluntarios]);
+
   const handleInactivate = useCallback(
     async (v: VoluntarioListItem, motivo?: string | null) => {
       try {
