@@ -82,6 +82,7 @@ const App = () => (
                 <Route path={ROUTES.solicitarCadastro} element={<SolicitarCadastro />} />
                 <Route path={ROUTES.forgotPassword} element={<ForgotPassword />} />
                 <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
+                <Route path={ROUTES.mfaVerify} element={<MfaVerify />} />
                 <Route path={ROUTES.checkinPublico()} element={guard(<CheckinPublico />, "Check-in Público")} />
                 <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
 
