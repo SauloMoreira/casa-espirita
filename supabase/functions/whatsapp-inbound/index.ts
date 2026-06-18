@@ -52,11 +52,15 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    // Evolution webhook shape (messages.upsert). Be defensive.
+    // Z-API on-message-received webhook shape. Be defensive and also accept
+    // legacy/other shapes so the parser survives provider variations.
     const data = body?.data ?? body;
-    const remoteJid: string = data?.key?.remoteJid || data?.remoteJid || body?.phone || "";
-    const fromMe: boolean = data?.key?.fromMe ?? false;
+    const remoteJid: string =
+      body?.phone || data?.phone ||
+      data?.key?.remoteJid || data?.remoteJid || "";
+    const fromMe: boolean = body?.fromMe ?? data?.fromMe ?? data?.key?.fromMe ?? false;
     const texto: string =
+      body?.text?.message || data?.text?.message ||
       data?.message?.conversation ||
       data?.message?.extendedTextMessage?.text ||
       body?.message || body?.text || "";
@@ -67,13 +71,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const telefone = normalizePhone(remoteJid.split("@")[0]);
+    const telefone = normalizePhone(String(remoteJid).split("@")[0]);
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const adapter = getAdapter({
-      EVOLUTION_API_URL: Deno.env.get("EVOLUTION_API_URL"),
-      EVOLUTION_API_KEY: Deno.env.get("EVOLUTION_API_KEY"),
-      EVOLUTION_INSTANCE: Deno.env.get("EVOLUTION_INSTANCE"),
+      ZAPI_INSTANCE_ID: Deno.env.get("ZAPI_INSTANCE_ID"),
+      ZAPI_INSTANCE_TOKEN: Deno.env.get("ZAPI_INSTANCE_TOKEN"),
+      ZAPI_BASE_URL: Deno.env.get("ZAPI_BASE_URL"),
+      ZAPI_CLIENT_TOKEN: Deno.env.get("ZAPI_CLIENT_TOKEN"),
     });
 
     // Identify assistido by phone (digits-only match on celular/telefone).
