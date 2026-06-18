@@ -50,6 +50,16 @@ describe("canApprove", () => {
     expect(r.reason).toMatch(/solicitante/i);
   });
 
+  it("bootstrap: sole administrator may approve their own request", () => {
+    const r = canApprove({
+      ...base,
+      approverId: "requester-1",
+      requiredApprovals: 1,
+      aptAdmins: 1,
+    });
+    expect(r.allowed).toBe(true);
+  });
+
   it("blocks self-approval by the target", () => {
     const r = canApprove({ ...base, approverId: "target-1" });
     expect(r.allowed).toBe(false);
