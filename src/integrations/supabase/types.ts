@@ -1771,6 +1771,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      painel_conversas: {
+        Args: {
+          p_atendente?: string
+          p_busca?: string
+          p_fim?: string
+          p_handoff?: boolean
+          p_identificado?: boolean
+          p_inicio?: string
+          p_limit?: number
+          p_pendente?: boolean
+          p_resolucao_ia?: boolean
+          p_status?: string
+        }
+        Returns: Json
+      }
       painel_whatsapp: {
         Args: { p_fim: string; p_inicio: string }
         Returns: Json
