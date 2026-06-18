@@ -3,38 +3,64 @@
 // (every inbound produces either an IA answer or a handoff) are verifiable.
 
 export type Intencao =
-  | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
+  | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
 export const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
 
+// Personal intents (about the assistido's own treatments/appointments) MUST win
+// over the public schedule intents, so any message that uses personal markers
+// ("meu", "minha", "tenho", "tratamento", "sessão", "entrevista") is routed to
+// the assistido's real data instead of the generic house schedule.
 export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
   { intent: "opt_out", terms: ["parar", "cancelar mensagens", "nao quero", "não quero", "sair", "descadastr", "remover"] },
   { intent: "reativar", terms: ["voltar a receber", "reativar", "quero receber"] },
-  // Public, identity-free intents about the house's public schedule. Placed
-  // before personal intents so "palestra"/"trabalho público" win over generic terms.
+  // ===== PERSONAL intents (require an identified assistido + real data) =====
+  { intent: "horario_entrevista", terms: [
+    "entrevista", "tenho entrevista", "minha entrevista", "entrevista marcada", "entrevista fraterna",
+  ] },
+  { intent: "tratamento_hoje", terms: [
+    "tenho tratamento hoje", "tem tratamento hoje", "tratamento hoje",
+    "tenho sessao hoje", "tenho sessão hoje", "minha sessao hoje", "minha sessão hoje",
+    "tenho atendimento hoje", "tenho hoje", "sessao hoje", "sessão hoje", "atendimento hoje",
+  ] },
+  { intent: "proxima_sessao", terms: [
+    "proxima sessao", "próxima sessão", "minha sessao", "minha sessão",
+    "meu tratamento", "meu próximo", "meu proximo", "proximo tratamento", "próximo tratamento",
+    "proximo atendimento", "próximo atendimento", "meu atendimento", "minha proxima", "minha próxima",
+    "quando e minha sessao", "quando é minha sessão", "quando e meu", "quando é meu",
+    "que horas e minha", "que horas é minha", "horario da minha", "horário da minha",
+  ] },
+  { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
+  // ===== PUBLIC intents (identity-free, answered from the house schedule) =====
   { intent: "programacao_publica", terms: [
     "palestra", "evangelhoterapia", "evangelho terapia", "passe",
     "trabalho publico", "trabalho público", "trabalhos publicos", "trabalhos públicos",
     "atendimento publico", "atendimento público", "programacao", "programação",
-    "tem hoje", "tera hoje", "terá hoje", "tem culto", "abre hoje", "vai abrir",
+    "tem palestra", "tem culto", "abre hoje", "vai abrir", "que horas e a palestra", "que horas é a palestra",
   ] },
-  { intent: "proxima_sessao", terms: ["proxima sessao", "próxima sessão", "minha sessao", "quando e minha sessao", "quando é minha sessão"] },
-  { intent: "horario_entrevista", terms: ["entrevista"] },
-  { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
   { intent: "onde_ver_app", terms: ["app", "aplicativo", "onde vejo", "onde ver", "sistema", "site"] },
 ];
 
 export const AUTORESOLVIVEIS: Intencao[] = [
-  "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
+  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
   "programacao_publica", "opt_out", "reativar",
 ];
 
 /** Requires an identified assistido to be answered automatically. */
 export const PRECISA_ASSISTIDO: Intencao[] = [
-  "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
+  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
 ];
+
+/** True when the intent is about the assistido's own personal data. */
+export const PESSOAIS: Intencao[] = [
+  "tratamento_hoje", "proxima_sessao", "horario_entrevista",
+];
+
+export function ehPerguntaPessoal(intencao: Intencao): boolean {
+  return PESSOAIS.includes(intencao);
+}
 
 export function classificarIntencao(msg: string): Intencao {
   const txt = (msg || "").toLowerCase().trim();
@@ -76,6 +102,72 @@ export function montarRespostaProgramacao(itens: ItemProgramacao[]): string {
     .map((i) => `• ${i.nome}${i.horario ? " às " + formatarHorario(i.horario) : ""}`)
     .join("\n");
   return `Hoje temos:\n${linhas}\n🌿`;
+}
+
+export interface SessaoPessoal {
+  nome: string;
+  data: string; // YYYY-MM-DD
+  horario?: string | null;
+  status?: string | null; // e.g. "agendado", "realizado", "cancelado", "remarcado"
+}
+
+/** Formats a "YYYY-MM-DD" date as "DD/MM" (defensive, never throws). */
+export function formatarDataCurta(d: string | null | undefined): string {
+  if (!d) return "";
+  const [y, m, day] = d.split("-");
+  if (!day) return d;
+  return `${day}/${m}`;
+}
+
+/**
+ * Builds the reply for the personal question "tenho tratamento hoje?" using the
+ * assistido's REAL agenda for today. Considers operational exceptions encoded as
+ * the session status (cancelled/rescheduled) so the IA never invents a session.
+ */
+export function montarRespostaTratamentoHoje(sessoes: SessaoPessoal[]): string {
+  const lista = (sessoes || []).filter((s) => s && s.nome);
+  const ativas = lista.filter((s) => {
+    const st = (s.status || "").toLowerCase();
+    return st !== "cancelado" && st !== "cancelada" && st !== "remarcado" && st !== "remarcada";
+  });
+  const canceladas = lista.filter((s) => {
+    const st = (s.status || "").toLowerCase();
+    return st === "cancelado" || st === "cancelada" || st === "remarcado" || st === "remarcada";
+  });
+
+  if (ativas.length === 0 && canceladas.length > 0) {
+    const c = canceladas[0];
+    return `Hoje sua sessão de ${c.nome} consta como ${(c.status || "").toLowerCase()}. Em caso de dúvida, nossa equipe pode confirmar. 🌿`;
+  }
+  if (ativas.length === 0) {
+    return "Hoje você não tem tratamento agendado. 🌿";
+  }
+  if (ativas.length === 1) {
+    const s = ativas[0];
+    const hora = formatarHorario(s.horario);
+    return `Sim, hoje você tem ${s.nome}${hora ? " às " + hora : ""}. 🌿`;
+  }
+  const linhas = ativas
+    .map((s) => `• ${s.nome}${s.horario ? " às " + formatarHorario(s.horario) : ""}`)
+    .join("\n");
+  return `Hoje você tem:\n${linhas}\n🌿`;
+}
+
+/**
+ * Builds the reply for "qual meu próximo tratamento/atendimento?" using the
+ * next real scheduled session. Honors operational exceptions via the status.
+ */
+export function montarRespostaProximaSessao(sessao: SessaoPessoal | null): string {
+  if (!sessao || !sessao.nome) {
+    return "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar. 🌿";
+  }
+  const st = (sessao.status || "").toLowerCase();
+  const hora = formatarHorario(sessao.horario);
+  const data = formatarDataCurta(sessao.data);
+  if (st === "cancelado" || st === "cancelada" || st === "remarcado" || st === "remarcada") {
+    return `Sua próxima sessão de ${sessao.nome} em ${data} consta como ${st}. Nossa equipe pode confirmar a nova data. 🌿`;
+  }
+  return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
 }
 
 export interface DecisaoFallback {

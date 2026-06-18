@@ -7,24 +7,40 @@ const corsHeaders = {
 };
 
 type Intencao =
-  | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
+  | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
   | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
 
 const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
 
+// Personal intents must win over public-schedule intents so any message using
+// personal markers is answered from the assistido's REAL data, not the generic
+// house schedule.
 const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
   { intent: "opt_out", terms: ["parar", "cancelar mensagens", "nao quero", "não quero", "sair", "descadastr", "remover"] },
   { intent: "reativar", terms: ["voltar a receber", "reativar", "quero receber"] },
+  { intent: "horario_entrevista", terms: [
+    "entrevista", "tenho entrevista", "minha entrevista", "entrevista marcada", "entrevista fraterna",
+  ] },
+  { intent: "tratamento_hoje", terms: [
+    "tenho tratamento hoje", "tem tratamento hoje", "tratamento hoje",
+    "tenho sessao hoje", "tenho sessão hoje", "minha sessao hoje", "minha sessão hoje",
+    "tenho atendimento hoje", "tenho hoje", "sessao hoje", "sessão hoje", "atendimento hoje",
+  ] },
+  { intent: "proxima_sessao", terms: [
+    "proxima sessao", "próxima sessão", "minha sessao", "minha sessão",
+    "meu tratamento", "meu próximo", "meu proximo", "proximo tratamento", "próximo tratamento",
+    "proximo atendimento", "próximo atendimento", "meu atendimento", "minha proxima", "minha próxima",
+    "quando e minha sessao", "quando é minha sessão", "quando e meu", "quando é meu",
+    "que horas e minha", "que horas é minha", "horario da minha", "horário da minha",
+  ] },
+  { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
   { intent: "programacao_publica", terms: [
     "palestra", "evangelhoterapia", "evangelho terapia", "passe",
     "trabalho publico", "trabalho público", "trabalhos publicos", "trabalhos públicos",
     "atendimento publico", "atendimento público", "programacao", "programação",
-    "tem hoje", "tera hoje", "terá hoje", "tem culto", "abre hoje", "vai abrir",
+    "tem palestra", "tem culto", "abre hoje", "vai abrir", "que horas e a palestra", "que horas é a palestra",
   ] },
-  { intent: "proxima_sessao", terms: ["proxima sessao", "próxima sessão", "minha sessao", "quando e minha sessao", "quando é minha sessão"] },
-  { intent: "horario_entrevista", terms: ["entrevista"] },
-  { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
   { intent: "onde_ver_app", terms: ["app", "aplicativo", "onde vejo", "onde ver", "sistema", "site"] },
 ];
 
@@ -37,14 +53,16 @@ function classificar(msg: string): Intencao {
 }
 
 const AUTORESOLVIVEIS: Intencao[] = [
-  "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
+  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
   "programacao_publica", "opt_out", "reativar",
 ];
 
 // Intents that can only be answered automatically when we know who is asking.
 const PRECISA_ASSISTIDO: Intencao[] = [
-  "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
+  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
 ];
+
+const CANCELADO_STATUS = ["cancelado", "cancelada", "remarcado", "remarcada"];
 
 function normalizePhone(p: string): string {
   return (p || "").replace(/\D/g, "");
@@ -80,7 +98,47 @@ function montarRespostaProgramacao(itens: ItemProgramacao[]): string {
   return `Hoje temos:\n${linhas}\n🌿`;
 }
 
-/** Returns today's date (YYYY-MM-DD) and weekday (0=Sun..6=Sat) in America/Sao_Paulo. */
+interface SessaoPessoal { nome: string; data: string; horario?: string | null; status?: string | null; }
+
+function formatarDataCurta(d: string | null | undefined): string {
+  if (!d) return "";
+  const [y, m, day] = d.split("-");
+  if (!day) return d;
+  return `${day}/${m}`;
+}
+
+function montarRespostaTratamentoHoje(sessoes: SessaoPessoal[]): string {
+  const lista = (sessoes || []).filter((s) => s && s.nome);
+  const ativas = lista.filter((s) => !CANCELADO_STATUS.includes((s.status || "").toLowerCase()));
+  const canceladas = lista.filter((s) => CANCELADO_STATUS.includes((s.status || "").toLowerCase()));
+  if (ativas.length === 0 && canceladas.length > 0) {
+    const c = canceladas[0];
+    return `Hoje sua sessão de ${c.nome} consta como ${(c.status || "").toLowerCase()}. Em caso de dúvida, nossa equipe pode confirmar. 🌿`;
+  }
+  if (ativas.length === 0) return "Hoje você não tem tratamento agendado. 🌿";
+  if (ativas.length === 1) {
+    const s = ativas[0];
+    const hora = formatarHorario(s.horario);
+    return `Sim, hoje você tem ${s.nome}${hora ? " às " + hora : ""}. 🌿`;
+  }
+  const linhas = ativas
+    .map((s) => `• ${s.nome}${s.horario ? " às " + formatarHorario(s.horario) : ""}`)
+    .join("\n");
+  return `Hoje você tem:\n${linhas}\n🌿`;
+}
+
+function montarRespostaProximaSessao(sessao: SessaoPessoal | null): string {
+  if (!sessao || !sessao.nome) {
+    return "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar. 🌿";
+  }
+  const st = (sessao.status || "").toLowerCase();
+  const hora = formatarHorario(sessao.horario);
+  const data = formatarDataCurta(sessao.data);
+  if (CANCELADO_STATUS.includes(st)) {
+    return `Sua próxima sessão de ${sessao.nome} em ${data} consta como ${st}. Nossa equipe pode confirmar a nova data. 🌿`;
+  }
+  return `Sua próxima sessão é ${sessao.nome} em ${data}${hora ? " às " + hora : ""}. 🌿`;
+}
 function hojeSaoPaulo(): { data: string; diaSemana: number } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
@@ -193,16 +251,42 @@ Deno.serve(async (req) => {
           assistido_id: assistido.id, whatsapp_ativo: true, opt_out_at: null, opt_out_motivo: null,
         }, { onConflict: "assistido_id" });
         resposta = "Pronto! Voltamos a enviar seus lembretes por aqui. 🌿";
+      } else if (intencao === "tratamento_hoje" && assistido) {
+        // Personal question: does the assistido have a session TODAY? Uses the
+        // real agenda and honors operational exceptions via the session status.
+        const { data: hojeData } = hojeSaoPaulo();
+        const { data: sessoesHoje } = await admin
+          .from("agenda_tratamentos_assistido")
+          .select("horario, status, tipos_tratamento ( nome )")
+          .eq("assistido_id", assistido.id)
+          .eq("data_sessao", hojeData)
+          .order("horario", { ascending: true });
+        const itensHoje: SessaoPessoal[] = (sessoesHoje || []).map((s: any) => ({
+          nome: s?.tipos_tratamento?.nome || "Tratamento",
+          data: hojeData,
+          horario: s?.horario ?? null,
+          status: s?.status ?? null,
+        }));
+        respostaFonte = "agenda_real_assistido";
+        resposta = montarRespostaTratamentoHoje(itensHoje);
       } else if (intencao === "proxima_sessao" && assistido) {
+        const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin
           .from("agenda_tratamentos_assistido")
-          .select("data_sessao, horario")
-          .eq("assistido_id", assistido.id).eq("status", "agendado")
-          .gte("data_sessao", new Date().toISOString().slice(0, 10))
-          .order("data_sessao", { ascending: true }).limit(1).maybeSingle();
-        resposta = sess
-          ? `Sua próxima sessão é em ${fmtData(sess.data_sessao)}${sess.horario ? " às " + sess.horario.slice(0, 5) : ""}. 🌿`
-          : "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar.";
+          .select("data_sessao, horario, status, tipos_tratamento ( nome )")
+          .eq("assistido_id", assistido.id)
+          .neq("status", "realizado")
+          .gte("data_sessao", hoje)
+          .order("data_sessao", { ascending: true })
+          .order("horario", { ascending: true })
+          .limit(1).maybeSingle();
+        respostaFonte = "agenda_real_assistido";
+        resposta = montarRespostaProximaSessao(sess ? {
+          nome: (sess as any)?.tipos_tratamento?.nome || "Tratamento",
+          data: sess.data_sessao,
+          horario: sess.horario,
+          status: sess.status,
+        } : null);
       } else if (intencao === "horario_entrevista" && assistido) {
         const { data: ent } = await admin
           .from("entrevistas_fraternas")
