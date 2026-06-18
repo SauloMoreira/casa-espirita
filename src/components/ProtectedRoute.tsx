@@ -40,6 +40,12 @@ export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
     return <Navigate to="/reset-password" replace />;
   }
 
+  // Second factor pending: the account has a verified MFA factor but the session
+  // is still aal1. Force the TOTP step before any protected content renders.
+  if (mfaPending && location.pathname !== "/mfa-verify") {
+    return <Navigate to="/mfa-verify" replace />;
+  }
+
   // Fail-closed: a route that requires roles must NEVER render until a
   // valid role has been resolved AND the user holds one of the allowed roles.
   //
