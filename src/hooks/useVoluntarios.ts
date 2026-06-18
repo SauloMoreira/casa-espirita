@@ -29,6 +29,7 @@ import {
   saveVoluntario,
   inactivateVoluntario,
   reactivateVoluntario,
+  marcarTermoGerado,
 } from "@/services/voluntarios/voluntariosService";
 import type {
   FuncaoVoluntariado,
