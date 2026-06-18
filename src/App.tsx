@@ -35,6 +35,8 @@ const GestaoCores = lazy(() => import("./pages/GestaoCores"));
 const Auditoria = lazy(() => import("./pages/Auditoria"));
 const RegrasOperacionais = lazy(() => import("./pages/RegrasOperacionais"));
 const Excecoes = lazy(() => import("./pages/Excecoes"));
+const ExcecoesOperacionais = lazy(() => import("./pages/ExcecoesOperacionais"));
+const ProgramacaoPadrao = lazy(() => import("./pages/ProgramacaoPadrao"));
 const Instituicao = lazy(() => import("./pages/Instituicao"));
 const CoordenadorListaEspera = lazy(() => import("./pages/CoordenadorListaEspera"));
 const CoordenadorTratamentos = lazy(() => import("./pages/CoordenadorTratamentos"));
