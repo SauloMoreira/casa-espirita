@@ -127,3 +127,65 @@ export async function processarFila(): Promise<unknown> {
   if (error) throw error;
   return data;
 }
+
+// ===== Painel operacional do canal WhatsApp =====
+
+export interface PainelPorTipo {
+  tipo: string;
+  geradas: number;
+  enviadas: number;
+  falhas: number;
+  taxa_entrega: number;
+}
+
+export interface PainelIntent {
+  intent: string;
+  total: number;
+}
+
+export interface PainelFalha {
+  tipo: string;
+  telefone: string | null;
+  erro: string | null;
+  quando: string | null;
+}
+
+export interface PainelWhatsapp {
+  autorizado: boolean;
+  periodo?: { inicio: string; fim: string };
+  operacional?: {
+    geradas: number;
+    enviadas: number;
+    falhas: number;
+    pendentes: number;
+    agendados: number;
+    canceladas: number;
+    inbound: number;
+    optout: number;
+    handoffs_abertos: number;
+    handoffs_resolvidos: number;
+    intents_ia: number;
+  };
+  por_tipo?: PainelPorTipo[];
+  intents?: PainelIntent[];
+  falhas_recentes?: PainelFalha[];
+  impacto?: {
+    presenca_atual_pct: number;
+    presenca_anterior_pct: number;
+    faltas_atual: number;
+    faltas_anterior: number;
+    presentes_atual: number;
+    ausentes_atual: number;
+    periodo_anterior: { inicio: string; fim: string };
+  };
+}
+
+/** Indicadores operacionais e de impacto do canal WhatsApp por período. */
+export async function getPainelWhatsapp(inicio: string, fim: string): Promise<PainelWhatsapp> {
+  const { data, error } = await supabase.rpc("painel_whatsapp", {
+    p_inicio: inicio,
+    p_fim: fim,
+  });
+  if (error) throw error;
+  return (data as unknown as PainelWhatsapp) ?? { autorizado: false };
+}
