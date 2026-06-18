@@ -13,7 +13,7 @@ import { isValidTotpCode, isValidRecoveryCodeFormat } from "@/lib/mfa";
 import ferIcon from "@/assets/fer-icon.png";
 
 export default function MfaVerify() {
-  const { session, refreshMfa, signOut } = useAuth();
+  const { refreshMfa, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
