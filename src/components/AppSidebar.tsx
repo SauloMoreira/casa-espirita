@@ -343,7 +343,7 @@ export function AppSidebar() {
                 {profile?.nome_completo || user?.email}
               </p>
               <span className="inline-block mt-0.5 text-[9px] uppercase tracking-wider bg-sidebar-accent/60 text-sidebar-foreground/70 px-1.5 py-0.5 rounded font-medium">
-                {role ? roleLabels[role] : ""}
+                {isMaster ? roleLabels.administrador_master : role ? roleLabels[role] : ""}
               </span>
             </div>
           </div>
