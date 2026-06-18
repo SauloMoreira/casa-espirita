@@ -9,9 +9,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
 import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
+import { AtendimentoDrawer } from "@/components/notificacoes/AtendimentoDrawer";
 import {
-  listFila, listConversas, listHandoffs, assumirHandoff, fecharHandoff, processarFila,
-  type FilaItem, type Conversa, type Handoff,
+  listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
+  type FilaItem, type Conversa, type HandoffEnriquecido,
 } from "@/services/notificacoes/notificacoesService";
 
 const STATUS_COLORS: Record<string, string> = {
