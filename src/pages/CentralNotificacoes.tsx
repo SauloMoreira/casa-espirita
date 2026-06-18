@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, RefreshCw, MessageSquare, ListChecks, Headphones } from "lucide-react";
+import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
+import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
 import {
   listFila, listConversas, listHandoffs, assumirHandoff, fecharHandoff, processarFila,
   type FilaItem, type Conversa, type Handoff,
@@ -100,8 +101,9 @@ export default function CentralNotificacoes() {
         </div>
       </div>
 
-      <Tabs defaultValue="fila">
+      <Tabs defaultValue="painel">
         <TabsList>
+          <TabsTrigger value="painel"><BarChart3 className="h-4 w-4 mr-1" /> Painel</TabsTrigger>
           <TabsTrigger value="fila"><ListChecks className="h-4 w-4 mr-1" /> Fila</TabsTrigger>
           <TabsTrigger value="conversas"><MessageSquare className="h-4 w-4 mr-1" /> Conversas</TabsTrigger>
           <TabsTrigger value="handoffs">
@@ -109,6 +111,12 @@ export default function CentralNotificacoes() {
             {handoffsAbertos > 0 && <Badge variant="secondary" className="ml-1">{handoffsAbertos}</Badge>}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="painel" className="mt-4">
+          <PainelWhatsapp />
+        </TabsContent>
+
+
 
         <TabsContent value="fila" className="mt-4">
           <Card className="glass-card">
