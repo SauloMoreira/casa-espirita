@@ -211,16 +211,42 @@ Deno.serve(async (req) => {
           assistido_id: assistido.id, whatsapp_ativo: true, opt_out_at: null, opt_out_motivo: null,
         }, { onConflict: "assistido_id" });
         resposta = "Pronto! Voltamos a enviar seus lembretes por aqui. 🌿";
+      } else if (intencao === "tratamento_hoje" && assistido) {
+        // Personal question: does the assistido have a session TODAY? Uses the
+        // real agenda and honors operational exceptions via the session status.
+        const { data: hojeData } = hojeSaoPaulo();
+        const { data: sessoesHoje } = await admin
+          .from("agenda_tratamentos_assistido")
+          .select("horario, status, tipos_tratamento ( nome )")
+          .eq("assistido_id", assistido.id)
+          .eq("data_sessao", hojeData)
+          .order("horario", { ascending: true });
+        const itensHoje: SessaoPessoal[] = (sessoesHoje || []).map((s: any) => ({
+          nome: s?.tipos_tratamento?.nome || "Tratamento",
+          data: hojeData,
+          horario: s?.horario ?? null,
+          status: s?.status ?? null,
+        }));
+        respostaFonte = "agenda_real_assistido";
+        resposta = montarRespostaTratamentoHoje(itensHoje);
       } else if (intencao === "proxima_sessao" && assistido) {
+        const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin
           .from("agenda_tratamentos_assistido")
-          .select("data_sessao, horario")
-          .eq("assistido_id", assistido.id).eq("status", "agendado")
-          .gte("data_sessao", new Date().toISOString().slice(0, 10))
-          .order("data_sessao", { ascending: true }).limit(1).maybeSingle();
-        resposta = sess
-          ? `Sua próxima sessão é em ${fmtData(sess.data_sessao)}${sess.horario ? " às " + sess.horario.slice(0, 5) : ""}. 🌿`
-          : "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar.";
+          .select("data_sessao, horario, status, tipos_tratamento ( nome )")
+          .eq("assistido_id", assistido.id)
+          .neq("status", "realizado")
+          .gte("data_sessao", hoje)
+          .order("data_sessao", { ascending: true })
+          .order("horario", { ascending: true })
+          .limit(1).maybeSingle();
+        respostaFonte = "agenda_real_assistido";
+        resposta = montarRespostaProximaSessao(sess ? {
+          nome: (sess as any)?.tipos_tratamento?.nome || "Tratamento",
+          data: sess.data_sessao,
+          horario: sess.horario,
+          status: sess.status,
+        } : null);
       } else if (intencao === "horario_entrevista" && assistido) {
         const { data: ent } = await admin
           .from("entrevistas_fraternas")
