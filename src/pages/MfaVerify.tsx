@@ -13,7 +13,7 @@ import { isValidTotpCode, isValidRecoveryCodeFormat } from "@/lib/mfa";
 import ferIcon from "@/assets/fer-icon.png";
 
 export default function MfaVerify() {
-  const { session, mfaPending, refreshMfa, signOut } = useAuth();
+  const { session, refreshMfa, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,13 +22,19 @@ export default function MfaVerify() {
   const [recovery, setRecovery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If there is no session, or the second factor is no longer pending, leave.
+  // Self-sufficient gate: query the assurance level directly so we never bounce
+  // to a protected page during the context's async refresh window.
   useEffect(() => {
-    if (session === null) navigate("/login", { replace: true });
-  }, [session, navigate]);
-  useEffect(() => {
-    if (session && !mfaPending) navigate("/dashboard", { replace: true });
-  }, [session, mfaPending, navigate]);
+    let active = true;
+    (async () => {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      if (!s) { if (active) navigate("/login", { replace: true }); return; }
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const pending = data?.currentLevel === "aal1" && data?.nextLevel === "aal2";
+      if (active && !pending) navigate("/dashboard", { replace: true });
+    })();
+    return () => { active = false; };
+  }, [navigate]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
