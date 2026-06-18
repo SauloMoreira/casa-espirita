@@ -468,6 +468,77 @@ export type Database = {
           },
         ]
       }
+      excecoes_operacionais: {
+        Row: {
+          atividade: string
+          ativo: boolean
+          atualizado_por: string | null
+          created_at: string
+          criado_por: string | null
+          data_excecao: string
+          horario_afetado: string | null
+          id: string
+          mensagem_ia: string | null
+          motivo: string | null
+          nova_data: string | null
+          novo_horario: string | null
+          observacao_interna: string | null
+          prioridade: number
+          status: string
+          tipo: string
+          tratamento_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          atividade: string
+          ativo?: boolean
+          atualizado_por?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_excecao: string
+          horario_afetado?: string | null
+          id?: string
+          mensagem_ia?: string | null
+          motivo?: string | null
+          nova_data?: string | null
+          novo_horario?: string | null
+          observacao_interna?: string | null
+          prioridade?: number
+          status?: string
+          tipo?: string
+          tratamento_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          atividade?: string
+          ativo?: boolean
+          atualizado_por?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_excecao?: string
+          horario_afetado?: string | null
+          id?: string
+          mensagem_ia?: string | null
+          motivo?: string | null
+          nova_data?: string | null
+          novo_horario?: string | null
+          observacao_interna?: string | null
+          prioridade?: number
+          status?: string
+          tipo?: string
+          tratamento_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excecoes_operacionais_tratamento_id_fkey"
+            columns: ["tratamento_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_tratamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funcoes_voluntariado: {
         Row: {
           created_at: string
@@ -1323,6 +1394,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      programacao_padrao: {
+        Row: {
+          atividade: string
+          ativo: boolean
+          atualizado_por: string | null
+          created_at: string
+          criado_por: string | null
+          dia_semana: number
+          frequencia: string | null
+          horario: string | null
+          id: string
+          observacao: string | null
+          tipo: string
+          tratamento_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          atividade: string
+          ativo?: boolean
+          atualizado_por?: string | null
+          created_at?: string
+          criado_por?: string | null
+          dia_semana: number
+          frequencia?: string | null
+          horario?: string | null
+          id?: string
+          observacao?: string | null
+          tipo?: string
+          tratamento_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          atividade?: string
+          ativo?: boolean
+          atualizado_por?: string | null
+          created_at?: string
+          criado_por?: string | null
+          dia_semana?: number
+          frequencia?: string | null
+          horario?: string | null
+          id?: string
+          observacao?: string | null
+          tipo?: string
+          tratamento_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programacao_padrao_tratamento_id_fkey"
+            columns: ["tratamento_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_tratamento"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regras_operacionais: {
         Row: {
