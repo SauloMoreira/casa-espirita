@@ -95,23 +95,81 @@ function classificar(msg: string): Intencao {
   return "complexo";
 }
 
-function montarRespostaConversacional(
-  intencao: Intencao, horaLocal?: number, jaSaudado?: boolean,
-): string {
-  if (intencao === "agradecimento") return "Disponha! 🌿 Fico à disposição se precisar de mais alguma informação.";
-  if (intencao === "encerramento") return "Conte conosco. 🌿 Se precisar de mais alguma orientação, a casa está à disposição para te acolher.";
-  if (intencao === "pedido_informacao") {
-    return "Com prazer! Você gostaria de saber sobre a programação da casa, entrevistas ou tratamentos? 🌿";
-  }
-  // saudacao — don't repeat the greeting if we already greeted in this conversation.
-  if (jaSaudado) return "Claro, posso te ajudar com isso. 🌿 Sobre o que você gostaria de saber?";
+// ===== Conversational generation: controlled repertoire + anti-repetition =====
+// The wording is NOT a fixed string per intent. Each "modo" has a repertoire;
+// a deterministic seed from the current message picks one, avoiding the exact
+// text sent last turn. Data/decisions stay rigid; only the phrasing varies.
+const SAUDACAO_SUFIXOS = [
+  "Como posso te ajudar hoje?",
+  "Fico à disposição. Em que posso ajudar?",
+  "Se quiser, posso te ajudar com informações da casa, entrevistas ou tratamentos.",
+  "Seja bem-vindo(a). Como posso te ajudar?",
+];
+const CONTINUACAO_FRASES = [
+  "Claro, posso te ajudar com isso. 🌿 Sobre o que você gostaria de saber?",
+  "Fico à disposição. 🌿 Em que posso ajudar?",
+  "Se quiser, posso te orientar por aqui. 🌿",
+  "Pode me dizer o que você gostaria de saber? 🌿",
+];
+const BEM_ESTAR_TERMOS = ["tudo bem", "tudo bom", "como vai", "como voce esta", "como você está"];
+const BEM_ESTAR_FRASES = [
+  "Tudo bem, sim. 🌿 E com você?",
+  "Tudo bem, graças a Deus. 🌿 Em que posso te ajudar?",
+  "Tudo ótimo por aqui. 🌿 Como posso te ajudar hoje?",
+];
+const PONTE_FRASES = [
+  "Claro, fico à disposição. Sobre o que você gostaria de saber? 🌿",
+  "Posso ajudar, sim. Você gostaria de saber sobre programação, entrevistas ou tratamentos? 🌿",
+  "Com prazer. Pode me dizer qual informação deseja consultar? 🌿",
+  "Com prazer! Você gostaria de saber sobre a programação da casa, entrevistas ou tratamentos? 🌿",
+];
+const AGRADECIMENTO_FRASES = [
+  "Disponha! 🌿 Fico à disposição se precisar de mais alguma informação.",
+  "Por nada! 🌿 Se precisar, é só me chamar.",
+  "Imagina! 🌿 Estou por aqui se precisar de mais alguma coisa.",
+];
+const ENCERRAMENTO_FRASES = [
+  "Conte conosco. 🌿 Se precisar de mais alguma orientação, a casa está à disposição para te acolher.",
+  "Fico à disposição se precisar de mais alguma informação. 🌿",
+  "Se precisar, posso continuar te ajudando por aqui. 🌿",
+  "Conte conosco. 🌿",
+];
+
+function hashTexto(s: string): number {
+  let h = 0;
+  const t = s || "";
+  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function escolherFrase(lista: string[], seed: number, evitar?: string | null): string {
+  if (!lista || lista.length === 0) return "";
+  if (lista.length === 1) return lista[0];
+  let idx = ((seed % lista.length) + lista.length) % lista.length;
+  if (evitar != null && lista[idx] === evitar) idx = (idx + 1) % lista.length;
+  return lista[idx];
+}
+
+interface ConversaContexto {
+  horaLocal?: number; jaSaudado?: boolean; texto?: string; ultimaResposta?: string | null;
+}
+
+function gerarRespostaConversacional(intencao: Intencao, ctx: ConversaContexto = {}): string {
+  const seed = hashTexto(ctx.texto || "") + (ctx.jaSaudado ? 1 : 0);
+  const evitar = ctx.ultimaResposta ?? null;
+  if (intencao === "agradecimento") return escolherFrase(AGRADECIMENTO_FRASES, seed, evitar);
+  if (intencao === "encerramento") return escolherFrase(ENCERRAMENTO_FRASES, seed, evitar);
+  if (intencao === "pedido_informacao") return escolherFrase(PONTE_FRASES, seed, evitar);
+  const txt = (ctx.texto || "").toLowerCase();
+  if (BEM_ESTAR_TERMOS.some((t) => txt.includes(t))) return escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+  if (ctx.jaSaudado) return escolherFrase(CONTINUACAO_FRASES, seed, evitar);
   let saudacao = "Olá";
-  if (typeof horaLocal === "number") {
-    if (horaLocal < 12) saudacao = "Bom dia";
-    else if (horaLocal < 18) saudacao = "Boa tarde";
+  if (typeof ctx.horaLocal === "number") {
+    if (ctx.horaLocal < 12) saudacao = "Bom dia";
+    else if (ctx.horaLocal < 18) saudacao = "Boa tarde";
     else saudacao = "Boa noite";
   }
-  return `${saudacao}! 🌿 Seja bem-vindo(a). Como posso te ajudar hoje?`;
+  return escolherFrase(SAUDACAO_SUFIXOS.map((s) => `${saudacao}! 🌿 ${s}`), seed, evitar);
 }
 
 // True when the conversation was already greeted recently, so the IA continues
