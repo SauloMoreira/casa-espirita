@@ -47,6 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [mfaPending, setMfaPending] = useState(false);
+  // Fail-closed authorization state: only true once role/profile resolution
+  // has SUCCEEDED. A read failure must never collapse into a permissive role.
+  const [rolesResolved, setRolesResolved] = useState(false);
 
   const refreshMfa = async () => {
     try {
