@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword";
 const CheckinPublico = lazy(() => import("./pages/CheckinPublico"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
+const GovernancaAcessos = lazy(() => import("./pages/GovernancaAcessos"));
 const Tratamentos = lazy(() => import("./pages/Tratamentos"));
 const Assistidos = lazy(() => import("./pages/Assistidos"));
 const Entrevistas = lazy(() => import("./pages/Entrevistas"));
