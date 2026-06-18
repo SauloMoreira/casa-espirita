@@ -58,7 +58,7 @@ export function VoluntariosList({
           <TableBody>
             {voluntarios.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   {VOLUNTARIO_MESSAGES.emptyList}
                 </TableCell>
               </TableRow>
