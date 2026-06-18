@@ -65,6 +65,9 @@ export function useVoluntarios() {
   const [fichaOpen, setFichaOpen] = useState(false);
   const [selectedVoluntario, setSelectedVoluntario] = useState<VoluntarioListItem | null>(null);
 
+  const [termoFlowOpen, setTermoFlowOpen] = useState(false);
+  const [termoFlowVoluntario, setTermoFlowVoluntario] = useState<VoluntarioListItem | null>(null);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<VoluntarioListItem | null>(null);
 
