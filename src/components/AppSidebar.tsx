@@ -10,6 +10,7 @@ import {
   BookOpen,
   Settings,
   Shield,
+  ShieldCheck,
   HandHeart,
   FileText,
   Cog,
