@@ -604,9 +604,10 @@ export const ONBOARDING_FLOWS: OnboardingFlow[] = [
   {
     role: "tarefeiro",
     steps: [
-      { title: "Bem-vindo(a)", description: "Você registra presenças e apoia as sessões públicas." },
+      { title: "Bem-vindo(a)", description: "Você registra presenças, apoia as sessões públicas e pode marcar entrevistas." },
       { title: "Presença", description: "Selecione o plantão, marque os presentes e salve." },
       { title: "Sessões Públicas", description: "Use o QR do dia ou o registro manual quando necessário." },
+      { title: "Agendar Entrevista", description: "Em Agendar Entrevista, escolha o tipo, o assistido e a data; confira a Agenda para evitar conflito de horário." },
       { title: "Ajuda em tela", description: "O botão Ajuda explica cada passo sem complicação." },
     ],
   },
