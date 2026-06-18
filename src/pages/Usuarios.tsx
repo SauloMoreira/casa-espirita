@@ -389,6 +389,17 @@ export default function Usuarios() {
         </Dialog>
       </div>
 
+      <Alert className="bg-primary/5 border-primary/20">
+        <ShieldCheck className="h-4 w-4 text-primary" />
+        <AlertTitle className="text-primary">Governança de Acessos Administrativos</AlertTitle>
+        <AlertDescription className="text-primary/80">
+          Concessão e aprovação de privilégios administrativos são geridos em ambiente separado.{" "}
+          <Link to="/governanca-acessos" className="font-semibold underline hover:text-primary">
+            Ir para Governança de Acessos →
+          </Link>
+        </AlertDescription>
+      </Alert>
+
       <Card className="glass-card">
         <CardHeader className="pb-3">
           <div className="relative">
