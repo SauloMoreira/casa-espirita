@@ -649,15 +649,19 @@ Deno.serve(async (req) => {
         const alvo = resolverDataAlvo(texto, baseIso);
         const atividade = detectarAtividade(texto);
 
-        // 1) EXCEPTIONS registered for the requested date (public scope).
+        // 1) EXCEPTIONS registered for the requested date.
+        // When a specific activity is named (e.g. "evangelhoterapia"), match it by
+        // name regardless of the exception's "tipo" — an exception can be registered
+        // as "tratamento" even for a public activity. Without a named activity we
+        // restrict to public-scope exceptions so personal cancellations don't leak.
         let excQuery = admin
           .from("excecoes_operacionais")
           .select("atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado, prioridade")
           .eq("ativo", true)
           .eq("data_excecao", alvo.iso)
-          .eq("tipo", "publico")
           .order("prioridade", { ascending: false });
         if (atividade) excQuery = excQuery.ilike("atividade", `%${atividade}%`);
+        else excQuery = excQuery.eq("tipo", "publico");
         const { data: excecoesCad } = await excQuery;
 
         if (excecoesCad && excecoesCad.length > 0) {
