@@ -538,7 +538,7 @@ Deno.serve(async (req) => {
         });
       }
       await admin.from("whatsapp_conversas").update({ em_handoff: true }).eq("id", conversaId);
-      resposta = resposta || "Recebemos sua mensagem! Um de nossos atendentes vai responder em breve. 🌿";
+      resposta = resposta || MENSAGEM_HANDOFF;
     }
 
     // Send auto-reply (IA). If sending fails, ensure a handoff exists so the
