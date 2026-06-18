@@ -405,6 +405,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cadastro_solicitacoes: {
+        Row: {
+          celular: string | null
+          cpf: string | null
+          created_at: string
+          decidido_em: string | null
+          decidido_por: string | null
+          email: string
+          id: string
+          motivo_rejeicao: string | null
+          nome_completo: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          celular?: string | null
+          cpf?: string | null
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          email: string
+          id?: string
+          motivo_rejeicao?: string | null
+          nome_completo: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          celular?: string | null
+          cpf?: string | null
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          email?: string
+          id?: string
+          motivo_rejeicao?: string | null
+          nome_completo?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       checkin_tentativas: {
         Row: {
           created_at: string

@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   children: React.ReactNode;
@@ -9,16 +8,18 @@ interface Props {
 }
 
 export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
-  const { session, role, profile, loading, signOut } = useAuth();
+  const { session, role, roles, profile, loading, signOut } = useAuth();
   const location = useLocation();
 
-  // Inactivated users lose access immediately: sign them out.
-  const isInactive = profile?.status === "inativo";
+  // Accounts that are not active lose access immediately:
+  // - "inativo": deactivated by an admin
+  // - "pendente": self-registration awaiting administrative approval
+  const blockedStatus = profile?.status === "inativo" || profile?.status === "pendente";
   useEffect(() => {
-    if (session && isInactive) {
+    if (session && blockedStatus) {
       signOut();
     }
-  }, [session, isInactive, signOut]);
+  }, [session, blockedStatus, signOut]);
 
   if (loading) {
     return (
@@ -31,8 +32,8 @@ export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   // No session: send to login.
   if (!session) return <Navigate to="/login" replace />;
 
-  // Inactivated account: deny access (sign-out handled above).
-  if (isInactive) return <Navigate to="/login" replace />;
+  // Blocked account (inactive or pending approval): deny access.
+  if (blockedStatus) return <Navigate to="/login" replace />;
 
   // Force temporary-password users to change it before anything else.
   if (profile?.senha_temporaria && location.pathname !== "/reset-password") {
@@ -40,13 +41,21 @@ export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   }
 
   // Fail-closed: a route that requires roles must NEVER render until a
-  // valid role has been resolved AND it is one of the allowed roles.
+  // valid role has been resolved AND the user holds one of the allowed roles.
+  //
+  // Guarding on the FULL roles array (not a single collapsed role) is essential:
+  // a person can accumulate an institutional role (e.g. tarefeiro/médium/admin)
+  // AND the "assistido" condition at the same time, and must keep access to BOTH
+  // experiences. We also treat "administrador_master" as "admin" for guards.
   if (allowedRoles && allowedRoles.length > 0) {
-    if (!role) {
-      // Role not yet resolved or could not be determined -> deny.
+    const effectiveRoles = new Set<AppRole>(roles);
+    if (role) effectiveRoles.add(role);
+    if (effectiveRoles.has("administrador_master")) effectiveRoles.add("admin");
+
+    if (effectiveRoles.size === 0) {
       return <Navigate to="/login" replace />;
     }
-    if (!allowedRoles.includes(role)) {
+    if (!allowedRoles.some((r) => effectiveRoles.has(r))) {
       return <Navigate to="/dashboard" replace />;
     }
   }
