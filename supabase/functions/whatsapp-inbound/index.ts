@@ -811,6 +811,15 @@ Deno.serve(async (req) => {
       resposta = null;
     }
 
+    // Persist short conversational context (last date/activity) for follow-ups.
+    if (ctxData || ctxAtividade) {
+      await admin.from("whatsapp_conversas").update({
+        contexto_data: ctxData,
+        contexto_atividade: ctxAtividade,
+      }).eq("id", conversaId);
+    }
+
+
     // Log inbound with full audit context (identification + intent + fallback).
     await admin.from("notificacoes_log").insert({
       fila_id: null, direcao: "entrada",
