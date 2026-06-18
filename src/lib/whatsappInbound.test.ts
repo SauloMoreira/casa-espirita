@@ -4,7 +4,50 @@ import {
   montarRespostaProgramacao, formatarHorario, ehPerguntaPessoal,
   montarRespostaTratamentoHoje, montarRespostaProximaSessao, formatarDataCurta,
   resolverDataAlvo, detectarAtividade, montarRespostaExcecao,
+  ehConversacional, montarRespostaConversacional,
 } from "./whatsappInbound";
+
+describe("whatsappInbound — camada conversacional básica", () => {
+  it("classifica saudações isoladas como saudacao", () => {
+    expect(classificarIntencao("oi")).toBe("saudacao");
+    expect(classificarIntencao("olá")).toBe("saudacao");
+    expect(classificarIntencao("bom dia")).toBe("saudacao");
+    expect(classificarIntencao("boa tarde")).toBe("saudacao");
+    expect(classificarIntencao("boa noite")).toBe("saudacao");
+    expect(classificarIntencao("tudo bem?")).toBe("saudacao");
+  });
+
+  it("classifica agradecimentos/ok como agradecimento", () => {
+    expect(classificarIntencao("obrigado")).toBe("agradecimento");
+    expect(classificarIntencao("valeu")).toBe("agradecimento");
+    expect(classificarIntencao("ok")).toBe("agradecimento");
+    expect(classificarIntencao("certo")).toBe("agradecimento");
+  });
+
+  it("saudação isolada NÃO gera handoff", () => {
+    expect(ehConversacional("saudacao")).toBe(true);
+    expect(ehConversacional("agradecimento")).toBe(true);
+    const d = decidirHandoff("saudacao", { assistidoIdentificado: false, respostaGerada: true });
+    expect(d.handoff).toBe(false);
+    const d2 = decidirHandoff("agradecimento", { assistidoIdentificado: false, respostaGerada: true });
+    expect(d2.handoff).toBe(false);
+  });
+
+  it("saudação + pergunta operacional segue para a lógica de negócio", () => {
+    expect(classificarIntencao("boa tarde, tem palestra hoje?")).toBe("programacao_publica");
+    expect(classificarIntencao("oi, tenho tratamento hoje?")).toBe("tratamento_hoje");
+    expect(classificarIntencao("bom dia, quando é minha próxima sessão?")).toBe("proxima_sessao");
+  });
+
+  it("monta resposta social humana e breve, adaptada ao período do dia", () => {
+    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/Bom dia! 🌿/);
+    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/Boa tarde! 🌿/);
+    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/Boa noite! 🌿/);
+    expect(montarRespostaConversacional("saudacao")).toMatch(/Olá! 🌿/);
+    expect(montarRespostaConversacional("agradecimento")).toMatch(/Disponha! 🌿/);
+  });
+});
+
 
 describe("whatsappInbound — classificação de intenção", () => {
   it("classifica mensagens vazias como complexo", () => {
