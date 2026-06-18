@@ -342,52 +342,95 @@ export function saudacaoPorHora(horaLocal?: number): string {
   return "Boa noite";
 }
 
-// Suffixes appended to the time-of-day greeting on the FIRST contact.
+// ===================== PERSONA & EMOJI =====================
+// The IA presents itself as "Daniel", virtual assistant of the FER. The full
+// presentation only happens on the FIRST contact of a conversation; afterwards
+// the dialog flows naturally without re-introducing the persona.
+
+/** Assistant identity used in the opening presentation. */
+export const IA_NOME = "Daniel";
+export const IA_CASA = "FER";
+export const IA_APRESENTACAO = `Sou ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+
+// Controlled emoji palette by context — variety with good sense, never spammy.
+// Each context offers a few options so the same emoji is not repeated mechanically.
+export const EMOJI_PALETA = {
+  saudacao: ["✨", "🌿", "🙏"],
+  bemestar: ["🌿", "💙", "🙏"],
+  ponte: ["🌿", "✨", "🙏"],
+  agradecimento: ["🙏", "🌿", "💙"],
+  encerramento: ["🙏", "🌿", "💙"],
+  agenda: ["📅", "⏰", "✅"],
+  aviso: ["⚠️", "📅"],
+  handoff: ["🤝"],
+} as const;
+
+/** Deterministically picks one emoji from a context palette, avoiding `evitar`. */
+export function escolherEmoji(
+  contexto: keyof typeof EMOJI_PALETA,
+  seed: number,
+  evitar?: string | null,
+): string {
+  const lista = EMOJI_PALETA[contexto] as readonly string[];
+  if (!lista || lista.length === 0) return "";
+  let idx = ((seed % lista.length) + lista.length) % lista.length;
+  if (evitar != null && lista[idx] === evitar) idx = (idx + 1) % lista.length;
+  return lista[idx];
+}
+
+// Suffixes appended to the FIRST-contact greeting (after the persona presentation).
 export const SAUDACAO_SUFIXOS = [
-  "Como posso te ajudar hoje?",
-  "Fico à disposição. Em que posso ajudar?",
-  "Se quiser, posso te ajudar com informações da casa, entrevistas ou tratamentos.",
-  "Seja bem-vindo(a). Como posso te ajudar?",
+  "Como posso te ajudar?",
+  "Posso te ajudar com informações da casa, entrevistas, tratamentos e agendamentos. Como posso te ajudar?",
+  "Estou à disposição para te ajudar com informações da casa e seus atendimentos.",
+  "Fico à disposição para te ajudar. O que você gostaria de saber?",
 ];
 
-// Continued conversation (already greeted): keep flowing WITHOUT a new greeting.
+// Continued conversation (already greeted): keep flowing WITHOUT a new greeting
+// and WITHOUT re-introducing the persona. Emojis are injected dynamically.
 export const CONTINUACAO_FRASES = [
-  "Claro, posso te ajudar com isso. 🌿 Sobre o que você gostaria de saber?",
-  "Fico à disposição. 🌿 Em que posso ajudar?",
-  "Se quiser, posso te orientar por aqui. 🌿",
-  "Pode me dizer o que você gostaria de saber? 🌿",
+  "Claro, posso te ajudar com isso. Sobre o que você gostaria de saber?",
+  "Fico à disposição. Em que posso ajudar?",
+  "Pode me dizer o que você gostaria de saber?",
+  "Com prazer. O que você deseja consultar?",
 ];
 
 // Well-being questions ("tudo bem?", "como vai?").
 export const BEM_ESTAR_TERMOS = ["tudo bem", "tudo bom", "como vai", "como voce esta", "como você está"];
 export const BEM_ESTAR_FRASES = [
-  "Tudo bem, sim. 🌿 E com você?",
-  "Tudo bem, graças a Deus. 🌿 Em que posso te ajudar?",
-  "Tudo ótimo por aqui. 🌿 Como posso te ajudar hoje?",
+  "Tudo bem, sim. E com você?",
+  "Tudo bem, obrigado por perguntar. Em que posso te ajudar?",
+  "Tudo ótimo por aqui. Como posso te ajudar?",
 ];
 
 // Generic request for help / information (bridge).
 export const PONTE_FRASES = [
-  "Claro, fico à disposição. Sobre o que você gostaria de saber? 🌿",
-  "Posso ajudar, sim. Você gostaria de saber sobre programação, entrevistas ou tratamentos? 🌿",
-  "Com prazer. Pode me dizer qual informação deseja consultar? 🌿",
-  "Com prazer! Você gostaria de saber sobre a programação da casa, entrevistas ou tratamentos? 🌿",
+  "Claro, fique à vontade para perguntar. Sobre o que você gostaria de saber?",
+  "Posso ajudar, sim. Você gostaria de saber sobre programação, entrevistas ou tratamentos?",
+  "Com prazer. Me diga qual informação deseja consultar.",
+  "Pode perguntar à vontade. O que você gostaria de saber?",
 ];
 
 // Thanks.
 export const AGRADECIMENTO_FRASES = [
-  "Disponha! 🌿 Fico à disposição se precisar de mais alguma informação.",
-  "Por nada! 🌿 Se precisar, é só me chamar.",
-  "Imagina! 🌿 Estou por aqui se precisar de mais alguma coisa.",
+  "Disponha! Fico à disposição se precisar de mais alguma informação.",
+  "Por nada! Se precisar, é só me chamar.",
+  "Imagina! Estou por aqui se precisar de mais alguma coisa.",
 ];
 
 // Gentle closing.
 export const ENCERRAMENTO_FRASES = [
-  "Conte conosco. 🌿 Se precisar de mais alguma orientação, a casa está à disposição para te acolher.",
-  "Fico à disposição se precisar de mais alguma informação. 🌿",
-  "Se precisar, posso continuar te ajudando por aqui. 🌿",
-  "Conte conosco. 🌿",
+  "Se precisar de mais alguma informação, sigo à disposição por aqui.",
+  "Conte conosco no que for possível.",
+  "Se precisar, a casa está à disposição para te acolher.",
+  "Fico à disposição caso queira confirmar mais alguma informação.",
 ];
+
+/** Appends a context emoji to a phrase that does not already carry one. */
+function comEmoji(frase: string, emoji: string): string {
+  if (!emoji) return frase;
+  return `${frase} ${emoji}`;
+}
 
 /**
  * When the user explicitly greets with a time-of-day phrase ("bom dia", "boa tarde",
@@ -450,32 +493,74 @@ export function gerarRespostaConversacional(
 ): string {
   const seed = hashTexto(ctx.texto || "") + (ctx.jaSaudado ? 1 : 0);
   const evitar = ctx.ultimaResposta ?? null;
+  // Emoji seed is offset so it doesn't always co-vary with the phrase seed,
+  // and the previous reply's trailing emoji is avoided to prevent repetition.
+  const emojiAnterior = extrairUltimoEmoji(evitar);
+  const emojiSeed = seed + 7;
 
-  if (intencao === "agradecimento") return escolherFrase(AGRADECIMENTO_FRASES, seed, evitar);
-  if (intencao === "encerramento") return escolherFrase(ENCERRAMENTO_FRASES, seed, evitar);
-  if (intencao === "pedido_informacao") return escolherFrase(PONTE_FRASES, seed, evitar);
+  if (intencao === "agradecimento") {
+    const frase = escolherFrase(AGRADECIMENTO_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("agradecimento", emojiSeed, emojiAnterior));
+  }
+  if (intencao === "encerramento") {
+    const frase = escolherFrase(ENCERRAMENTO_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("encerramento", emojiSeed, emojiAnterior));
+  }
+  if (intencao === "pedido_informacao") {
+    const frase = escolherFrase(PONTE_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("ponte", emojiSeed, emojiAnterior));
+  }
 
   // saudacao
-  if (ehBemEstar(ctx.texto)) return escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+  if (ehBemEstar(ctx.texto)) {
+    const frase = escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("bemestar", emojiSeed, emojiAnterior));
+  }
 
   // If the user explicitly greets with "bom dia" / "boa tarde" / "boa noite",
   // we greet back with the SAME phrase — polite and human, even mid-conversation.
+  // Mid-conversation we do NOT re-introduce the persona; only the first contact does.
   const saudacaoUsuario = extrairSaudacaoDoTexto(ctx.texto);
-  if (saudacaoUsuario) {
+  if (saudacaoUsuario && ctx.jaSaudado) {
+    const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
     const candidatos = [
-      `${saudacaoUsuario}! 🌿 Como posso te ajudar?`,
-      `${saudacaoUsuario}! 🌿 Em que posso ajudar?`,
-      `${saudacaoUsuario}! 🌿 Seja bem-vindo(a). Como posso te ajudar?`,
-      `${saudacaoUsuario}! 🌿 Fico à disposição. Como posso te ajudar?`,
+      `${saudacaoUsuario}! Como posso te ajudar?`,
+      `${saudacaoUsuario}! Em que posso ajudar?`,
+      `${saudacaoUsuario}! Fico à disposição. Como posso te ajudar?`,
+      `${saudacaoUsuario}! O que você gostaria de saber?`,
     ];
-    return escolherFrase(candidatos, seed, evitar);
+    return comEmoji(escolherFrase(candidatos, seed, evitar), emoji);
   }
 
-  // Already greeted: continue the dialog without repeating a greeting.
-  if (ctx.jaSaudado) return escolherFrase(CONTINUACAO_FRASES, seed, evitar);
-  const saudacao = saudacaoPorHora(ctx.horaLocal);
-  const candidatos = SAUDACAO_SUFIXOS.map((s) => `${saudacao}! 🌿 ${s}`);
+  // Already greeted: continue the dialog without repeating a greeting or persona.
+  if (ctx.jaSaudado) {
+    const frase = escolherFrase(CONTINUACAO_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("ponte", emojiSeed, emojiAnterior));
+  }
+
+  // FIRST contact: greet + present the persona (Daniel / FER) + invite.
+  const saudacao = saudacaoUsuario || saudacaoPorHora(ctx.horaLocal);
+  const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
+  const candidatos = SAUDACAO_SUFIXOS.map(
+    (s) => `${saudacao}! ${emoji} ${IA_APRESENTACAO}. ${s}`,
+  );
   return escolherFrase(candidatos, seed, evitar);
+}
+
+/** Extracts the trailing emoji of a previous reply (best-effort), for anti-repetition. */
+export function extrairUltimoEmoji(texto?: string | null): string | null {
+  if (!texto) return null;
+  const todos = ["✨", "🌿", "🙏", "💙", "📅", "⏰", "✅", "⚠️", "📍", "🤝"];
+  let achado: string | null = null;
+  let pos = -1;
+  for (const e of todos) {
+    const i = texto.lastIndexOf(e);
+    if (i > pos) {
+      pos = i;
+      achado = e;
+    }
+  }
+  return achado;
 }
 
 /**

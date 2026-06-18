@@ -41,12 +41,12 @@ describe("whatsappInbound — camada conversacional básica", () => {
     expect(classificarIntencao("bom dia, quando é minha próxima sessão?")).toBe("proxima_sessao");
   });
 
-  it("monta resposta social humana e breve, adaptada ao período do dia", () => {
-    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/Bom dia! 🌿/);
-    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/Boa tarde! 🌿/);
-    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/Boa noite! 🌿/);
-    expect(montarRespostaConversacional("saudacao")).toMatch(/Olá! 🌿/);
-    expect(montarRespostaConversacional("agradecimento")).toMatch(/Disponha! 🌿/);
+  it("monta resposta social humana, com persona Daniel/FER e período do dia", () => {
+    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel, assistente virtual da FER\./u);
+    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/^Boa tarde! [✨🌿🙏] Sou Daniel/u);
+    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/^Boa noite! [✨🌿🙏] Sou Daniel/u);
+    expect(montarRespostaConversacional("saudacao")).toMatch(/^Olá! [✨🌿🙏] Sou Daniel/u);
+    expect(montarRespostaConversacional("agradecimento")).toMatch(/^Disponha!/);
   });
 });
 
@@ -336,16 +336,29 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     expect(r).not.toMatch(/Bom dia|Boa tarde|Boa noite/);
   });
 
-  it("não repete a saudação quando o usuário já foi saudado", () => {
+  it("apresenta a persona Daniel da FER apenas no primeiro contato", () => {
+    const inicio = gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "oi" });
+    expect(inicio).toMatch(/Sou Daniel, assistente virtual da FER/);
+    // No meio da conversa não reapresenta a persona.
+    const meio = gerarRespostaConversacional("pedido_informacao", { texto: "uma dúvida", jaSaudado: true });
+    expect(meio).not.toMatch(/Sou Daniel/);
+  });
+
+
+  it("não repete a saudação nem reapresenta a persona quando já saudado", () => {
     const jaSaudado = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "oi" });
     expect(jaSaudado).not.toMatch(/Bom dia|Boa tarde|Boa noite/);
-    expect(jaSaudado).toMatch(/🌿/);
-    expect(gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "boa tarde" })).toMatch(/Boa tarde! 🌿/);
+    expect(jaSaudado).not.toMatch(/Sou Daniel/);
+    expect(jaSaudado).toMatch(/[✨🌿🙏💙]/u);
+    // First contact greeting presents the persona Daniel/FER.
+    expect(gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "boa tarde" }))
+      .toMatch(/^Boa tarde! [✨🌿🙏] Sou Daniel, assistente virtual da FER\./u);
   });
 
   it("acolhe no início e encerra com gentileza da casa", () => {
-    expect(gerarRespostaConversacional("saudacao", { horaLocal: 20, texto: "boa noite" })).toMatch(/Boa noite! 🌿/);
-    expect(gerarRespostaConversacional("encerramento", { texto: "era só isso" })).toMatch(/🌿/);
+    expect(gerarRespostaConversacional("saudacao", { horaLocal: 20, texto: "boa noite" }))
+      .toMatch(/^Boa noite! [✨🌿🙏] Sou Daniel/u);
+    expect(gerarRespostaConversacional("encerramento", { texto: "era só isso" })).toMatch(/[🙏🌿💙]/u);
   });
 
   it("responde perguntas de bem-estar de forma natural", () => {
@@ -353,11 +366,30 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     expect(r).toMatch(/Tudo (bem|ótimo)/);
   });
 
+  it("usa paleta de emojis variada conforme o contexto", () => {
+    const pessoais = new Set<string>();
+    for (const txt of ["obrigado", "muito obrigado", "valeu demais", "agradeço"]) {
+      const r = gerarRespostaConversacional("agradecimento", { texto: txt });
+      const m = r.match(/[✨🌿🙏💙]/u);
+      if (m) pessoais.add(m[0]);
+    }
+    // O sistema não fica preso a um único emoji.
+    expect(pessoais.size).toBeGreaterThan(1);
+  });
+
+  it("não repete o mesmo emoji da última resposta", () => {
+    const primeiro = gerarRespostaConversacional("encerramento", { texto: "era só isso" });
+    const emojiAnt = primeiro.match(/[✨🌿🙏💙]/u)?.[0] ?? null;
+    const segundo = gerarRespostaConversacional("encerramento", { texto: "era só isso", ultimaResposta: primeiro });
+    const emojiNovo = segundo.match(/[✨🌿🙏💙]/u)?.[0] ?? null;
+    expect(emojiNovo).not.toBe(emojiAnt);
+  });
+
   it("varia a formulação conforme a mensagem (não é frase fixa)", () => {
     const a = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "bom dia" });
     const b = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "oi" });
-    expect(a.startsWith("Bom dia! 🌿")).toBe(true);
-    expect(b.startsWith("Bom dia! 🌿")).toBe(true);
+    expect(a).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel/u);
+    expect(b).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel/u);
     // Different inbound text maps to different repertoire paths, both valid.
     expect(a).not.toBe(b);
   });
@@ -397,27 +429,28 @@ describe("whatsappInbound — retribuição gentil de saudação", () => {
 
   it("retribui bom dia mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "bom dia" });
-    expect(r).toMatch(/^Bom dia! 🌿/);
+    expect(r).toMatch(/^Bom dia! /); expect(r).toMatch(/[✨🌿🙏]/u);
+    expect(r).not.toMatch(/Sou Daniel/);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("retribui boa tarde mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 9, jaSaudado: true, texto: "boa tarde" });
-    expect(r).toMatch(/^Boa tarde! 🌿/);
-    expect(r).toMatch(/ajudar/i);
+    expect(r).toMatch(/^Boa tarde! /); expect(r).toMatch(/[✨🌿🙏]/u);
+    expect(r).toMatch(/ajudar|saber/i);
   });
 
   it("retribui boa noite mesmo quando já saudado", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 9, jaSaudado: true, texto: "boa noite" });
-    expect(r).toMatch(/^Boa noite! 🌿/);
+    expect(r).toMatch(/^Boa noite! /); expect(r).toMatch(/[✨🌿🙏]/u);
     expect(r).toMatch(/ajudar/i);
   });
 
   it("não retribui saudação de tempo para saudação genérica (oi)", () => {
     const r = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "oi" });
-    expect(r).not.toMatch(/^Bom dia! 🌿/);
-    expect(r).not.toMatch(/^Boa tarde! 🌿/);
-    expect(r).not.toMatch(/^Boa noite! 🌿/);
-    expect(r).toMatch(/🌿/);
+    expect(r).not.toMatch(/^Bom dia/);
+    expect(r).not.toMatch(/^Boa tarde/);
+    expect(r).not.toMatch(/^Boa noite/);
+    expect(r).toMatch(/[✨🌿🙏💙]/u);
   });
 });
