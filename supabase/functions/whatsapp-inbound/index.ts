@@ -38,6 +38,11 @@ function normalizePhone(p: string): string {
   return (p || "").replace(/\D/g, "");
 }
 
+function resumo(texto: string, max = 160): string {
+  const t = (texto || "").trim();
+  return t.length > max ? t.slice(0, max - 1) + "…" : t;
+}
+
 function fmtData(value: string, withTime = false): string {
   const d = new Date(value);
   if (isNaN(d.getTime())) return value;
@@ -49,6 +54,10 @@ function fmtData(value: string, withTime = false): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // admin client is needed across the whole flow (and for the catch-all safety net).
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -72,8 +81,6 @@ Deno.serve(async (req) => {
     }
 
     const telefone = normalizePhone(String(remoteJid).split("@")[0]);
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const adapter = getAdapter({
       ZAPI_INSTANCE_ID: Deno.env.get("ZAPI_INSTANCE_ID"),
       ZAPI_INSTANCE_TOKEN: Deno.env.get("ZAPI_INSTANCE_TOKEN"),
@@ -90,7 +97,7 @@ Deno.serve(async (req) => {
       normalizePhone(a.celular || "") === telefone || normalizePhone(a.telefone || "") === telefone
     );
 
-    // Upsert conversa
+    // Upsert conversa (records the last inbound message text + timestamp).
     let conversaId: string;
     const { data: convExist } = await admin
       .from("whatsapp_conversas").select("*").eq("telefone", telefone).maybeSingle();
@@ -98,98 +105,167 @@ Deno.serve(async (req) => {
       conversaId = convExist.id;
       await admin.from("whatsapp_conversas").update({
         ultimo_contato_em: new Date().toISOString(),
+        ultima_mensagem: resumo(texto),
         assistido_id: assistido?.id ?? convExist.assistido_id,
         status_conversa: "ativa",
       }).eq("id", conversaId);
     } else {
       const { data: novaConv } = await admin.from("whatsapp_conversas").insert({
         telefone, assistido_id: assistido?.id ?? null, status_conversa: "ativa",
+        ultima_mensagem: resumo(texto),
       }).select("id").single();
       conversaId = novaConv!.id;
     }
 
-    const intencao = classificar(texto);
-
-    // Log inbound (the classified intent is stored for the operations panel
-    // metrics — "principais intents" and "intents resolvidas pela IA").
-    await admin.from("notificacoes_log").insert({
-      fila_id: null, direcao: "entrada",
-      payload_recebido: { telefone, texto, intencao }, status: "recebido",
-    });
-
+    // ===== Classify + build response. Any failure here MUST fall back to handoff. =====
+    let intencao: Intencao = "complexo";
     let resposta: string | null = null;
     let handoff = false;
+    let handoffMotivo = "";
+    let handoffOrigem = "ia";
+    let respostaOk = true;
+    let respostaErro: string | null = null;
+    let fallbackMotivo: string | null = null;
 
-    if (intencao === "opt_out" && assistido) {
-      await admin.from("notificacoes_preferencias").upsert({
-        assistido_id: assistido.id, whatsapp_ativo: false,
-        opt_out_at: new Date().toISOString(), opt_out_motivo: "solicitado_via_whatsapp",
-      }, { onConflict: "assistido_id" });
-      resposta = "Tudo certo! Você não receberá mais mensagens operacionais por aqui. Se mudar de ideia, é só responder 'quero receber'. 🌿";
-    } else if (intencao === "reativar" && assistido) {
-      await admin.from("notificacoes_preferencias").upsert({
-        assistido_id: assistido.id, whatsapp_ativo: true, opt_out_at: null, opt_out_motivo: null,
-      }, { onConflict: "assistido_id" });
-      resposta = "Pronto! Voltamos a enviar seus lembretes por aqui. 🌿";
-    } else if (intencao === "proxima_sessao" && assistido) {
-      const { data: sess } = await admin
-        .from("agenda_tratamentos_assistido")
-        .select("data_sessao, horario")
-        .eq("assistido_id", assistido.id).eq("status", "agendado")
-        .gte("data_sessao", new Date().toISOString().slice(0, 10))
-        .order("data_sessao", { ascending: true }).limit(1).maybeSingle();
-      resposta = sess
-        ? `Sua próxima sessão é em ${fmtData(sess.data_sessao)}${sess.horario ? " às " + sess.horario.slice(0, 5) : ""}. 🌿`
-        : "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar.";
-    } else if (intencao === "horario_entrevista" && assistido) {
-      const { data: ent } = await admin
-        .from("entrevistas_fraternas")
-        .select("data, status")
-        .eq("assistido_id", assistido.id).eq("status", "agendada")
-        .order("data", { ascending: true }).limit(1).maybeSingle();
-      resposta = ent
-        ? `Sua entrevista está agendada para ${fmtData(ent.data, true)}. 🌿`
-        : "Não encontrei entrevista agendada no momento. Nossa equipe pode confirmar para você.";
-    } else if (intencao === "confirmacao_agendamento") {
-      resposta = "Obrigado por confirmar! Esperamos por você. 🌿";
-    } else if (intencao === "onde_ver_app") {
-      resposta = "Você pode ver seus agendamentos, tratamentos e avisos direto no app, na área 'Painel' e 'Agenda'. 🌿";
+    try {
+      intencao = classificar(texto);
+
+      if (intencao === "opt_out" && assistido) {
+        await admin.from("notificacoes_preferencias").upsert({
+          assistido_id: assistido.id, whatsapp_ativo: false,
+          opt_out_at: new Date().toISOString(), opt_out_motivo: "solicitado_via_whatsapp",
+        }, { onConflict: "assistido_id" });
+        resposta = "Tudo certo! Você não receberá mais mensagens operacionais por aqui. Se mudar de ideia, é só responder 'quero receber'. 🌿";
+      } else if (intencao === "reativar" && assistido) {
+        await admin.from("notificacoes_preferencias").upsert({
+          assistido_id: assistido.id, whatsapp_ativo: true, opt_out_at: null, opt_out_motivo: null,
+        }, { onConflict: "assistido_id" });
+        resposta = "Pronto! Voltamos a enviar seus lembretes por aqui. 🌿";
+      } else if (intencao === "proxima_sessao" && assistido) {
+        const { data: sess } = await admin
+          .from("agenda_tratamentos_assistido")
+          .select("data_sessao, horario")
+          .eq("assistido_id", assistido.id).eq("status", "agendado")
+          .gte("data_sessao", new Date().toISOString().slice(0, 10))
+          .order("data_sessao", { ascending: true }).limit(1).maybeSingle();
+        resposta = sess
+          ? `Sua próxima sessão é em ${fmtData(sess.data_sessao)}${sess.horario ? " às " + sess.horario.slice(0, 5) : ""}. 🌿`
+          : "Não encontrei sessões futuras agendadas no momento. Em caso de dúvida, nossa equipe pode ajudar.";
+      } else if (intencao === "horario_entrevista" && assistido) {
+        const { data: ent } = await admin
+          .from("entrevistas_fraternas")
+          .select("data, status")
+          .eq("assistido_id", assistido.id).eq("status", "agendada")
+          .order("data", { ascending: true }).limit(1).maybeSingle();
+        resposta = ent
+          ? `Sua entrevista está agendada para ${fmtData(ent.data, true)}. 🌿`
+          : "Não encontrei entrevista agendada no momento. Nossa equipe pode confirmar para você.";
+      } else if (intencao === "confirmacao_agendamento") {
+        resposta = "Obrigado por confirmar! Esperamos por você. 🌿";
+      } else if (intencao === "onde_ver_app") {
+        resposta = "Você pode ver seus agendamentos, tratamentos e avisos direto no app, na área 'Painel' e 'Agenda'. 🌿";
+      }
+
+      // Decide handoff: anything the IA cannot auto-resolve, or that needs an
+      // identified assistido but none was found, must escalate to a human.
+      if (intencao === "complexo") {
+        handoff = true; handoffOrigem = "ia";
+        handoffMotivo = "Mensagem que requer atendimento humano";
+      } else if (!AUTORESOLVIVEIS.includes(intencao)) {
+        handoff = true; handoffOrigem = "regra";
+        handoffMotivo = "Intenção sem resposta automática disponível";
+      } else if (
+        (intencao === "proxima_sessao" || intencao === "horario_entrevista" ||
+         intencao === "opt_out" || intencao === "reativar") && !assistido
+      ) {
+        handoff = true; handoffOrigem = "regra";
+        handoffMotivo = "Assistido não identificado";
+      } else if (!resposta) {
+        // IA classified an intent but produced no valid action/answer.
+        handoff = true; handoffOrigem = "regra";
+        handoffMotivo = "IA não produziu uma resposta válida";
+      }
+    } catch (procErr) {
+      // Any technical failure during classification/response building -> handoff.
+      fallbackMotivo = `Falha técnica no processamento da IA: ${String(procErr)}`;
+      handoff = true; handoffOrigem = "regra";
+      handoffMotivo = fallbackMotivo;
+      resposta = null;
     }
 
-    if (!AUTORESOLVIVEIS.includes(intencao) || (intencao !== "confirmacao_agendamento" && intencao !== "onde_ver_app" && !assistido)) {
-      handoff = true;
-    }
+    // Log inbound with full audit context (identification + intent + fallback).
+    await admin.from("notificacoes_log").insert({
+      fila_id: null, direcao: "entrada",
+      payload_recebido: {
+        telefone, texto, intencao,
+        assistido_identificado: !!assistido,
+        assistido_id: assistido?.id ?? null,
+        fallback_motivo: fallbackMotivo,
+      },
+      status: "recebido",
+    });
 
     if (handoff) {
-      // Avoid duplicate open handoffs for the same conversation.
       const { data: aberto } = await admin
         .from("whatsapp_handoffs").select("id").eq("conversa_id", conversaId)
         .in("status", ["aberto", "em_atendimento"]).maybeSingle();
       if (!aberto) {
         await admin.from("whatsapp_handoffs").insert({
           conversa_id: conversaId,
-          motivo: intencao === "complexo" ? "Mensagem que requer atendimento humano" : "Assistido não identificado",
-          classificado_por_ia: true, status: "aberto",
+          motivo: handoffMotivo || "Atendimento humano necessário",
+          origem: handoffOrigem,
+          classificado_por_ia: handoffOrigem === "ia",
+          status: "aberto",
         });
-        await admin.from("whatsapp_conversas").update({ em_handoff: true }).eq("id", conversaId);
       }
+      await admin.from("whatsapp_conversas").update({ em_handoff: true }).eq("id", conversaId);
       resposta = resposta || "Recebemos sua mensagem! Um de nossos atendentes vai responder em breve. 🌿";
     }
 
+    // Send auto-reply (IA). If sending fails, ensure a handoff exists so the
+    // message is never "lost": there is always either a reply or a handoff.
     if (resposta) {
       const send = await adapter.send(telefone, resposta);
+      respostaOk = send.ok;
+      respostaErro = send.error ?? null;
       await admin.from("notificacoes_log").insert({
         fila_id: null, direcao: "saida",
-        payload_enviado: { telefone, mensagem: resposta },
+        payload_enviado: { telefone, mensagem: resposta, autor: handoff ? "sistema" : "ia" },
         payload_recebido: send.raw ?? null,
         status: send.ok ? "enviado" : "falha", erro: send.error ?? null,
       });
+
+      if (!send.ok && !handoff) {
+        // The IA answer could not be delivered -> escalate.
+        handoff = true; handoffOrigem = "regra";
+        handoffMotivo = `Falha ao enviar resposta automática (Z-API): ${send.error ?? "erro"}`;
+        const { data: aberto2 } = await admin
+          .from("whatsapp_handoffs").select("id").eq("conversa_id", conversaId)
+          .in("status", ["aberto", "em_atendimento"]).maybeSingle();
+        if (!aberto2) {
+          await admin.from("whatsapp_handoffs").insert({
+            conversa_id: conversaId, motivo: handoffMotivo, origem: "regra",
+            classificado_por_ia: false, status: "aberto",
+          });
+        }
+        await admin.from("whatsapp_conversas").update({ em_handoff: true }).eq("id", conversaId);
+      }
     }
 
-    return new Response(JSON.stringify({ ok: true, intencao, handoff }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, intencao, handoff, resposta_enviada: !!resposta && respostaOk, erro: respostaErro }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e) {
+    // Last-resort safety net: never let an inbound disappear silently.
+    // Log the failure for auditing even when the main flow blew up early.
+    try {
+      await admin.from("notificacoes_log").insert({
+        fila_id: null, direcao: "entrada",
+        payload_recebido: { erro_fatal: String(e), fallback_motivo: "Falha fatal no inbound" },
+        status: "falha", erro: String(e),
+      });
+    } catch (_) { /* ignore logging failure */ }
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
