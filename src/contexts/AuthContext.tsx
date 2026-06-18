@@ -81,8 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRolesResolved(false);
         return;
       }
-      const rows = await roleRes.json();
-      const list = (rows ?? []).map((r: any) => r.role as AppRole);
+      const rows = (await roleRes.json()) as Array<{ role: AppRole }> | null;
+      const list = (rows ?? []).map((r) => r.role);
       setRoles(list);
       // Master holds both 'administrador_master' and 'admin'; collapse any
       // administrative role to 'admin' so existing route guards keep working.
