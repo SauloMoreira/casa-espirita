@@ -167,25 +167,7 @@ export default function CentralNotificacoes() {
         </TabsContent>
 
         <TabsContent value="conversas" className="mt-4">
-          <Card className="glass-card">
-            <CardHeader><CardTitle className="text-base">Conversas</CardTitle></CardHeader>
-            <CardContent>
-              {conversas.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-6 text-center">Nenhuma conversa registrada.</p>
-              ) : (
-                <div className="space-y-2">
-                  {conversas.map((c) => (
-                    <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm">
-                      <span className="font-medium">{c.telefone}</span>
-                      <Badge variant="secondary">{c.status_conversa}</Badge>
-                      {c.em_handoff && <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">em atendimento</Badge>}
-                      <span className="ml-auto text-xs text-muted-foreground">último contato: {dt(c.ultimo_contato_em)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ConversasTab />
         </TabsContent>
 
         <TabsContent value="handoffs" className="mt-4">
