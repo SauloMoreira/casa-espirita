@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, RefreshCw, MessageSquare, ListChecks, Headphones } from "lucide-react";
+import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
+import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
 import {
   listFila, listConversas, listHandoffs, assumirHandoff, fecharHandoff, processarFila,
   type FilaItem, type Conversa, type Handoff,
