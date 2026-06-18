@@ -22,6 +22,9 @@ interface AuthContextType {
   isMaster: boolean;
   profile: UserProfile | null;
   loading: boolean;
+  /** True only once role/profile resolution has SUCCEEDED. While false, protected
+   *  UI must stay closed instead of assuming a permissive default role. */
+  rolesResolved: boolean;
   /** True when the account has a verified second factor but the current session
    *  is still aal1 — i.e. the TOTP step must be completed before access. */
   mfaPending: boolean;
