@@ -6,6 +6,7 @@ import { VoluntarioFormDialog } from "@/components/voluntarios/VoluntarioFormDia
 import { TermoAdesao } from "@/components/voluntarios/TermoAdesao";
 import { FichaVoluntario } from "@/components/voluntarios/FichaVoluntario";
 import { DeleteVoluntarioDialog } from "@/components/voluntarios/DeleteVoluntarioDialog";
+import { TermoVoluntarioDialog } from "@/components/voluntarios/TermoVoluntarioDialog";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export default function Voluntarios() {
