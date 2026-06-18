@@ -319,7 +319,9 @@ export function useVoluntarios() {
       const matchesFuncao =
         filters.funcao === FILTER_TODOS ||
         (voluntarioFuncoesMap[v.id] || []).includes(filters.funcao);
-      return matchesSearch && matchesStatus && matchesTipo && matchesFuncao;
+      const matchesTermo =
+        filters.termo === FILTER_TODOS || (v.termo_status || "nao_gerado") === filters.termo;
+      return matchesSearch && matchesStatus && matchesTipo && matchesFuncao && matchesTermo;
     });
   }, [voluntarios, filters, voluntarioFuncoesMap]);
 
