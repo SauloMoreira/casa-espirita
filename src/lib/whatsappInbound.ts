@@ -493,32 +493,74 @@ export function gerarRespostaConversacional(
 ): string {
   const seed = hashTexto(ctx.texto || "") + (ctx.jaSaudado ? 1 : 0);
   const evitar = ctx.ultimaResposta ?? null;
+  // Emoji seed is offset so it doesn't always co-vary with the phrase seed,
+  // and the previous reply's trailing emoji is avoided to prevent repetition.
+  const emojiAnterior = extrairUltimoEmoji(evitar);
+  const emojiSeed = seed + 7;
 
-  if (intencao === "agradecimento") return escolherFrase(AGRADECIMENTO_FRASES, seed, evitar);
-  if (intencao === "encerramento") return escolherFrase(ENCERRAMENTO_FRASES, seed, evitar);
-  if (intencao === "pedido_informacao") return escolherFrase(PONTE_FRASES, seed, evitar);
+  if (intencao === "agradecimento") {
+    const frase = escolherFrase(AGRADECIMENTO_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("agradecimento", emojiSeed, emojiAnterior));
+  }
+  if (intencao === "encerramento") {
+    const frase = escolherFrase(ENCERRAMENTO_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("encerramento", emojiSeed, emojiAnterior));
+  }
+  if (intencao === "pedido_informacao") {
+    const frase = escolherFrase(PONTE_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("ponte", emojiSeed, emojiAnterior));
+  }
 
   // saudacao
-  if (ehBemEstar(ctx.texto)) return escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+  if (ehBemEstar(ctx.texto)) {
+    const frase = escolherFrase(BEM_ESTAR_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("bemestar", emojiSeed, emojiAnterior));
+  }
 
   // If the user explicitly greets with "bom dia" / "boa tarde" / "boa noite",
   // we greet back with the SAME phrase — polite and human, even mid-conversation.
+  // Mid-conversation we do NOT re-introduce the persona; only the first contact does.
   const saudacaoUsuario = extrairSaudacaoDoTexto(ctx.texto);
-  if (saudacaoUsuario) {
+  if (saudacaoUsuario && ctx.jaSaudado) {
+    const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
     const candidatos = [
-      `${saudacaoUsuario}! 🌿 Como posso te ajudar?`,
-      `${saudacaoUsuario}! 🌿 Em que posso ajudar?`,
-      `${saudacaoUsuario}! 🌿 Seja bem-vindo(a). Como posso te ajudar?`,
-      `${saudacaoUsuario}! 🌿 Fico à disposição. Como posso te ajudar?`,
+      `${saudacaoUsuario}! Como posso te ajudar?`,
+      `${saudacaoUsuario}! Em que posso ajudar?`,
+      `${saudacaoUsuario}! Fico à disposição. Como posso te ajudar?`,
+      `${saudacaoUsuario}! O que você gostaria de saber?`,
     ];
-    return escolherFrase(candidatos, seed, evitar);
+    return comEmoji(escolherFrase(candidatos, seed, evitar), emoji);
   }
 
-  // Already greeted: continue the dialog without repeating a greeting.
-  if (ctx.jaSaudado) return escolherFrase(CONTINUACAO_FRASES, seed, evitar);
-  const saudacao = saudacaoPorHora(ctx.horaLocal);
-  const candidatos = SAUDACAO_SUFIXOS.map((s) => `${saudacao}! 🌿 ${s}`);
+  // Already greeted: continue the dialog without repeating a greeting or persona.
+  if (ctx.jaSaudado) {
+    const frase = escolherFrase(CONTINUACAO_FRASES, seed, evitar);
+    return comEmoji(frase, escolherEmoji("ponte", emojiSeed, emojiAnterior));
+  }
+
+  // FIRST contact: greet + present the persona (Daniel / FER) + invite.
+  const saudacao = saudacaoUsuario || saudacaoPorHora(ctx.horaLocal);
+  const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
+  const candidatos = SAUDACAO_SUFIXOS.map(
+    (s) => `${saudacao}! ${emoji} ${IA_APRESENTACAO}. ${s}`,
+  );
   return escolherFrase(candidatos, seed, evitar);
+}
+
+/** Extracts the trailing emoji of a previous reply (best-effort), for anti-repetition. */
+export function extrairUltimoEmoji(texto?: string | null): string | null {
+  if (!texto) return null;
+  const todos = ["✨", "🌿", "🙏", "💙", "📅", "⏰", "✅", "⚠️", "📍", "🤝"];
+  let achado: string | null = null;
+  let pos = -1;
+  for (const e of todos) {
+    const i = texto.lastIndexOf(e);
+    if (i > pos) {
+      pos = i;
+      achado = e;
+    }
+  }
+  return achado;
 }
 
 /**
