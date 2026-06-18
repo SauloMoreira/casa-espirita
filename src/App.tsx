@@ -15,6 +15,7 @@ import { ROUTES } from "@/constants";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import SolicitarCadastro from "./pages/SolicitarCadastro";
 
 // Lazy: route-split the heavier authenticated pages to lighten the initial bundle.
 const CheckinPublico = lazy(() => import("./pages/CheckinPublico"));
