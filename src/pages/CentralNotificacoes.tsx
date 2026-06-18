@@ -29,6 +29,10 @@ const HANDOFF_COLORS: Record<string, string> = {
   fechado: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
 
+const ORIGEM_LABEL: Record<string, string> = {
+  ia: "IA", regra: "Regra", manual: "Manual",
+};
+
 function dt(value?: string | null) {
   if (!value) return "—";
   return format(new Date(value), "dd/MM/yy HH:mm", { locale: ptBR });
