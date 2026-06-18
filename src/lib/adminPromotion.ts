@@ -56,6 +56,8 @@ export interface ApprovalContext {
   alreadyDecidedBy: string[];
   /** Current request status. */
   status: PromotionStatus;
+  /** Total number of active (apt) administrators in the whole system. */
+  aptAdmins: number;
 }
 
 export interface ApprovalCheck {
