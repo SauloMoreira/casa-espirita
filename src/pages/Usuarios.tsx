@@ -26,11 +26,23 @@ import { DeleteUserDialog } from "@/components/DeleteUserDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
+  administrador_master: "Administrador Master",
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
   coordenador_de_tratamento: "Coordenador de Tratamento",
 };
+
+// Roles that can be assigned directly here. Administrative roles are granted
+// ONLY through the approval-gated workflow in Governança de Acessos.
+const ASSIGNABLE_ROLE_LABELS: Record<string, string> = {
+  entrevistador: "Entrevistador",
+  tarefeiro: "Tarefeiro",
+  assistido: "Assistido",
+  coordenador_de_tratamento: "Coordenador de Tratamento",
+};
+
+const isAdminRole = (r?: string | null) => r === "admin" || r === "administrador_master";
 
 interface UserRow {
   user_id: string;
@@ -337,12 +349,23 @@ export default function Usuarios() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Perfil *</Label>
-                  <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ROLE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {isAdminRole(form.role) ? (
+                    <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm text-muted-foreground">
+                      {ROLE_LABELS[form.role]} (gerido na Governança de Acessos)
+                    </div>
+                  ) : (
+                    <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ASSIGNABLE_ROLE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {isAdminRole(form.role) && (
+                    <p className="text-xs text-muted-foreground">
+                      Acesso administrativo só é concedido pelo fluxo de aprovação.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>

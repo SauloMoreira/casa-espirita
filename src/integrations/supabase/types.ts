@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_promotion_approvals: {
+        Row: {
+          approver_id: string
+          created_at: string
+          decision: string
+          id: string
+          motivo: string | null
+          request_id: string
+        }
+        Insert: {
+          approver_id: string
+          created_at?: string
+          decision: string
+          id?: string
+          motivo?: string | null
+          request_id: string
+        }
+        Update: {
+          approver_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          motivo?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_promotion_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "admin_promotion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_promotion_requests: {
+        Row: {
+          concluido_em: string | null
+          created_at: string
+          excecao_master: boolean
+          id: string
+          justificativa: string
+          requested_by: string
+          required_approvals: number
+          status: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          concluido_em?: string | null
+          created_at?: string
+          excecao_master?: boolean
+          id?: string
+          justificativa: string
+          requested_by: string
+          required_approvals?: number
+          status?: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          concluido_em?: string | null
+          created_at?: string
+          excecao_master?: boolean
+          id?: string
+          justificativa?: string
+          requested_by?: string
+          required_approvals?: number
+          status?: string
+          target_role?: Database["public"]["Enums"]["app_role"]
+          target_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agenda_tratamentos_assistido: {
         Row: {
           assistido_id: string
@@ -1931,8 +2008,14 @@ export type Database = {
         Args: { _assistido_id: string; _coordinator_id: string }
         Returns: boolean
       }
+      count_active_masters: { Args: never; Returns: number }
+      count_apt_admins: { Args: never; Returns: number }
       dashboard_admin: {
         Args: { p_fim: string; p_inicio: string }
+        Returns: Json
+      }
+      decidir_promocao_admin: {
+        Args: { p_decision: string; p_motivo?: string; p_request_id: string }
         Returns: Json
       }
       entrevista_assistido_belongs_to_coordinator: {
@@ -1972,6 +2055,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_admin: { Args: { _uid: string }; Returns: boolean }
+      is_active_master: { Args: { _uid: string }; Returns: boolean }
       painel_conversas: {
         Args: {
           p_atendente?: string
@@ -2063,6 +2148,14 @@ export type Database = {
         }
         Returns: Json
       }
+      solicitar_promocao_admin: {
+        Args: {
+          p_justificativa: string
+          p_target_role: string
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
       staff_names: {
         Args: { _ids?: string[] }
         Returns: {
@@ -2078,6 +2171,7 @@ export type Database = {
         | "tarefeiro"
         | "assistido"
         | "coordenador_de_tratamento"
+        | "administrador_master"
       conversa_status: "ativa" | "encerrada"
       handoff_status: "aberto" | "em_atendimento" | "fechado"
       notif_canal: "whatsapp"
@@ -2222,6 +2316,7 @@ export const Constants = {
         "tarefeiro",
         "assistido",
         "coordenador_de_tratamento",
+        "administrador_master",
       ],
       conversa_status: ["ativa", "encerrada"],
       handoff_status: ["aberto", "em_atendimento", "fechado"],

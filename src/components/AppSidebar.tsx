@@ -10,6 +10,7 @@ import {
   BookOpen,
   Settings,
   Shield,
+  ShieldCheck,
   HandHeart,
   FileText,
   Cog,
@@ -104,6 +105,7 @@ const navGroups: NavGroup[] = [
     icon: Users,
     items: [
       { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin"] },
+      { title: "Governança de Acessos", url: "/governanca-acessos", icon: ShieldCheck, roles: ["admin"] },
       { title: "Voluntários", url: "/voluntarios", icon: UserCheck, roles: ["admin"] },
       { title: "Funções Voluntariado", url: "/funcoes-voluntariado", icon: ClipboardCheck, roles: ["admin"] },
     ],
@@ -135,6 +137,7 @@ const navGroups: NavGroup[] = [
 
 const roleLabels: Record<AppRole, string> = {
   admin: "Administrador",
+  administrador_master: "Administrador Master",
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
@@ -145,7 +148,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { role, user, profile, signOut } = useAuth();
+  const { role, isMaster, user, profile, signOut } = useAuth();
   const [inst, setInst] = useState<{ logo_url: string | null; nome_fantasia: string | null } | null>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -340,7 +343,7 @@ export function AppSidebar() {
                 {profile?.nome_completo || user?.email}
               </p>
               <span className="inline-block mt-0.5 text-[9px] uppercase tracking-wider bg-sidebar-accent/60 text-sidebar-foreground/70 px-1.5 py-0.5 rounded font-medium">
-                {role ? roleLabels[role] : ""}
+                {isMaster ? roleLabels.administrador_master : role ? roleLabels[role] : ""}
               </span>
             </div>
           </div>

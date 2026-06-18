@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword";
 const CheckinPublico = lazy(() => import("./pages/CheckinPublico"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
+const GovernancaAcessos = lazy(() => import("./pages/GovernancaAcessos"));
 const Tratamentos = lazy(() => import("./pages/Tratamentos"));
 const Assistidos = lazy(() => import("./pages/Assistidos"));
 const Entrevistas = lazy(() => import("./pages/Entrevistas"));
@@ -82,6 +83,8 @@ const App = () => (
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route path={ROUTES.dashboard} element={guard(<Dashboard />, "Dashboard")} />
                   <Route path={ROUTES.usuarios} element={<ProtectedRoute allowedRoles={["admin"]}><Usuarios /></ProtectedRoute>} />
+                  <Route path={ROUTES.governancaAcessos} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<GovernancaAcessos />, "Governança de Acessos")}</ProtectedRoute>} />
+
                   <Route path={ROUTES.tratamentos} element={<ProtectedRoute allowedRoles={["admin"]}><Tratamentos /></ProtectedRoute>} />
                   <Route path={ROUTES.assistidos} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Assistidos /></ProtectedRoute>} />
                   <Route path={ROUTES.entrevistas} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><Entrevistas /></ProtectedRoute>} />

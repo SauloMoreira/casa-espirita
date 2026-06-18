@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "entrevistador" | "tarefeiro" | "assistido" | "coordenador_de_tratamento";
+export type AppRole = "admin" | "administrador_master" | "entrevistador" | "tarefeiro" | "assistido" | "coordenador_de_tratamento";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -18,6 +18,8 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   role: AppRole | null;
+  roles: AppRole[];
+  isMaster: boolean;
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -36,13 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchRoleAndProfile = async (userId: string, accessToken: string) => {
     try {
       const [roleRes, profileRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role&limit=1`, {
+        fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role`, {
           headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
         }),
         fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${userId}&select=nome_completo,foto_url,senha_temporaria,status&limit=1`, {
@@ -51,8 +54,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
       if (roleRes.ok) {
         const rows = await roleRes.json();
-        setRole((rows?.[0]?.role as AppRole) ?? "assistido");
+        const list = (rows ?? []).map((r: any) => r.role as AppRole);
+        setRoles(list);
+        // Master holds both 'administrador_master' and 'admin'; collapse any
+        // administrative role to 'admin' so existing route guards keep working.
+        if (list.includes("administrador_master") || list.includes("admin")) {
+          setRole("admin");
+        } else {
+          setRole((list[0] as AppRole) ?? "assistido");
+        }
       } else {
+        setRoles([]);
         setRole("assistido");
       }
       if (profileRes.ok) {
@@ -60,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(rows?.[0] ?? null);
       }
     } catch {
+      setRoles([]);
       setRole("assistido");
     }
   };
@@ -99,11 +112,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await supabase.auth.signOut();
     setRole(null);
+    setRoles([]);
     setProfile(null);
   };
 
+  const isMaster = roles.includes("administrador_master");
+
   return (
-    <AuthContext.Provider value={{ session, user, role, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, role, roles, isMaster, profile, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
