@@ -39,15 +39,18 @@ export default function CentralNotificacoes() {
   const { toast } = useToast();
   const [fila, setFila] = useState<FilaItem[]>([]);
   const [conversas, setConversas] = useState<Conversa[]>([]);
-  const [handoffs, setHandoffs] = useState<Handoff[]>([]);
+  const [handoffs, setHandoffs] = useState<HandoffEnriquecido[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [selecionado, setSelecionado] = useState<HandoffEnriquecido | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [f, c, h] = await Promise.all([listFila(), listConversas(), listHandoffs()]);
+      const [f, c, h] = await Promise.all([listFila(), listConversas(), listHandoffsEnriquecidos()]);
       setFila(f); setConversas(c); setHandoffs(h);
+      setSelecionado((prev) => (prev ? h.find((x) => x.id === prev.id) ?? prev : prev));
     } catch (e: any) {
       toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
     } finally {
@@ -70,17 +73,32 @@ export default function CentralNotificacoes() {
     }
   };
 
-  const handleAssumir = async (h: Handoff) => {
-    if (!user) return;
-    await assumirHandoff(h.id, user.id);
-    toast({ title: "Atendimento assumido" });
-    load();
+  const abrirDetalhe = (h: HandoffEnriquecido) => {
+    setSelecionado(h);
+    setDrawerOpen(true);
   };
 
-  const handleFechar = async (h: Handoff) => {
-    await fecharHandoff(h.id, h.conversa_id);
-    toast({ title: "Atendimento encerrado" });
-    load();
+  const handleAssumir = async (h: HandoffEnriquecido) => {
+    if (!user) return;
+    try {
+      await assumirHandoff(h.id, user.id, h.conversa_id);
+      toast({ title: "Atendimento assumido" });
+      await load();
+      setSelecionado({ ...h, status: "em_atendimento", atendente_id: user.id });
+      setDrawerOpen(true);
+    } catch (e: any) {
+      toast({ title: "Erro ao assumir", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleFechar = async (h: HandoffEnriquecido) => {
+    try {
+      await fecharHandoff(h.id, h.conversa_id);
+      toast({ title: "Atendimento encerrado" });
+      load();
+    } catch (e: any) {
+      toast({ title: "Erro ao encerrar", description: e.message, variant: "destructive" });
+    }
   };
 
   const handoffsAbertos = handoffs.filter((h) => h.status !== "fechado").length;
