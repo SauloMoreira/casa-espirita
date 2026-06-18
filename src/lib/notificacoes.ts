@@ -3,7 +3,7 @@
  *
  * Kept provider-agnostic and side-effect free so the anti-spam rules,
  * template rendering and AI triage can be unit tested independently of the
- * Evolution adapter and the database. The edge functions reuse the same rules.
+ * Z-API adapter and the database. The edge functions reuse the same rules.
  */
 
 export const LIMITE_DIARIO_PADRAO = 3;
