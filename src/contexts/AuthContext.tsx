@@ -46,6 +46,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mfaPending, setMfaPending] = useState(false);
+
+  const refreshMfa = async () => {
+    try {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      setMfaPending(data?.currentLevel === "aal1" && data?.nextLevel === "aal2");
+    } catch {
+      setMfaPending(false);
+    }
+  };
 
   const fetchRoleAndProfile = async (userId: string, accessToken: string) => {
     try {
