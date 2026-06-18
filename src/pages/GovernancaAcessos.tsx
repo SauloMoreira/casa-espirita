@@ -78,16 +78,24 @@ export default function GovernancaAcessos() {
   );
 
   const fetchAll = useCallback(async () => {
-    const [{ data: profs }, { data: reqs }, { data: apps }, { count: mastersCount }] = await Promise.all([
+    const [{ data: profs }, { data: reqs }, { data: apps }, { count: mastersCount }, { data: adminRoles }] = await Promise.all([
       supabase.from("profiles").select("user_id, nome_completo").eq("status", "ativo"),
       supabase.from("admin_promotion_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("admin_promotion_approvals").select("*"),
       supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "administrador_master"),
+      supabase.from("user_roles").select("user_id").eq("role", "admin"),
     ]);
+    const activeIds = new Set(((profs as ProfileLite[]) || []).map((p) => p.user_id));
+    const distinctActiveAdmins = new Set(
+      ((adminRoles as { user_id: string }[]) || [])
+        .map((r) => r.user_id)
+        .filter((id) => activeIds.has(id)),
+    );
     setProfiles((profs as ProfileLite[]) || []);
     setRequests((reqs as RequestRow[]) || []);
     setApprovals((apps as ApprovalRow[]) || []);
     setActiveMasters(mastersCount || 0);
+    setAptAdmins(distinctActiveAdmins.size);
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
