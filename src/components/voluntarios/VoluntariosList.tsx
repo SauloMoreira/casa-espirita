@@ -80,6 +80,9 @@ export function VoluntariosList({
                     <TableCell>
                       <VoluntarioStatusBadge status={v.status} />
                     </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <TermoStatusBadge status={v.termo_status} />
+                    </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {v.data_ingresso_sistema
                         ? new Date(v.data_ingresso_sistema + "T12:00:00").toLocaleDateString("pt-BR")
