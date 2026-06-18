@@ -2078,6 +2078,7 @@ export type Database = {
         | "tarefeiro"
         | "assistido"
         | "coordenador_de_tratamento"
+        | "administrador_master"
       conversa_status: "ativa" | "encerrada"
       handoff_status: "aberto" | "em_atendimento" | "fechado"
       notif_canal: "whatsapp"
@@ -2222,6 +2223,7 @@ export const Constants = {
         "tarefeiro",
         "assistido",
         "coordenador_de_tratamento",
+        "administrador_master",
       ],
       conversa_status: ["ativa", "encerrada"],
       handoff_status: ["aberto", "em_atendimento", "fechado"],
