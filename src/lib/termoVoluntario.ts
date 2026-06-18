@@ -39,6 +39,7 @@ export function validateTermoFile(file: { type: string; size: number }): FileVal
 
 /** Build the storage path for a volunteer's signed term. */
 export function buildTermoPath(voluntarioId: string, fileName: string): string {
-  const safeExt = (fileName.split(".").pop() || "pdf").toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
+  const rawExt = fileName.includes(".") ? fileName.split(".").pop() || "" : "";
+  const safeExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
   return `${voluntarioId}/${Date.now()}-${crypto.randomUUID()}.${safeExt}`;
 }
