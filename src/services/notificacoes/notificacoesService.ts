@@ -125,12 +125,88 @@ export async function listHandoffs(limit = 100): Promise<Handoff[]> {
   return (data as Handoff[]) ?? [];
 }
 
-export async function assumirHandoff(id: string, atendenteId: string): Promise<void> {
+/** Atendimentos com contexto: telefone, assistido, última mensagem e atendente. */
+export async function listHandoffsEnriquecidos(limit = 100): Promise<HandoffEnriquecido[]> {
+  const handoffs = await listHandoffs(limit);
+  if (handoffs.length === 0) return [];
+
+  const conversaIds = [...new Set(handoffs.map((h) => h.conversa_id))];
+  const { data: conversas } = await supabase
+    .from("whatsapp_conversas")
+    .select("id, telefone, assistido_id, ultima_mensagem, ultimo_contato_em")
+    .in("id", conversaIds);
+  const convMap = new Map((conversas ?? []).map((c: any) => [c.id, c]));
+
+  const assistidoIds = [...new Set((conversas ?? []).map((c: any) => c.assistido_id).filter(Boolean))];
+  const assistidoMap = new Map<string, string>();
+  if (assistidoIds.length > 0) {
+    const { data: assistidos } = await supabase
+      .from("assistidos").select("id, nome").in("id", assistidoIds);
+    (assistidos ?? []).forEach((a: any) => assistidoMap.set(a.id, a.nome));
+  }
+
+  const atendenteIds = [...new Set(handoffs.map((h) => h.atendente_id).filter(Boolean))] as string[];
+  const atendenteMap = new Map<string, string>();
+  if (atendenteIds.length > 0) {
+    const { data: staff } = await supabase.rpc("staff_names", { _ids: atendenteIds });
+    (staff ?? []).forEach((s: any) => atendenteMap.set(s.user_id, s.nome_completo));
+  }
+
+  return handoffs.map((h) => {
+    const c: any = convMap.get(h.conversa_id);
+    const assistidoId = c?.assistido_id ?? null;
+    return {
+      ...h,
+      telefone: c?.telefone ?? null,
+      assistido_id: assistidoId,
+      assistido_nome: assistidoId ? assistidoMap.get(assistidoId) ?? null : null,
+      identificado: !!assistidoId,
+      ultima_mensagem: c?.ultima_mensagem ?? null,
+      ultimo_contato_em: c?.ultimo_contato_em ?? null,
+      atendente_nome: h.atendente_id ? atendenteMap.get(h.atendente_id) ?? null : null,
+    };
+  });
+}
+
+/** Histórico de mensagens (inbound/outbound) de uma conversa, por telefone. */
+export async function getConversaMensagens(telefone: string): Promise<MensagemConversa[]> {
+  if (!telefone) return [];
+  const { data, error } = await supabase
+    .from("notificacoes_log")
+    .select("*")
+    .or(`payload_recebido->>telefone.eq.${telefone},payload_enviado->>telefone.eq.${telefone}`)
+    .order("created_at", { ascending: true })
+    .limit(300);
+  if (error) throw error;
+  return (data ?? []).map((l: any): MensagemConversa => {
+    if (l.direcao === "entrada") {
+      return {
+        id: l.id, direcao: "entrada",
+        texto: l.payload_recebido?.texto ?? "",
+        autor: "assistido",
+        status: l.status, erro: l.erro, created_at: l.created_at,
+      };
+    }
+    const autorRaw = l.payload_enviado?.autor;
+    const autor: MensagemConversa["autor"] =
+      autorRaw === "humano" ? "humano" : autorRaw === "sistema" ? "sistema" : "ia";
+    return {
+      id: l.id, direcao: "saida",
+      texto: l.payload_enviado?.mensagem ?? "",
+      autor,
+      status: l.status, erro: l.erro, created_at: l.created_at,
+    };
+  }).filter((m) => m.texto || m.direcao === "saida");
+}
+
+export async function assumirHandoff(id: string, atendenteId: string, conversaId: string): Promise<void> {
   const { error } = await supabase
     .from("whatsapp_handoffs")
     .update({ status: "em_atendimento", atendente_id: atendenteId })
     .eq("id", id);
   if (error) throw error;
+  await supabase.from("whatsapp_conversas")
+    .update({ atendente_responsavel: atendenteId }).eq("id", conversaId);
 }
 
 export async function fecharHandoff(id: string, conversaId: string): Promise<void> {
@@ -140,6 +216,24 @@ export async function fecharHandoff(id: string, conversaId: string): Promise<voi
     .eq("id", id);
   if (error) throw error;
   await supabase.from("whatsapp_conversas").update({ em_handoff: false }).eq("id", conversaId);
+}
+
+/** Vincula (ou desvincula) um assistido a uma conversa. */
+export async function vincularAssistidoConversa(conversaId: string, assistidoId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from("whatsapp_conversas")
+    .update({ assistido_id: assistidoId })
+    .eq("id", conversaId);
+  if (error) throw error;
+}
+
+/** Envia uma resposta manual do atendente via Z-API (edge function autenticada). */
+export async function responderConversa(conversaId: string, mensagem: string): Promise<{ ok: boolean; erro: string | null }> {
+  const { data, error } = await supabase.functions.invoke("whatsapp-responder", {
+    body: { conversa_id: conversaId, mensagem },
+  });
+  if (error) throw error;
+  return (data as { ok: boolean; erro: string | null }) ?? { ok: false, erro: "Sem resposta" };
 }
 
 /** Dispara manualmente o processamento da fila. */
