@@ -99,8 +99,10 @@ export function ehPerguntaPessoal(intencao: Intencao): boolean {
   return PESSOAIS.includes(intencao);
 }
 
-/** True for the basic social/conversational intents (greeting, thanks). */
-export const CONVERSACIONAIS: Intencao[] = ["saudacao", "agradecimento"];
+/** True for the basic social/conversational intents (greeting, thanks, bridge, closing). */
+export const CONVERSACIONAIS: Intencao[] = [
+  "saudacao", "agradecimento", "pedido_informacao", "encerramento",
+];
 export function ehConversacional(intencao: Intencao): boolean {
   return CONVERSACIONAIS.includes(intencao);
 }
@@ -116,7 +118,11 @@ export function classificarIntencao(msg: string): Intencao {
   // Business intents win first, so "boa tarde, tem palestra hoje?" is answered
   // as an operational question (greeting + request → operational content).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
-  // Isolated social messages → friendly conversational layer (no handoff).
+  // Conversational layers (no handoff), checked from most to least specific:
+  // bridge ("gostaria de informações") wins over a bare greeting so a continued
+  // conversation flows naturally instead of repeating the greeting.
+  if (contemTermo(txt, PEDIDO_INFO_TERMOS)) return "pedido_informacao";
+  if (contemTermo(txt, ENCERRAMENTO_TERMOS)) return "encerramento";
   if (contemTermo(txt, AGRADECIMENTO_TERMOS)) return "agradecimento";
   if (contemTermo(txt, SAUDACAO_TERMOS)) return "saudacao";
   return "complexo";
