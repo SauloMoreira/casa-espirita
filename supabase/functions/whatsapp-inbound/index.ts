@@ -257,6 +257,15 @@ function hojeSaoPaulo(): { data: string; diaSemana: number } {
   return { data, diaSemana: map[weekdayName] ?? new Date().getDay() };
 }
 
+function horaSaoPaulo(): number {
+  const h = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false,
+  }).format(new Date());
+  const n = parseInt(h, 10);
+  return isNaN(n) ? new Date().getHours() : n;
+}
+
+
 
 function fmtData(value: string, withTime = false): string {
   const d = new Date(value);
