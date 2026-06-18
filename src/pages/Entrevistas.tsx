@@ -121,8 +121,11 @@ export default function Entrevistas() {
   const [decisoes, setDecisoes] = useState("");
   const [designacoes, setDesignacoes] = useState<DesignacaoItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, role, isMaster } = useAuth();
   const { toast } = useToast();
+  // Tarefeiros may schedule interviews and read availability, but the actual
+  // "realizar" (which designates treatments) stays with entrevistador/admin.
+  const canRealizar = isMaster || role === "admin" || role === "entrevistador";
   const [cartaOpen, setCartaOpen] = useState(false);
   const [cartaAssistidoId, setCartaAssistidoId] = useState("");
   const [cartaEntrevistaId, setCartaEntrevistaId] = useState("");
@@ -161,18 +164,18 @@ export default function Entrevistas() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("entrevistas_fraternas").insert({
-      assistido_id: form.assistido_id,
-      entrevistador_id: user!.id,
-      data: form.data,
-      tipo_entrevista: form.tipo_entrevista,
-      observacoes: form.observacoes || null,
-      status: "agendada",
+    // Scheduling goes through a role-scoped security-definer RPC so that
+    // tarefeiros can create the interview and flag the assistido as
+    // "entrevista_agendada" without holding broad write access on assistidos.
+    const { error } = await supabase.rpc("agendar_entrevista_fraterna", {
+      _assistido_id: form.assistido_id,
+      _data: form.data,
+      _tipo: form.tipo_entrevista,
+      _observacoes: form.observacoes || "",
     });
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      await supabase.from("assistidos").update({ status: "entrevista_agendada" }).eq("id", form.assistido_id);
       toast({ title: "Entrevista agendada" });
       setAgendarOpen(false);
       setForm({ assistido_id: "", data: "", tipo_entrevista: "regular", observacoes: "" });
@@ -513,7 +516,7 @@ export default function Entrevistas() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {e.status === "agendada" && (
+                          {e.status === "agendada" && canRealizar && (
                             <>
                               <Button variant="ghost" size="icon" title="Realizar" onClick={() => openRealizar(e)}>
                                 <BookOpen className="h-4 w-4" />
@@ -522,6 +525,9 @@ export default function Entrevistas() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
+                          )}
+                          {e.status === "agendada" && !canRealizar && (
+                            <span className="text-xs text-muted-foreground">Agendada</span>
                           )}
                           {e.status === "realizada" && (
                             <>
