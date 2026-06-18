@@ -5,6 +5,7 @@ import { VoluntariosList } from "@/components/voluntarios/VoluntariosList";
 import { VoluntarioFormDialog } from "@/components/voluntarios/VoluntarioFormDialog";
 import { TermoAdesao } from "@/components/voluntarios/TermoAdesao";
 import { FichaVoluntario } from "@/components/voluntarios/FichaVoluntario";
+import { DeleteVoluntarioDialog } from "@/components/voluntarios/DeleteVoluntarioDialog";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export default function Voluntarios() {
@@ -21,6 +22,17 @@ export default function Voluntarios() {
         onEdit={v.openEdit}
         onFicha={v.openFicha}
         onTermo={v.openTermo}
+        onInactivate={(vol) => {
+          if (window.confirm(`Inativar o voluntário ${vol.nome_completo}? O histórico será preservado.`)) {
+            v.handleInactivate(vol);
+          }
+        }}
+        onReactivate={(vol) => {
+          if (window.confirm(`Reativar o voluntário ${vol.nome_completo}?`)) {
+            v.handleReactivate(vol);
+          }
+        }}
+        onDelete={v.openDelete}
       />
 
       {v.total > 0 && (
@@ -63,6 +75,17 @@ export default function Voluntarios() {
           onClose={() => v.setFichaOpen(false)}
           voluntario={v.selectedVoluntario}
           funcoesNomes={v.getFuncaoNames(v.selectedVoluntario.id)}
+        />
+      )}
+
+      {v.deleteTarget && (
+        <DeleteVoluntarioDialog
+          open={v.deleteOpen}
+          onOpenChange={v.setDeleteOpen}
+          voluntarioId={v.deleteTarget.id}
+          voluntarioNome={v.deleteTarget.nome_completo}
+          onDeleted={v.onDeleted}
+          onInactivate={(motivo) => v.deleteTarget && v.handleInactivate(v.deleteTarget, motivo)}
         />
       )}
     </div>

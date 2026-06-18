@@ -27,6 +27,8 @@ import {
   isCpfDuplicado,
   replaceVoluntarioFuncoes,
   saveVoluntario,
+  inactivateVoluntario,
+  reactivateVoluntario,
 } from "@/services/voluntarios/voluntariosService";
 import type {
   FuncaoVoluntariado,
@@ -62,6 +64,9 @@ export function useVoluntarios() {
   const [termoOpen, setTermoOpen] = useState(false);
   const [fichaOpen, setFichaOpen] = useState(false);
   const [selectedVoluntario, setSelectedVoluntario] = useState<VoluntarioListItem | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<VoluntarioListItem | null>(null);
 
   const reloadVoluntarios = useCallback(async () => {
     setVoluntarios(await fetchVoluntarios());
@@ -211,6 +216,44 @@ export function useVoluntarios() {
     setTermoOpen(true);
   }, []);
 
+  const handleInactivate = useCallback(
+    async (v: VoluntarioListItem, motivo?: string | null) => {
+      try {
+        const res = await inactivateVoluntario(v.id, motivo);
+        if (res?.error) throw new Error(res.error);
+        toast({ title: "Voluntário inativado", description: res?.message });
+        await reloadVoluntarios();
+      } catch (error) {
+        toast({ title: "Erro ao inativar", description: (error as Error).message, variant: "destructive" });
+      }
+    },
+    [toast, reloadVoluntarios],
+  );
+
+  const handleReactivate = useCallback(
+    async (v: VoluntarioListItem) => {
+      try {
+        const res = await reactivateVoluntario(v.id);
+        if (res?.error) throw new Error(res.error);
+        toast({ title: "Voluntário reativado", description: res?.message });
+        await reloadVoluntarios();
+      } catch (error) {
+        toast({ title: "Erro ao reativar", description: (error as Error).message, variant: "destructive" });
+      }
+    },
+    [toast, reloadVoluntarios],
+  );
+
+  const openDelete = useCallback((v: VoluntarioListItem) => {
+    setDeleteTarget(v);
+    setDeleteOpen(true);
+  }, []);
+
+  const onDeleted = useCallback(async () => {
+    await reloadVoluntarios();
+    await reloadFuncoesMap();
+  }, [reloadVoluntarios, reloadFuncoesMap]);
+
   const getFuncaoNames = useCallback(
     (volId: string) => {
       const ids = voluntarioFuncoesMap[volId] || [];
@@ -315,5 +358,13 @@ export function useVoluntarios() {
     selectedVoluntario,
     openFicha,
     openTermo,
+    // lifecycle
+    handleInactivate,
+    handleReactivate,
+    openDelete,
+    deleteOpen,
+    setDeleteOpen,
+    deleteTarget,
+    onDeleted,
   };
 }
