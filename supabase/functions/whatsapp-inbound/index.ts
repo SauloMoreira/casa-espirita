@@ -439,6 +439,10 @@ const PRECISA_ASSISTIDO: Intencao[] = [
   "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
 ];
 
+// Intents about the assistido's OWN personal data (used to tag the short memory scope).
+const PESSOAIS: Intencao[] = ["tratamento_hoje", "proxima_sessao", "horario_entrevista"];
+
+
 const CANCELADO_STATUS = ["cancelado", "cancelada", "remarcado", "remarcada"];
 
 function normalizePhone(p: string): string {
@@ -810,9 +814,90 @@ function fmtData(value: string, withTime = false): string {
   });
 }
 
+// ===================== FASE 3 — GERAÇÃO FINAL HUMANA (grounded) =====================
+// A resposta factual já foi montada deterministicamente (fonte da verdade). Aqui
+// um modelo LEVE/BARATO da família flash/lite apenas REESCREVE de forma natural e
+// acolhedora, SEM inventar, remover ou alterar nenhum dado (datas/horários/nomes).
+// Qualquer falha cai no texto determinístico — nunca fica sem resposta.
+
+interface HumanizarCtx {
+  escopo?: string | null;
+  jaSaudado?: boolean;
+  nome?: string | null;
+  ultimosTurnos?: Array<{ papel: string; resumo: string }>;
+}
+
+async function humanizarRespostaIA(
+  textoFactual: string,
+  ctx: HumanizarCtx,
+): Promise<{ texto: string; usouLlm: boolean }> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey || !textoFactual || !textoFactual.trim()) {
+    return { texto: textoFactual, usouLlm: false };
+  }
+
+  const historico = (ctx.ultimosTurnos || [])
+    .slice(-4)
+    .map((t) => `${t.papel === "ia" ? "Daniel" : "Pessoa"}: ${t.resumo}`)
+    .join("\n");
+
+  const sistema = [
+    "Você é o Daniel, assistente virtual acolhedor de uma casa espírita (FER).",
+    "Reescreva a MENSAGEM FACTUAL abaixo de forma natural, calorosa e humana, em português do Brasil.",
+    "REGRAS ABSOLUTAS:",
+    "- NÃO invente, remova ou altere nenhum fato: mantenha exatamente datas, horários, nomes de atividades e status.",
+    "- Se a mensagem factual indica ausência (não há / não encontrei), mantenha a ausência de forma honesta, clara e acolhedora — nunca vaga ou seca.",
+    "- Informação principal primeiro, em 1 frase. Complemente só o necessário.",
+    ctx.jaSaudado ? "- A conversa já começou: NÃO repita saudações." : "- Pode cumprimentar brevemente.",
+    "- Sem frases genéricas, sem burocracia. Fechamento gentil só quando fizer sentido.",
+    "- No máximo 1 emoji discreto. Seja conciso (até ~2 frases).",
+    "- Responda APENAS com o texto final para o usuário, sem aspas nem rótulos.",
+  ].join("\n");
+
+  const usuario = [
+    historico ? `Contexto recente da conversa:\n${historico}\n` : "",
+    `MENSAGEM FACTUAL a reescrever:\n${textoFactual}`,
+  ].join("\n");
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-lite",
+        messages: [
+          { role: "system", content: sistema },
+          { role: "user", content: usuario },
+        ],
+        temperature: 0.5,
+        max_tokens: 220,
+      }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) return { texto: textoFactual, usouLlm: false };
+    const json = await resp.json();
+    const out = String(json?.choices?.[0]?.message?.content || "").trim();
+    if (!out) return { texto: textoFactual, usouLlm: false };
+    return { texto: out, usouLlm: true };
+  } catch (_) {
+    return { texto: textoFactual, usouLlm: false };
+  }
+}
+
+// Intenções factuais cuja resposta pode ser humanizada (conversacionais já variam
+// sozinhas; handoff e opt-out/in têm texto fixo e sensível, não humanizamos).
+const INTENCOES_HUMANIZAVEIS = new Set<Intencao>([
+  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento",
+  "onde_ver_app", "programacao_publica", "eventos", "campanhas", "acao_social",
+]);
+
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req, "authorization, x-client-info, apikey, content-type");
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
 
   // admin client is needed across the whole flow (and for the catch-all safety net).
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -1404,6 +1489,22 @@ Deno.serve(async (req) => {
       }).eq("id", conversaId);
     }
 
+    // ===== FASE 1 — Memória curta estruturada (assunto/entidade/escopo/turnos) =====
+    // Resumo determinístico (sem LLM): mantém no máximo 4 turnos curtos para dar
+    // o "fio da conversa" aos follow-ups e à geração humana.
+    const escopoAtual: string = PESSOAIS.includes(intencao)
+      ? "pessoal"
+      : (intencao === "complexo" || intencao === "pedido_informacao" || intencao === "saudacao"
+          ? "geral" : "publico");
+    const ctxConvAnterior = (convExist?.contexto_conversa as any) || {};
+    const turnosAnteriores: Array<{ papel: string; resumo: string; em: string }> =
+      Array.isArray(ctxConvAnterior?.ultimos_turnos) ? ctxConvAnterior.ultimos_turnos : [];
+    const resumirT = (t: string) => {
+      const c = (t || "").replace(/\s+/g, " ").trim();
+      return c.length > 120 ? c.slice(0, 119) + "…" : c;
+    };
+    const turnosComUser = [...turnosAnteriores,
+      { papel: "user", resumo: resumirT(texto), em: new Date().toISOString() }].slice(-4);
 
     // Log inbound with full audit context (identification + intent + fallback).
     await admin.from("notificacoes_log").insert({
@@ -1414,6 +1515,7 @@ Deno.serve(async (req) => {
         assistido_id: assistido?.id ?? null,
         resposta_fonte: respostaFonte,
         fallback_motivo: fallbackMotivo,
+        escopo: escopoAtual,
       },
       status: "recebido",
     });
@@ -1435,23 +1537,48 @@ Deno.serve(async (req) => {
       resposta = resposta || MENSAGEM_HANDOFF;
     }
 
+    // ===== FASE 3 — Geração final humana (grounded), só p/ intenções factuais =====
+    let usouLlm = false;
+    if (resposta && !handoff && INTENCOES_HUMANIZAVEIS.has(intencao)) {
+      const h = await humanizarRespostaIA(resposta, {
+        escopo: escopoAtual, jaSaudado, nome: nomeContato, ultimosTurnos: turnosAnteriores,
+      });
+      resposta = h.texto;
+      usouLlm = h.usouLlm;
+    }
+
+
     // Send auto-reply (IA). If sending fails, ensure a handoff exists so the
     // message is never "lost": there is always either a reply or a handoff.
     if (resposta) {
       const send = await adapter.send(telefone, resposta);
       respostaOk = send.ok;
       respostaErro = send.error ?? null;
-      // Remember the exact reply we sent (short context) for anti-repetition.
+      // Remember the exact reply we sent (short context) for anti-repetition,
+      // and persist the structured short memory (entity/scope/temporal/turns).
       if (send.ok) {
-        await admin.from("whatsapp_conversas")
-          .update({ ultima_resposta_ia: resposta }).eq("id", conversaId);
+        const turnosFinais = [...turnosComUser,
+          { papel: "ia", resumo: resumirT(resposta), em: new Date().toISOString() }].slice(-4);
+        await admin.from("whatsapp_conversas").update({
+          ultima_resposta_ia: resposta,
+          contexto_conversa: {
+            assunto_atual: intencao,
+            entidade_atual: ctxAtividade ?? ctxConvAnterior?.entidade_atual ?? null,
+            referencia_temporal: ctxData ?? ctxConvAnterior?.referencia_temporal ?? null,
+            escopo: escopoAtual,
+            assistido_identificado: !!assistido,
+            assistido_id: assistido?.id ?? null,
+            ultimos_turnos: turnosFinais,
+          },
+        }).eq("id", conversaId);
       }
       await admin.from("notificacoes_log").insert({
         fila_id: null, direcao: "saida",
-        payload_enviado: { telefone, mensagem: resposta, autor: handoff ? "sistema" : "ia" },
+        payload_enviado: { telefone, mensagem: resposta, autor: handoff ? "sistema" : "ia", usou_llm: usouLlm },
         payload_recebido: send.raw ?? null,
         status: send.ok ? "enviado" : "falha", erro: send.error ?? null,
       });
+
 
       if (!send.ok && !handoff) {
         // The IA answer could not be delivered -> escalate.
