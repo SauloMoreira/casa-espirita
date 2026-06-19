@@ -110,6 +110,7 @@ serve(async (req) => {
     const modo: string = body.modo;
     const prompt: string = (body.prompt ?? "").toString();
     const imagemUrl: string | null = body.imagemUrl ?? null;
+    const formato = normalizarFormato(body.formato);
 
     if (modo !== "gerar" && modo !== "otimizar") return json({ error: "Modo inválido" }, 400);
     if (!prompt.trim()) return json({ error: "Prompt obrigatório" }, 400);
