@@ -75,6 +75,8 @@ export default function Campanhas() {
       descricao_curta: c.descricao_curta ?? "",
       descricao_completa: c.descricao_completa ?? "",
       imagem_url: c.imagem_url ?? "",
+      imagem_origem: (c.imagem_origem as ImagemOrigem) ?? "url",
+      imagem_otimizada: c.imagem_otimizada ?? false,
       ordem: c.ordem.toString(),
       destaque: c.destaque,
       data_inicio: c.data_inicio ?? "",
