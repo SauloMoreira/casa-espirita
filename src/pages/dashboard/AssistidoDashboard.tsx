@@ -164,6 +164,8 @@ export default function AssistidoDashboard() {
       </div>
 
 
+      <AlimentosAssistidoCard />
+
       <div className="grid gap-4 lg:grid-cols-2 items-start">
       {tratamentos.length > 0 && (
         <Card className="border-border/60 shadow-sm">
