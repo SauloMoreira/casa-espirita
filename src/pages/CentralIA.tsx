@@ -87,9 +87,14 @@ export default function CentralIA() {
           <IndicadoresAssertividade />
         </TabsContent>
         {isAdmin && (
-          <TabsContent value="configuracoes" className="mt-6">
-            <ConfiguracoesIA />
-          </TabsContent>
+          <>
+            <TabsContent value="metricas-whatsapp" className="mt-6">
+              <MetricasWhatsApp />
+            </TabsContent>
+            <TabsContent value="configuracoes" className="mt-6">
+              <ConfiguracoesIA />
+            </TabsContent>
+          </>
         )}
       </Tabs>
     </div>
