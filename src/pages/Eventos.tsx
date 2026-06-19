@@ -135,6 +135,7 @@ export default function Eventos() {
         imagem_url: imagemUrl,
         imagem_origem: imagemUrl ? form.imagem_origem : "url",
         imagem_otimizada: imagemUrl ? form.imagem_otimizada : false,
+        imagem_formato: imagemUrl ? form.imagem_formato : "card",
         imagem_atualizada_em: imagemMudou ? new Date().toISOString() : (editing?.imagem_atualizada_em ?? null),
         imagem_atualizada_por: imagemMudou ? (authData.user?.id ?? null) : (editing?.imagem_atualizada_por ?? null),
         local: form.local.trim() || null,
