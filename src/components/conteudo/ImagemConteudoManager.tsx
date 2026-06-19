@@ -26,16 +26,17 @@ interface Props {
   onChange: (next: ImagemValue) => void;
 }
 
-type Candidato = { url: string; otimizada: boolean } | null;
+type Candidato = { url: string; otimizada: boolean; formato: ImagemFormato } | null;
 
 export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChange }: Props) {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [formato, setFormato] = useState<ImagemFormato>("card");
+  const [formato, setFormato] = useState<ImagemFormato>(normalizarFormato(value.formato));
   const [busy, setBusy] = useState<null | "upload" | "gerar" | "otimizar">(null);
   const [candidato, setCandidato] = useState<Candidato>(null);
 
   const temImagem = !!value.url;
+  const aspectClass = formatoAspectClass(formato);
 
   const handleFile = async (file: File) => {
     const err = validarUploadImagem(file);
