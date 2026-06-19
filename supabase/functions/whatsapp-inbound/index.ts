@@ -96,6 +96,13 @@ function classificar(msg: string): Intencao {
   // Explicit request to talk to a human wins over business/conversational layers
   // so the gentle-retention -> handoff flow can be applied.
   if (contemTermo(txt, HUMANO_TERMOS)) return "falar_humano";
+  // Word-order-agnostic detection: any "treatment/session" word together with a
+  // temporal marker ("hoje tem tratamento", "tratamento hoje", "tem sessão hoje").
+  const TEMPORAL = ["hoje", "amanha", "amanhã", "depois de amanha", "depois de amanhã"];
+  const TRAT_PALAVRAS = ["tratamento", "sessao", "sessão", "atendimento"];
+  if (TEMPORAL.some((d) => txt.includes(d)) && TRAT_PALAVRAS.some((p) => txt.includes(p))) {
+    return "tratamento_hoje";
+  }
   // Business intents win first (greeting + operational request -> operational).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
   // Conversational layers (no handoff), most to least specific. The bridge
