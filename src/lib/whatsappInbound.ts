@@ -552,6 +552,8 @@ export interface ConversaContexto {
   texto?: string;
   /** The exact last reply we sent, to avoid repeating it verbatim. */
   ultimaResposta?: string | null;
+  /** Identified contact name (assistido or registered user), when available. */
+  nome?: string | null;
 }
 
 /**
