@@ -336,6 +336,31 @@ function normalizePhone(p: string): string {
   return (p || "").replace(/\D/g, "");
 }
 
+/**
+ * Canonical Brazilian phone form for comparison: digits only, without the "55"
+ * country code, so a stored "21984221866" matches an inbound "5521984221866".
+ */
+function canonTelefone(p: string): string {
+  let d = normalizePhone(p);
+  if (d.startsWith("55") && d.length >= 12) d = d.slice(2);
+  return d;
+}
+
+/**
+ * Robust phone equality that tolerates the country code (55) and the optional
+ * 9th mobile digit, comparing by the DDD + last 8 digits as a final fallback.
+ */
+function mesmoTelefone(a: string, b: string): boolean {
+  const ca = canonTelefone(a);
+  const cb = canonTelefone(b);
+  if (!ca || !cb) return false;
+  if (ca === cb) return true;
+  if (ca.slice(-10).length === 10 && ca.slice(-10) === cb.slice(-10)) return true;
+  // DDD (first 2 of canonical) + last 8 digits, ignoring a missing/extra 9.
+  const chave = (s: string) => s.slice(0, 2) + s.slice(-8);
+  return chave(ca) === chave(cb);
+}
+
 function resumo(texto: string, max = 160): string {
   const t = (texto || "").trim();
   return t.length > max ? t.slice(0, max - 1) + "…" : t;
