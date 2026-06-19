@@ -113,6 +113,7 @@ export default function Instituicao() {
       cidade: form.cidade.trim(),
       estado: form.estado.trim().toUpperCase(),
       telefone: form.telefone.replace(/\D/g, "") || null,
+      whatsapp: form.whatsapp.replace(/\D/g, "") || null,
       email_institucional: form.email_institucional.trim() || null,
       observacoes: form.observacoes.trim() || null,
       updated_by: user!.id,
