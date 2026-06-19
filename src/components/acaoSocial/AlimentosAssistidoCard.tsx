@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { HeartHandshake } from "lucide-react";
 import { alimentosVisiveis, formatFaltante, type AlimentoAcaoSocial } from "@/lib/acaoSocial";
 import { listAlimentosAtivos } from "@/services/acaoSocial";
