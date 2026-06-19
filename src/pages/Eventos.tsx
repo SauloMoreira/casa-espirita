@@ -31,6 +31,7 @@ type FormState = {
   imagem_url: string;
   imagem_origem: ImagemOrigem;
   imagem_otimizada: boolean;
+  imagem_formato: string;
   local: string;
   data_evento: string;
   data_evento_fim: string;
@@ -43,7 +44,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   titulo: "", subtitulo: "", descricao_curta: "", descricao_completa: "",
-  imagem_url: "", imagem_origem: "url", imagem_otimizada: false,
+  imagem_url: "", imagem_origem: "url", imagem_otimizada: false, imagem_formato: "card",
   local: "", data_evento: "", data_evento_fim: "",
   ordem: "0", destaque: false, data_inicio: "", data_fim: "", ativo: true,
 };
