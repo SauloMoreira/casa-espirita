@@ -19,6 +19,9 @@ import { validarEvento, type Evento } from "@/lib/eventos";
 import {
   listEventos, createEvento, updateEvento, deleteEvento, toggleEventoAtivo,
 } from "@/services/eventos";
+import { supabase } from "@/integrations/supabase/client";
+import { ImagemConteudoManager } from "@/components/conteudo/ImagemConteudoManager";
+import type { ImagemOrigem } from "@/lib/conteudoImagem";
 
 type FormState = {
   titulo: string;
@@ -26,6 +29,8 @@ type FormState = {
   descricao_curta: string;
   descricao_completa: string;
   imagem_url: string;
+  imagem_origem: ImagemOrigem;
+  imagem_otimizada: boolean;
   local: string;
   data_evento: string;
   data_evento_fim: string;
@@ -38,7 +43,8 @@ type FormState = {
 
 const emptyForm: FormState = {
   titulo: "", subtitulo: "", descricao_curta: "", descricao_completa: "",
-  imagem_url: "", local: "", data_evento: "", data_evento_fim: "",
+  imagem_url: "", imagem_origem: "url", imagem_otimizada: false,
+  local: "", data_evento: "", data_evento_fim: "",
   ordem: "0", destaque: false, data_inicio: "", data_fim: "", ativo: true,
 };
 
