@@ -253,6 +253,7 @@ function extrairUltimoEmoji(texto?: string | null): string | null {
 
 interface ConversaContexto {
   horaLocal?: number; jaSaudado?: boolean; texto?: string; ultimaResposta?: string | null;
+  nome?: string | null;
 }
 
 function extrairSaudacaoDoTexto(texto: string): string | null {
