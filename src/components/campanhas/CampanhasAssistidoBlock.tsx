@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Megaphone, Star } from "lucide-react";
+import { Megaphone } from "lucide-react";
 import { campanhasVisiveis, type Campanha } from "@/lib/campanhas";
 import { listCampanhasVigentes } from "@/services/campanhas";
+import { VitrineCard } from "@/components/conteudo/VitrineCard";
 
 /**
  * Bloco institucional de campanhas da casa exibido ao assistido.
- * Mostra apenas campanhas ativas e vigentes (destaques primeiro).
+ * Mostra apenas campanhas ativas e vigentes (destaques primeiro), em vitrine.
  * Não renderiza nada quando não há campanhas. Área própria, separada
  * de eventos e da ação social.
  */
@@ -24,6 +23,8 @@ export function CampanhasAssistidoBlock() {
 
   if (loading || itens.length === 0) return null;
 
+  const [primeiro, ...restantes] = itens;
+
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
@@ -31,26 +32,23 @@ export function CampanhasAssistidoBlock() {
         <h2 className="text-sm font-semibold tracking-wide uppercase text-primary">Campanhas da Casa</h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {itens.map((c) => (
-          <Card key={c.id} className="overflow-hidden border-border/60 shadow-sm hover:shadow-md transition-shadow">
-            {c.imagem_url && (
-              <div className="aspect-[16/9] w-full overflow-hidden bg-secondary/30">
-                <img src={c.imagem_url} alt={c.titulo} className="h-full w-full object-cover" loading="lazy" />
-              </div>
-            )}
-            <CardContent className="p-4 space-y-1.5">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-display font-bold text-foreground">{c.titulo}</h3>
-                {c.destaque && (
-                  <Badge variant="outline" className="shrink-0 text-[10px] gap-1 border-primary/30 text-primary">
-                    <Star className="h-3 w-3" /> Destaque
-                  </Badge>
-                )}
-              </div>
-              {c.subtitulo && <p className="text-xs font-medium text-muted-foreground">{c.subtitulo}</p>}
-              {c.descricao_curta && <p className="text-xs text-muted-foreground leading-relaxed">{c.descricao_curta}</p>}
-            </CardContent>
-          </Card>
+        <VitrineCard
+          featured={itens.length > 1}
+          imagemUrl={primeiro.imagem_url}
+          titulo={primeiro.titulo}
+          subtitulo={primeiro.subtitulo}
+          descricao={primeiro.descricao_curta}
+          destaque={primeiro.destaque}
+        />
+        {restantes.map((c) => (
+          <VitrineCard
+            key={c.id}
+            imagemUrl={c.imagem_url}
+            titulo={c.titulo}
+            subtitulo={c.subtitulo}
+            descricao={c.descricao_curta}
+            destaque={c.destaque}
+          />
         ))}
       </div>
     </section>
