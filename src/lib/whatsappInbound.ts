@@ -128,6 +128,9 @@ export function classificarIntencao(msg: string): Intencao {
   const txt = (msg || "").toLowerCase().trim();
   if (!txt) return "complexo";
   if (SENSITIVE.some((t) => txt.includes(t))) return "complexo";
+  // Explicit request to talk to a human wins over business/conversational layers
+  // so the gentle-retention -> handoff flow can be applied.
+  if (contemTermo(txt, HUMANO_TERMOS)) return "falar_humano";
   // Business intents win first, so "boa tarde, tem palestra hoje?" is answered
   // as an operational question (greeting + request → operational content).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
