@@ -411,6 +411,66 @@ export function montarRespostaProgramacao(itens: ItemProgramacao[], label = "hoj
   return `${quando} temos:\n${linhas}\n🌿`;
 }
 
+// ===================== MÓDULOS INSTITUCIONAIS (eventos/campanhas/ação social) =====================
+
+export interface EventoResumo { titulo: string; data?: string | null; local?: string | null; }
+
+/** Builds a human reply listing active/relevant events. Never invents events. */
+export function montarRespostaEventos(eventos: EventoResumo[]): string {
+  const lista = (eventos || []).filter((e) => e && e.titulo);
+  if (lista.length === 0) {
+    return "No momento não encontrei eventos programados. Assim que houver novidades, divulgamos por aqui. 🌿";
+  }
+  if (lista.length === 1) {
+    const e = lista[0];
+    const data = e.data ? ` em ${formatarDataCurta(e.data)}` : "";
+    const local = e.local ? ` (${e.local})` : "";
+    return `Sim, temos o evento "${e.titulo}"${data}${local}. 🌿`;
+  }
+  const linhas = lista
+    .map((e) => `• ${e.titulo}${e.data ? " — " + formatarDataCurta(e.data) : ""}`)
+    .join("\n");
+  return `Temos estes eventos:\n${linhas}\nSe quiser detalhes de algum, é só me dizer. 🌿`;
+}
+
+export interface CampanhaResumo { titulo: string; descricao?: string | null; }
+
+/** Builds a human reply listing active campaigns. Never invents campaigns. */
+export function montarRespostaCampanhas(campanhas: CampanhaResumo[]): string {
+  const lista = (campanhas || []).filter((c) => c && c.titulo);
+  if (lista.length === 0) {
+    return "No momento não há campanhas ativas. Quando abrirmos uma nova, aviso por aqui. 🌿";
+  }
+  if (lista.length === 1) {
+    const c = lista[0];
+    const desc = c.descricao && c.descricao.trim() ? ` ${c.descricao.trim()}` : "";
+    return `Sim, está acontecendo a campanha "${c.titulo}".${desc} Se quiser participar, posso te orientar. 🌿`;
+  }
+  const linhas = lista.map((c) => `• ${c.titulo}`).join("\n");
+  return `Temos estas campanhas em andamento:\n${linhas}\nPosso te ajudar a participar de alguma delas. 🌿`;
+}
+
+export interface AlimentoFaltante { nome: string; unidade?: string | null; faltante?: number | null; }
+
+/** Builds a human reply about the social-action food drive from real data. */
+export function montarRespostaAcaoSocial(alimentos: AlimentoFaltante[]): string {
+  const lista = (alimentos || []).filter((a) => a && a.nome);
+  if (lista.length === 0) {
+    return "No momento não há itens em falta registrados na ação social. Obrigado pelo seu cuidado! Se quiser ajudar, nossa equipe pode te orientar. 🌿";
+  }
+  const linhas = lista
+    .map((a) => {
+      const qtd = a.faltante != null && a.faltante > 0
+        ? ` (faltam ${a.faltante}${a.unidade ? " " + a.unidade : ""})`
+        : "";
+      return `• ${a.nome}${qtd}`;
+    })
+    .join("\n");
+  return `Sim, estamos arrecadando para a ação social. Estes itens estão em falta:\n${linhas}\nQualquer doação ajuda muito. 🌿`;
+}
+
+
+
 export interface SessaoPessoal {
   nome: string;
   data: string; // YYYY-MM-DD
