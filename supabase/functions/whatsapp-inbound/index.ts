@@ -917,38 +917,46 @@ Deno.serve(async (req) => {
         const { data: baseIso } = hojeSaoPaulo();
         const alvo = resolverDataAlvo(texto, baseIso);
         ctxData = alvo.iso;
+
+        // 1) Base list of ALL treatments scheduled for the day: prefer real
+        //    public sessions, fall back to the recurring standard schedule.
+        const { data: sessoes } = await admin
+          .from("sessoes_publicas")
+          .select("horario_inicio, status, tipos_tratamento ( nome )")
+          .eq("data_sessao", alvo.iso)
+          .neq("status", "cancelada");
+        let base: ItemProgramacao[] = (sessoes || []).map((s: any) => ({
+          nome: s?.tipos_tratamento?.nome || "Atendimento",
+          horario: s?.horario_inicio ?? null,
+        }));
+        let fonteBase = "agenda_publica_real";
+        if (base.length === 0) {
+          const { data: prog } = await admin
+            .from("programacao_padrao")
+            .select("atividade, horario")
+            .eq("ativo", true)
+            .eq("dia_semana", alvo.diaSemana);
+          base = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
+          fonteBase = "programacao_padrao";
+        }
+
+        // 2) ALL operational exceptions registered for the day.
         const { data: excecoesCad } = await admin
           .from("excecoes_operacionais")
           .select("atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado, prioridade")
           .eq("ativo", true)
           .eq("data_excecao", alvo.iso)
           .order("prioridade", { ascending: false });
-        if (excecoesCad && excecoesCad.length > 0) {
-          respostaFonte = "excecao_operacional";
-          resposta = montarRespostaExcecao(excecoesCad[0] as any, alvo.label);
-        } else {
-          const { data: sessoes } = await admin
-            .from("sessoes_publicas")
-            .select("horario_inicio, status, tipos_tratamento ( nome )")
-            .eq("data_sessao", alvo.iso)
-            .neq("status", "cancelada");
-          let itens: ItemProgramacao[] = (sessoes || []).map((s: any) => ({
-            nome: s?.tipos_tratamento?.nome || "Atendimento",
-            horario: s?.horario_inicio ?? null,
-          }));
-          if (itens.length > 0) {
-            respostaFonte = "agenda_publica_real";
-          } else {
-            const { data: prog } = await admin
-              .from("programacao_padrao")
-              .select("atividade, horario")
-              .eq("ativo", true)
-              .eq("dia_semana", alvo.diaSemana);
-            itens = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
-            if (itens.length > 0) respostaFonte = "programacao_padrao";
-          }
-          resposta = montarRespostaProgramacao(itens, alvo.label);
-        }
+
+        respostaFonte = (excecoesCad && excecoesCad.length > 0)
+          ? "dia_consolidado_com_excecoes"
+          : fonteBase;
+        // 3) Consolidate base treatments + exceptions into a single answer.
+        resposta = montarRespostaDiaConsolidado(
+          base,
+          (excecoesCad || []) as any,
+          alvo.label,
+        );
       } else if (intencao === "proxima_sessao" && assistido) {
         const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin
