@@ -19,6 +19,9 @@ import { validarCampanha, type Campanha } from "@/lib/campanhas";
 import {
   listCampanhas, createCampanha, updateCampanha, deleteCampanha, toggleCampanhaAtivo,
 } from "@/services/campanhas";
+import { supabase } from "@/integrations/supabase/client";
+import { ImagemConteudoManager } from "@/components/conteudo/ImagemConteudoManager";
+import type { ImagemOrigem } from "@/lib/conteudoImagem";
 
 type FormState = {
   titulo: string;
@@ -26,6 +29,8 @@ type FormState = {
   descricao_curta: string;
   descricao_completa: string;
   imagem_url: string;
+  imagem_origem: ImagemOrigem;
+  imagem_otimizada: boolean;
   ordem: string;
   destaque: boolean;
   data_inicio: string;
@@ -35,7 +40,8 @@ type FormState = {
 
 const emptyForm: FormState = {
   titulo: "", subtitulo: "", descricao_curta: "", descricao_completa: "",
-  imagem_url: "", ordem: "0", destaque: false, data_inicio: "", data_fim: "", ativo: true,
+  imagem_url: "", imagem_origem: "url", imagem_otimizada: false,
+  ordem: "0", destaque: false, data_inicio: "", data_fim: "", ativo: true,
 };
 
 export default function Campanhas() {
