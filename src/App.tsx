@@ -55,6 +55,7 @@ const FuncoesVoluntariado = lazy(() => import("./pages/FuncoesVoluntariado"));
 const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
 const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
 const AcaoSocial = lazy(() => import("./pages/AcaoSocial"));
+const Campanhas = lazy(() => import("./pages/Campanhas"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
