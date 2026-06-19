@@ -130,8 +130,8 @@ export function resolverTempo(
     if (txt.includes(nome)) {
       let offset = (dow - diaUTC(baseIso) + 7) % 7;
       const querProxima = txt.includes("proxima") || txt.includes("proximo") || txt.includes("que vem");
+      // Se o dia cair hoje e a pessoa pediu "próxima", pula para a semana seguinte.
       if (offset === 0 && querProxima) offset = 7;
-      if (offset === 0) offset = querProxima ? 7 : 0; // hoje mesmo se cair no dia
       return mkDia(baseIso, offset, NOME_DIA[dow], "explicito");
     }
   }
