@@ -182,14 +182,14 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
           <div className="flex items-start gap-3">
             {candidato.otimizada && temImagem && (
               <div className="text-center">
-                <div className="h-24 w-24 rounded-lg overflow-hidden border border-border/40">
+                <div className={`w-24 rounded-lg overflow-hidden border border-border/40 ${formatoAspectClass(value.formato)}`}>
                   <img src={value.url} alt="Original" className="h-full w-full object-cover" />
                 </div>
                 <span className="text-[10px] text-muted-foreground">Original</span>
               </div>
             )}
             <div className="text-center">
-              <div className="h-24 w-24 rounded-lg overflow-hidden border border-primary/50">
+              <div className={`w-24 rounded-lg overflow-hidden border border-primary/50 ${formatoAspectClass(candidato.formato)}`}>
                 <img src={candidato.url} alt="Nova versão" className="h-full w-full object-cover" />
               </div>
               <span className="text-[10px] text-muted-foreground">Nova versão</span>
