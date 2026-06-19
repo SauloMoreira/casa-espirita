@@ -1,0 +1,229 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { getAdapter } from "../_shared/channel-adapter.ts";
+import { guardCronOrStaff } from "../_shared/auth.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
+
+/**
+ * Módulo 5B — Disparo institucional em lotes, com limites e proteção anti-spam.
+ *
+ * Fila própria e isolada das notificações operacionais (`notificacoes_fila`).
+ * Regras aplicadas em cada execução:
+ *  - processa apenas itens `pendente` de comunicações `aprovada` em envio
+ *  - lote máximo por execução (escalonamento)
+ *  - janela horária de envio (08:00–20:00 por padrão)
+ *  - reconfirmação de consentimento no momento do envio (respeito absoluto ao opt-out)
+ *  - pequeno intervalo entre mensagens (anti-spam / reputação)
+ *  - auditoria e observabilidade via contadores na comunicação
+ */
+
+const LOTE_MAX_PADRAO = 25;
+const LOTE_MAX_TETO = 100;
+const MAX_RETRY = 4;
+const INTERVALO_MS = 1200; // escalonamento entre mensagens
+const JANELA_INICIO = "08:00";
+const JANELA_FIM = "20:00";
+
+function parseHoraMin(hora: string): number {
+  const [h, m] = (hora || "0:0").split(":");
+  return Number(h) * 60 + Number(m || 0);
+}
+
+function dentroJanela(date: Date, inicio: string, fim: string): boolean {
+  const minutos = date.getHours() * 60 + date.getMinutes();
+  return minutos >= parseHoraMin(inicio) && minutos < parseHoraMin(fim);
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(
+    req,
+    "authorization, x-client-info, apikey, content-type, x-cron-secret",
+  );
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // Apenas cron interno (com segredo) ou administradores podem disparar.
+  const guard = await guardCronOrStaff(req, ["admin"]);
+  if (!guard.ok) return guard.response!;
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const comunicacaoId: string | undefined = body?.comunicacao_id;
+    const loteMax = Math.min(
+      Math.max(Number(body?.lote_max) || LOTE_MAX_PADRAO, 1),
+      LOTE_MAX_TETO,
+    );
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceRoleKey);
+    const adapter = getAdapter({
+      ZAPI_INSTANCE_ID: Deno.env.get("ZAPI_INSTANCE_ID"),
+      ZAPI_INSTANCE_TOKEN: Deno.env.get("ZAPI_INSTANCE_TOKEN"),
+      ZAPI_BASE_URL: Deno.env.get("ZAPI_BASE_URL"),
+      ZAPI_CLIENT_TOKEN: Deno.env.get("ZAPI_CLIENT_TOKEN"),
+    });
+
+    const agora = new Date();
+    if (!dentroJanela(agora, JANELA_INICIO, JANELA_FIM)) {
+      return new Response(
+        JSON.stringify({ ignorado: true, motivo: "fora_da_janela" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Quais comunicações processar: a indicada (se válida) ou todas em andamento/preparadas.
+    let comQuery = admin
+      .from("comunicacoes_institucionais")
+      .select("id, mensagem, status, envio_status")
+      .eq("status", "aprovada")
+      .in("envio_status", ["preparado", "em_andamento"]);
+    if (comunicacaoId) comQuery = admin
+      .from("comunicacoes_institucionais")
+      .select("id, mensagem, status, envio_status")
+      .eq("id", comunicacaoId)
+      .eq("status", "aprovada")
+      .in("envio_status", ["preparado", "em_andamento"]);
+
+    const { data: comunicacoes, error: comErr } = await comQuery;
+    if (comErr) throw comErr;
+
+    const result = {
+      lote_max: loteMax,
+      processados: 0,
+      enviados: 0,
+      bloqueados: 0,
+      falhas: 0,
+      concluidas: [] as string[],
+    };
+
+    let restante = loteMax;
+
+    for (const com of comunicacoes || []) {
+      if (restante <= 0) break;
+
+      // Marca início do envio.
+      if (com.envio_status === "preparado") {
+        await admin
+          .from("comunicacoes_institucionais")
+          .update({ envio_status: "em_andamento", envio_iniciado_at: new Date().toISOString() })
+          .eq("id", com.id);
+      }
+
+      const { data: pendentes, error: pendErr } = await admin
+        .from("comunicacoes_institucionais_envios")
+        .select("*")
+        .eq("comunicacao_id", com.id)
+        .eq("status", "pendente")
+        .lt("retry_count", MAX_RETRY)
+        .order("created_at", { ascending: true })
+        .limit(restante);
+      if (pendErr) throw pendErr;
+
+      for (const env of pendentes || []) {
+        if (restante <= 0) break;
+        restante--;
+        result.processados++;
+
+        // 1) Reconfirma consentimento no momento do envio (opt-out absoluto).
+        const { data: pref } = await admin
+          .from("notificacoes_preferencias")
+          .select("whatsapp_ativo, consentimento_status")
+          .eq("assistido_id", env.assistido_id)
+          .maybeSingle();
+
+        const consentido =
+          pref && pref.whatsapp_ativo === true && pref.consentimento_status === "concedido";
+
+        if (!consentido) {
+          await admin
+            .from("comunicacoes_institucionais_envios")
+            .update({ status: "bloqueado", motivo: "consentimento_revogado" })
+            .eq("id", env.id);
+          result.bloqueados++;
+          continue;
+        }
+
+        // 2) Telefone obrigatório.
+        if (!env.telefone_normalizado) {
+          await admin
+            .from("comunicacoes_institucionais_envios")
+            .update({ status: "bloqueado", motivo: "sem_telefone" })
+            .eq("id", env.id);
+          result.bloqueados++;
+          continue;
+        }
+
+        // 3) Envio pelo adaptador de canal.
+        const send = await adapter.send(env.telefone_normalizado, com.mensagem);
+        if (send.ok) {
+          await admin
+            .from("comunicacoes_institucionais_envios")
+            .update({
+              status: "enviado",
+              sent_at: new Date().toISOString(),
+              external_message_id: send.externalMessageId || null,
+              erro: null,
+            })
+            .eq("id", env.id);
+          result.enviados++;
+        } else {
+          const nextRetry = (env.retry_count || 0) + 1;
+          await admin
+            .from("comunicacoes_institucionais_envios")
+            .update({
+              status: nextRetry >= MAX_RETRY ? "falha" : "pendente",
+              retry_count: nextRetry,
+              scheduled_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+              erro: send.error || "erro_envio",
+            })
+            .eq("id", env.id);
+          result.falhas++;
+        }
+
+        await sleep(INTERVALO_MS);
+      }
+
+      // Atualiza contadores e fecha o envio se não restarem pendências.
+      const { data: contagem } = await admin
+        .from("comunicacoes_institucionais_envios")
+        .select("status")
+        .eq("comunicacao_id", com.id);
+      const enviados = (contagem || []).filter((r) => r.status === "enviado").length;
+      const falhas = (contagem || []).filter((r) => r.status === "falha").length;
+      const bloqueados = (contagem || []).filter((r) => r.status === "bloqueado").length;
+      const pend = (contagem || []).filter((r) => r.status === "pendente").length;
+
+      await admin
+        .from("comunicacoes_institucionais")
+        .update({
+          total_enviados: enviados,
+          total_falhas: falhas,
+          total_bloqueados: bloqueados,
+          ...(pend === 0
+            ? { envio_status: "concluido", envio_concluido_at: new Date().toISOString() }
+            : {}),
+        })
+        .eq("id", com.id);
+
+      if (pend === 0) {
+        result.concluidas.push(com.id);
+        await admin.from("audit_logs").insert({
+          tabela: "comunicacoes_institucionais",
+          acao: "ENVIO_CONCLUIDO",
+          registro_id: com.id,
+          dados_novos: { enviados, falhas, bloqueados },
+        });
+      }
+    }
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
