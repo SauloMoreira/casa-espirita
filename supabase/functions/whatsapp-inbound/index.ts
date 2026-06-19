@@ -660,7 +660,7 @@ Deno.serve(async (req) => {
         .from("profiles")
         .select("nome_completo, celular");
       const perfil = (perfis || []).find((p: any) =>
-        normalizePhone(p.celular || "") === telefone
+        mesmoTelefone(p.celular || "", telefone)
       );
       if (perfil) {
         nomeContato = perfil.nome_completo ?? null;
