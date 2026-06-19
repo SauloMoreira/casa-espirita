@@ -823,14 +823,20 @@ Deno.serve(async (req) => {
         intencao = "programacao_publica";
       }
 
-      // Temporal-only follow-up ("e amanhã?", "e hoje?") with no other intent:
-      // the user is asking about the house's schedule/events for that day. Answer
-      // from real data instead of escalating to a human, inheriting the activity
-      // from the conversation context when available.
+      // Temporal follow-up ("e amanhã?", "segunda?", "tem trabalho na casa amanhã?")
+      // with no other intent: answer from real data instead of escalating.
+      // - If a specific public activity is named/inherited -> public-schedule branch.
+      // - Otherwise it's a GENERAL question about the day -> consolidated branch
+      //   that lists ALL activities of the house (treatments + public works),
+      //   not just public ones, so the IA never "misses" the parametrization.
       if ((intencao === "complexo" || intencao === "pedido_informacao") && temDataExplicita(texto)) {
-        intencao = "programacao_publica";
-        if (!atividadeMencionada && convExist?.contexto_atividade) {
-          atividadeMencionada = String(convExist.contexto_atividade);
+        const atividadeContexto = (!atividadeMencionada && convExist?.contexto_atividade)
+          ? String(convExist.contexto_atividade) : null;
+        if (atividadeMencionada || detectarAtividade(texto) || atividadeContexto) {
+          intencao = "programacao_publica";
+          if (atividadeContexto) atividadeMencionada = atividadeContexto;
+        } else {
+          intencao = "tratamento_hoje";
         }
       }
 
