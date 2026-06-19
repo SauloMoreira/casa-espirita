@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, BookOpen, Lightbulb, MessageSquare, BarChart3, Settings } from "lucide-react";
+import { Brain, BookOpen, Lightbulb, MessageSquare, BarChart3, Settings, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import QueixasTratamentos from "@/components/central-ia/QueixasTratamentos";
 import BibliotecaDoutrinaria from "@/components/central-ia/BibliotecaDoutrinaria";
@@ -7,6 +7,7 @@ import SugestoesIA from "@/components/central-ia/SugestoesIA";
 import FeedbackAprendizado from "@/components/central-ia/FeedbackAprendizado";
 import IndicadoresAssertividade from "@/components/central-ia/IndicadoresAssertividade";
 import ConfiguracoesIA from "@/components/central-ia/ConfiguracoesIA";
+import MetricasWhatsApp from "@/components/central-ia/MetricasWhatsApp";
 
 export default function CentralIA() {
   const { role } = useAuth();
@@ -27,7 +28,7 @@ export default function CentralIA() {
       </div>
 
       <Tabs defaultValue={isAdmin ? "queixas" : "sugestoes"} className="w-full">
-        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-6" : "grid-cols-3"}`}>
+        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-4 md:grid-cols-7" : "grid-cols-3"}`}>
           {isAdmin && (
             <>
               <TabsTrigger value="queixas" className="flex items-center gap-1.5 text-xs py-2.5">
@@ -53,10 +54,16 @@ export default function CentralIA() {
             <span className="hidden md:inline">Indicadores</span>
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="configuracoes" className="flex items-center gap-1.5 text-xs py-2.5">
-              <Settings className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Configurações</span>
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="metricas-whatsapp" className="flex items-center gap-1.5 text-xs py-2.5">
+                <Smartphone className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">IA WhatsApp</span>
+              </TabsTrigger>
+              <TabsTrigger value="configuracoes" className="flex items-center gap-1.5 text-xs py-2.5">
+                <Settings className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Configurações</span>
+              </TabsTrigger>
+            </>
           )}
         </TabsList>
 
@@ -80,9 +87,14 @@ export default function CentralIA() {
           <IndicadoresAssertividade />
         </TabsContent>
         {isAdmin && (
-          <TabsContent value="configuracoes" className="mt-6">
-            <ConfiguracoesIA />
-          </TabsContent>
+          <>
+            <TabsContent value="metricas-whatsapp" className="mt-6">
+              <MetricasWhatsApp />
+            </TabsContent>
+            <TabsContent value="configuracoes" className="mt-6">
+              <ConfiguracoesIA />
+            </TabsContent>
+          </>
         )}
       </Tabs>
     </div>
