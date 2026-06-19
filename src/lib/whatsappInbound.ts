@@ -175,7 +175,21 @@ export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
     "que horas e minha", "que horas é minha", "horario da minha", "horário da minha",
   ] },
   { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
-  // ===== PUBLIC intents (identity-free, answered from the house schedule) =====
+  // ===== PUBLIC institutional modules (events, campaigns, social action) =====
+  { intent: "acao_social", terms: [
+    "acao social", "ação social", "alimentos", "alimento", "cesta basica", "cesta básica",
+    "doar", "doacao", "doação", "doacoes", "doações", "arrecada", "arrecadacao", "arrecadação",
+    "esta faltando", "está faltando", "o que falta", "como ajudar", "como posso ajudar a casa",
+  ] },
+  { intent: "campanhas", terms: [
+    "campanha", "campanhas", "socio mantenedor", "sócio mantenedor", "mantenedor",
+    "tem alguma campanha", "campanha ativa", "campanha da casa",
+  ] },
+  { intent: "eventos", terms: [
+    "evento", "eventos", "tem evento", "algum evento", "que eventos", "evento essa semana",
+    "evento ativo", "proximos eventos", "próximos eventos",
+  ] },
+  // ===== PUBLIC schedule (identity-free, answered from the house schedule) =====
   { intent: "programacao_publica", terms: [
     "palestra", "evangelhoterapia", "evangelho terapia", "passe",
     "trabalho publico", "trabalho público", "trabalhos publicos", "trabalhos públicos",
@@ -188,7 +202,7 @@ export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
 export const AUTORESOLVIVEIS: Intencao[] = [
   "saudacao", "agradecimento", "pedido_informacao", "encerramento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
-  "programacao_publica", "opt_out", "reativar", "falar_humano",
+  "programacao_publica", "eventos", "campanhas", "acao_social", "opt_out", "reativar", "falar_humano",
 ];
 
 /**
