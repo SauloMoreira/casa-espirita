@@ -427,6 +427,85 @@ function montarRespostaExcecao(ex: ExcecaoOperacional, label = "hoje"): string {
   return `Sim, ${label} teremos ${ex.atividade}${h ? " às " + h : ""}. 🌿`;
 }
 
+function normalizarNome(s: string): string {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+interface ItemDia { nome: string; horario?: string | null; excecao?: ExcecaoOperacional | null; }
+
+/**
+ * Consolidated answer for "tem tratamento hoje?" covering ALL treatments of the
+ * day and ALL operational exceptions, so days with multiple treatments don't
+ * cause confusion. Each activity is listed with its real status (active,
+ * cancelled, rescheduled, etc.).
+ */
+function montarRespostaDiaConsolidado(
+  base: ItemProgramacao[],
+  excecoes: ExcecaoOperacional[],
+  label = "hoje",
+): string {
+  const quando = capitalizar(label);
+  const itens: ItemDia[] = (base || [])
+    .filter((i) => i && i.nome)
+    .map((i) => ({ nome: i.nome, horario: i.horario ?? null, excecao: null }));
+
+  // Apply / merge exceptions by activity name.
+  for (const ex of (excecoes || [])) {
+    if (!ex || !ex.atividade) continue;
+    const alvo = itens.find((i) => {
+      const a = normalizarNome(i.nome);
+      const b = normalizarNome(ex.atividade);
+      return a === b || a.includes(b) || b.includes(a);
+    });
+    if (alvo) {
+      alvo.excecao = ex;
+    } else {
+      itens.push({ nome: ex.atividade, horario: ex.horario_afetado ?? null, excecao: ex });
+    }
+  }
+
+  if (itens.length === 0) {
+    return `${quando} não encontrei tratamentos agendados na casa. Em caso de dúvida, nossa equipe pode ajudar. 🌿`;
+  }
+
+  const descreverItem = (i: ItemDia): string => {
+    const hora = formatarHorario(i.horario);
+    const ex = i.excecao;
+    if (!ex) return `${i.nome}${hora ? " às " + hora : ""} (normalmente)`;
+    const st = (ex.status || "").toLowerCase();
+    if (st === "cancelado" || st === "cancelada") {
+      const motivo = ex.motivo && ex.motivo.trim() ? ` — ${ex.motivo.trim()}` : "";
+      return `${i.nome}: cancelado${motivo}`;
+    }
+    if (st === "remarcado" || st === "remarcada") {
+      const nd = ex.nova_data ? formatarDataCurta(ex.nova_data) : null;
+      const nh = formatarHorario(ex.novo_horario);
+      return `${i.nome}: remarcado${nd ? " para " + nd : ""}${nh ? " às " + nh : ""}`;
+    }
+    if (st === "excepcional") {
+      const motivo = ex.motivo && ex.motivo.trim() ? ` — ${ex.motivo.trim()}` : "";
+      return `${i.nome}: há uma alteração${motivo}`;
+    }
+    return `${i.nome}${hora ? " às " + hora : ""}`;
+  };
+
+  if (itens.length === 1) {
+    const i = itens[0];
+    const ex = i.excecao;
+    const st = (ex?.status || "").toLowerCase();
+    if (ex && ex.mensagem_ia && ex.mensagem_ia.trim()) return ex.mensagem_ia.trim();
+    if (ex && (st === "cancelado" || st === "cancelada")) {
+      const motivo = ex.motivo && ex.motivo.trim() ? ` Motivo: ${ex.motivo.trim()}.` : "";
+      return `${quando} não haverá ${i.nome}.${motivo} 🌿`;
+    }
+    const hora = formatarHorario(i.horario);
+    return `Sim, ${label} temos ${i.nome}${hora ? " às " + hora : ""}. 🌿`;
+  }
+
+  const linhas = itens.map((i) => `• ${descreverItem(i)}`).join("\n");
+  return `${quando} a casa tem mais de um tratamento. Veja a situação de cada um:\n${linhas}\nEm caso de dúvida, nossa equipe pode confirmar. 🌿`;
+}
+
 interface SessaoPessoal { nome: string; data: string; horario?: string | null; status?: string | null; }
 
 function formatarDataCurta(d: string | null | undefined): string {
@@ -838,38 +917,46 @@ Deno.serve(async (req) => {
         const { data: baseIso } = hojeSaoPaulo();
         const alvo = resolverDataAlvo(texto, baseIso);
         ctxData = alvo.iso;
+
+        // 1) Base list of ALL treatments scheduled for the day: prefer real
+        //    public sessions, fall back to the recurring standard schedule.
+        const { data: sessoes } = await admin
+          .from("sessoes_publicas")
+          .select("horario_inicio, status, tipos_tratamento ( nome )")
+          .eq("data_sessao", alvo.iso)
+          .neq("status", "cancelada");
+        let base: ItemProgramacao[] = (sessoes || []).map((s: any) => ({
+          nome: s?.tipos_tratamento?.nome || "Atendimento",
+          horario: s?.horario_inicio ?? null,
+        }));
+        let fonteBase = "agenda_publica_real";
+        if (base.length === 0) {
+          const { data: prog } = await admin
+            .from("programacao_padrao")
+            .select("atividade, horario")
+            .eq("ativo", true)
+            .eq("dia_semana", alvo.diaSemana);
+          base = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
+          fonteBase = "programacao_padrao";
+        }
+
+        // 2) ALL operational exceptions registered for the day.
         const { data: excecoesCad } = await admin
           .from("excecoes_operacionais")
           .select("atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado, prioridade")
           .eq("ativo", true)
           .eq("data_excecao", alvo.iso)
           .order("prioridade", { ascending: false });
-        if (excecoesCad && excecoesCad.length > 0) {
-          respostaFonte = "excecao_operacional";
-          resposta = montarRespostaExcecao(excecoesCad[0] as any, alvo.label);
-        } else {
-          const { data: sessoes } = await admin
-            .from("sessoes_publicas")
-            .select("horario_inicio, status, tipos_tratamento ( nome )")
-            .eq("data_sessao", alvo.iso)
-            .neq("status", "cancelada");
-          let itens: ItemProgramacao[] = (sessoes || []).map((s: any) => ({
-            nome: s?.tipos_tratamento?.nome || "Atendimento",
-            horario: s?.horario_inicio ?? null,
-          }));
-          if (itens.length > 0) {
-            respostaFonte = "agenda_publica_real";
-          } else {
-            const { data: prog } = await admin
-              .from("programacao_padrao")
-              .select("atividade, horario")
-              .eq("ativo", true)
-              .eq("dia_semana", alvo.diaSemana);
-            itens = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
-            if (itens.length > 0) respostaFonte = "programacao_padrao";
-          }
-          resposta = montarRespostaProgramacao(itens, alvo.label);
-        }
+
+        respostaFonte = (excecoesCad && excecoesCad.length > 0)
+          ? "dia_consolidado_com_excecoes"
+          : fonteBase;
+        // 3) Consolidate base treatments + exceptions into a single answer.
+        resposta = montarRespostaDiaConsolidado(
+          base,
+          (excecoesCad || []) as any,
+          alvo.label,
+        );
       } else if (intencao === "proxima_sessao" && assistido) {
         const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin
