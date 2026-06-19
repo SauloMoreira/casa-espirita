@@ -491,12 +491,16 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+  const body = await req.json().catch(() => ({}));
+  const data = body?.data ?? body;
+
   // --- Webhook origin verification ---
   // The webhook is public (Z-API cannot send a user JWT), so we require a shared
   // secret passed by the provider either as the `?secret=` query param or the
-  // `x-webhook-secret` header. The expected value lives in the service-role-only
-  // `app_cron_secrets` table. When a secret is configured, unsigned/forged
-  // requests are rejected with 401.
+  // `x-webhook-secret` header. Some Z-API webhook configurations cannot attach
+  // custom headers/query params, so we also accept the provider payload when its
+  // `instanceId` matches the configured instance. That keeps the existing
+  // external entry working without opening a parallel channel.
   {
     const { data: secretRow } = await admin
       .from("app_cron_secrets")
@@ -507,7 +511,15 @@ Deno.serve(async (req) => {
     if (expected) {
       const url = new URL(req.url);
       const provided = url.searchParams.get("secret") || req.headers.get("x-webhook-secret");
-      if (provided !== expected) {
+      const configuredInstanceId = Deno.env.get("ZAPI_INSTANCE_ID") || "";
+      const payloadInstanceId = String(body?.instanceId || data?.instanceId || "");
+      const validZapiPayload = Boolean(
+        configuredInstanceId &&
+        payloadInstanceId &&
+        payloadInstanceId === configuredInstanceId &&
+        (body?.phone || data?.phone || data?.key?.remoteJid || data?.remoteJid)
+      );
+      if (provided !== expected && !validZapiPayload) {
         return new Response(JSON.stringify({ error: "Não autorizado" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -517,10 +529,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
     // Z-API on-message-received webhook shape. Be defensive and also accept
     // legacy/other shapes so the parser survives provider variations.
-    const data = body?.data ?? body;
     const remoteJid: string =
       body?.phone || data?.phone ||
       data?.key?.remoteJid || data?.remoteJid || "";
