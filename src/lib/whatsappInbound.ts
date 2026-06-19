@@ -5,7 +5,7 @@
 export type Intencao =
   | "saudacao" | "agradecimento" | "pedido_informacao" | "encerramento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
-  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
+  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "falar_humano" | "complexo";
 
 export const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
@@ -48,6 +48,16 @@ export const ENCERRAMENTO_TERMOS = [
   "nada mais", "por enquanto e so", "por enquanto é só", "fica com deus",
 ];
 
+// Explicit request to talk to a real person. First time -> gentle retention by
+// the IA; on a second insistence the conversation is escalated to human handoff.
+export const HUMANO_TERMOS = [
+  "falar com humano", "falar com um humano", "falar com uma pessoa", "falar com pessoa",
+  "falar com atendente", "falar com um atendente", "falar com alguem", "falar com alguém",
+  "atendimento humano", "atendente humano", "quero um humano", "quero falar com humano",
+  "quero falar com atendente", "quero falar com alguem", "quero falar com alguém",
+  "pessoa real", "ser humano", "humano de verdade", "falar com responsavel", "falar com responsável",
+];
+
 // Personal intents (about the assistido's own treatments/appointments) MUST win
 // over the public schedule intents, so any message that uses personal markers
 // ("meu", "minha", "tenho", "tratamento", "sessão", "entrevista") is routed to
@@ -85,7 +95,7 @@ export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
 export const AUTORESOLVIVEIS: Intencao[] = [
   "saudacao", "agradecimento", "pedido_informacao", "encerramento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
-  "programacao_publica", "opt_out", "reativar",
+  "programacao_publica", "opt_out", "reativar", "falar_humano",
 ];
 
 /** Requires an identified assistido to be answered automatically. */
@@ -118,6 +128,9 @@ export function classificarIntencao(msg: string): Intencao {
   const txt = (msg || "").toLowerCase().trim();
   if (!txt) return "complexo";
   if (SENSITIVE.some((t) => txt.includes(t))) return "complexo";
+  // Explicit request to talk to a human wins over business/conversational layers
+  // so the gentle-retention -> handoff flow can be applied.
+  if (contemTermo(txt, HUMANO_TERMOS)) return "falar_humano";
   // Business intents win first, so "boa tarde, tem palestra hoje?" is answered
   // as an operational question (greeting + request → operational content).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
@@ -354,6 +367,62 @@ export function saudacaoPorHora(horaLocal?: number): string {
 export const IA_NOME = "Daniel";
 export const IA_CASA = "FER";
 export const IA_APRESENTACAO = `Sou ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+// Greeting persona line (uses the article "o Daniel" for a warmer, agreed tone).
+export const IA_APRESENTACAO_SAUDACAO = `Sou o ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+// The agreed welcoming closing: IA help + human escalation + human hours note.
+export const IA_SAUDACAO_EXPLICACAO =
+  "Como posso lhe ajudar? Posso tirar suas dúvidas por aqui e, se necessário, " +
+  "encaminhar você para um atendimento humano e personalizado. Os atendimentos " +
+  "humanos acontecem em horário comercial e/ou nos horários de atendimento da FER.";
+
+/** Returns a safe, presentable first name from a full name, or null. */
+export function primeiroNomeSeguro(nomeCompleto?: string | null): string | null {
+  if (!nomeCompleto || typeof nomeCompleto !== "string") return null;
+  const limpo = nomeCompleto.trim().replace(/\s+/g, " ");
+  if (!limpo) return null;
+  const primeiro = limpo.split(" ")[0];
+  // Reject inconsistent / non-name tokens (numbers, symbols, single letters).
+  if (primeiro.length < 2 || !/^[\p{L}'.-]+$/u.test(primeiro)) return null;
+  return primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
+}
+
+/**
+ * Builds Daniel's agreed first-contact greeting. Uses the user's first name when
+ * it is safely available, otherwise a neutral fallback. Always includes the
+ * persona, the offer to help, the human-escalation note and the human hours.
+ */
+export function montarSaudacaoInicial(opts: { nome?: string | null; horaLocal?: number }): string {
+  const saud = saudacaoPorHora(opts.horaLocal);
+  const nome = primeiroNomeSeguro(opts.nome);
+  const abertura = nome ? `${saud}, ${nome}.` : `${saud}.`;
+  return `${abertura} ${IA_APRESENTACAO_SAUDACAO}. ${IA_SAUDACAO_EXPLICACAO} 🌿`;
+}
+
+// First request to talk to a human: acknowledge + gently offer IA help first.
+export const RETENCAO_HUMANO_MENSAGEM =
+  "Claro, posso te encaminhar se for necessário. Antes disso, posso tentar te " +
+  "ajudar por aqui com dúvidas sobre horários da casa, palestras, evangelhoterapia, " +
+  "tratamentos, agendamentos, eventos, campanhas e informações gerais. Me diga o " +
+  "que você precisa e, se eu não conseguir resolver, encaminho você para um " +
+  "atendimento humano. 🌿";
+// Second insistence: confirm escalation warmly (then a handoff is opened).
+export const ENCAMINHAMENTO_HUMANO_MENSAGEM =
+  "Sem problemas! Vou te encaminhar agora para um atendimento humano. Em breve " +
+  "alguém da nossa equipe falará com você. 🙏";
+
+/**
+ * Decides the IA behaviour for an explicit "talk to a human" request, applying
+ * gentle retention on the first ask and escalation on a second insistence.
+ * `pedidosAnteriores` is how many prior human requests this conversation had.
+ */
+export function decidirPedidoHumano(pedidosAnteriores: number): {
+  resposta: string; handoff: boolean;
+} {
+  if ((pedidosAnteriores ?? 0) >= 1) {
+    return { resposta: ENCAMINHAMENTO_HUMANO_MENSAGEM, handoff: true };
+  }
+  return { resposta: RETENCAO_HUMANO_MENSAGEM, handoff: false };
+}
 
 // Controlled emoji palette by context — variety with good sense, never spammy.
 // Each context offers a few options so the same emoji is not repeated mechanically.
@@ -483,6 +552,8 @@ export interface ConversaContexto {
   texto?: string;
   /** The exact last reply we sent, to avoid repeating it verbatim. */
   ultimaResposta?: string | null;
+  /** Identified contact name (assistido or registered user), when available. */
+  nome?: string | null;
 }
 
 /**
@@ -541,13 +612,15 @@ export function gerarRespostaConversacional(
     return comEmoji(frase, escolherEmoji("ponte", emojiSeed, emojiAnterior));
   }
 
-  // FIRST contact: greet + present the persona (Daniel / FER) + invite.
-  const saudacao = saudacaoUsuario || saudacaoPorHora(ctx.horaLocal);
-  const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
-  const candidatos = SAUDACAO_SUFIXOS.map(
-    (s) => `${saudacao}! ${emoji} ${IA_APRESENTACAO}. ${s}`,
-  );
-  return escolherFrase(candidatos, seed, evitar);
+  // FIRST contact: agreed welcoming greeting — period salutation, the user's
+  // name when safely available, persona, IA help + human escalation + hours.
+  const horaParaSaudacao = (() => {
+    if (saudacaoUsuario === "Bom dia") return 9;
+    if (saudacaoUsuario === "Boa tarde") return 15;
+    if (saudacaoUsuario === "Boa noite") return 20;
+    return ctx.horaLocal;
+  })();
+  return montarSaudacaoInicial({ nome: ctx.nome ?? null, horaLocal: horaParaSaudacao });
 }
 
 /** Extracts the trailing emoji of a previous reply (best-effort), for anti-repetition. */

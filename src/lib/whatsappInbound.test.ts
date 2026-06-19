@@ -7,7 +7,68 @@ import {
   ehConversacional, montarRespostaConversacional, jaSaudadoRecentemente,
   gerarRespostaConversacional, escolherFrase, SAUDACAO_SUFIXOS, PONTE_FRASES,
   extrairSaudacaoDoTexto,
+  primeiroNomeSeguro, montarSaudacaoInicial, decidirPedidoHumano,
+  RETENCAO_HUMANO_MENSAGEM, ENCAMINHAMENTO_HUMANO_MENSAGEM,
 } from "./whatsappInbound";
+
+describe("whatsappInbound — identificação e saudação do Daniel", () => {
+  it("extrai primeiro nome seguro e descarta valores inconsistentes", () => {
+    expect(primeiroNomeSeguro("Saulo da Costa Moreira")).toBe("Saulo");
+    expect(primeiroNomeSeguro("lucas")).toBe("Lucas");
+    expect(primeiroNomeSeguro("  maria  aparecida ")).toBe("Maria");
+    expect(primeiroNomeSeguro(null)).toBeNull();
+    expect(primeiroNomeSeguro("")).toBeNull();
+    expect(primeiroNomeSeguro("   ")).toBeNull();
+    expect(primeiroNomeSeguro("123")).toBeNull();
+    expect(primeiroNomeSeguro("J")).toBeNull();
+  });
+
+  it("usa o nome do usuário na saudação quando disponível", () => {
+    const msg = montarSaudacaoInicial({ nome: "Lucas Pereira", horaLocal: 15 });
+    expect(msg).toContain("Boa tarde, Lucas.");
+    expect(msg).toContain("Sou o Daniel, assistente virtual da FER");
+    expect(msg).toContain("encaminhar você para um atendimento humano");
+    expect(msg).toContain("horário comercial");
+  });
+
+  it("usa fallback neutro quando o nome não está disponível", () => {
+    const msg = montarSaudacaoInicial({ nome: null, horaLocal: 9 });
+    expect(msg).toContain("Bom dia.");
+    expect(msg).not.toMatch(/Bom dia,/);
+    expect(msg).toContain("Sou o Daniel, assistente virtual da FER");
+    expect(msg).toContain("atendimento humano");
+  });
+
+  it("a saudação do primeiro contato é a mensagem do Daniel (não do assistido)", () => {
+    const msg = gerarRespostaConversacional("saudacao", {
+      texto: "Olá! Estou falando pela plataforma da FER. 🌿",
+      jaSaudado: false, horaLocal: 15, nome: "Saulo da Costa Moreira",
+    });
+    expect(msg).toContain("Boa tarde, Saulo.");
+    expect(msg).toContain("Sou o Daniel, assistente virtual da FER");
+  });
+});
+
+describe("whatsappInbound — pedido de atendimento humano", () => {
+  it("classifica pedidos explícitos de humano", () => {
+    expect(classificarIntencao("quero falar com um atendente")).toBe("falar_humano");
+    expect(classificarIntencao("posso falar com uma pessoa?")).toBe("falar_humano");
+    expect(classificarIntencao("atendimento humano por favor")).toBe("falar_humano");
+  });
+
+  it("primeira solicitação faz retenção gentil, sem handoff", () => {
+    const r = decidirPedidoHumano(0);
+    expect(r.handoff).toBe(false);
+    expect(r.resposta).toBe(RETENCAO_HUMANO_MENSAGEM);
+    expect(r.resposta).toContain("Antes disso, posso tentar te ajudar");
+  });
+
+  it("segunda solicitação encaminha para handoff", () => {
+    const r = decidirPedidoHumano(1);
+    expect(r.handoff).toBe(true);
+    expect(r.resposta).toBe(ENCAMINHAMENTO_HUMANO_MENSAGEM);
+  });
+});
 
 describe("whatsappInbound — camada conversacional básica", () => {
   it("classifica saudações isoladas como saudacao", () => {
@@ -42,10 +103,10 @@ describe("whatsappInbound — camada conversacional básica", () => {
   });
 
   it("monta resposta social humana, com persona Daniel/FER e período do dia", () => {
-    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel, assistente virtual da FER\./u);
-    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/^Boa tarde! [✨🌿🙏] Sou Daniel/u);
-    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/^Boa noite! [✨🌿🙏] Sou Daniel/u);
-    expect(montarRespostaConversacional("saudacao")).toMatch(/^Olá! [✨🌿🙏] Sou Daniel/u);
+    expect(montarRespostaConversacional("saudacao", 9)).toMatch(/^Bom dia\. Sou o Daniel, assistente virtual da FER\./u);
+    expect(montarRespostaConversacional("saudacao", 14)).toMatch(/^Boa tarde\. Sou o Daniel/u);
+    expect(montarRespostaConversacional("saudacao", 20)).toMatch(/^Boa noite\. Sou o Daniel/u);
+    expect(montarRespostaConversacional("saudacao")).toMatch(/^Olá\. Sou o Daniel/u);
     expect(montarRespostaConversacional("agradecimento")).toMatch(/^Disponha!/);
   });
 });
@@ -338,26 +399,26 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
 
   it("apresenta a persona Daniel da FER apenas no primeiro contato", () => {
     const inicio = gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "oi" });
-    expect(inicio).toMatch(/Sou Daniel, assistente virtual da FER/);
+    expect(inicio).toMatch(/Sou o Daniel, assistente virtual da FER/);
     // No meio da conversa não reapresenta a persona.
     const meio = gerarRespostaConversacional("pedido_informacao", { texto: "uma dúvida", jaSaudado: true });
-    expect(meio).not.toMatch(/Sou Daniel/);
+    expect(meio).not.toMatch(/Sou o Daniel/);
   });
 
 
   it("não repete a saudação nem reapresenta a persona quando já saudado", () => {
     const jaSaudado = gerarRespostaConversacional("saudacao", { horaLocal: 14, jaSaudado: true, texto: "oi" });
     expect(jaSaudado).not.toMatch(/Bom dia|Boa tarde|Boa noite/);
-    expect(jaSaudado).not.toMatch(/Sou Daniel/);
+    expect(jaSaudado).not.toMatch(/Sou o Daniel/);
     expect(jaSaudado).toMatch(/[✨🌿🙏💙]/u);
-    // First contact greeting presents the persona Daniel/FER.
+    // First contact greeting presents the persona Daniel/FER (agreed format).
     expect(gerarRespostaConversacional("saudacao", { horaLocal: 14, texto: "boa tarde" }))
-      .toMatch(/^Boa tarde! [✨🌿🙏] Sou Daniel, assistente virtual da FER\./u);
+      .toMatch(/^Boa tarde\. Sou o Daniel, assistente virtual da FER\./u);
   });
 
   it("acolhe no início e encerra com gentileza da casa", () => {
     expect(gerarRespostaConversacional("saudacao", { horaLocal: 20, texto: "boa noite" }))
-      .toMatch(/^Boa noite! [✨🌿🙏] Sou Daniel/u);
+      .toMatch(/^Boa noite\. Sou o Daniel/u);
     expect(gerarRespostaConversacional("encerramento", { texto: "era só isso" })).toMatch(/[🙏🌿💙]/u);
   });
 
@@ -385,13 +446,17 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     expect(emojiNovo).not.toBe(emojiAnt);
   });
 
-  it("varia a formulação conforme a mensagem (não é frase fixa)", () => {
+  it("a saudação inicial acordada é determinística (mesmo horário e nome)", () => {
     const a = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "bom dia" });
     const b = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "oi" });
-    expect(a).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel/u);
-    expect(b).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel/u);
-    // Different inbound text maps to different repertoire paths, both valid.
-    expect(a).not.toBe(b);
+    expect(a).toMatch(/^Bom dia\. Sou o Daniel/u);
+    expect(b).toMatch(/^Bom dia\. Sou o Daniel/u);
+    // Same hour + no name -> the agreed greeting is stable (not random).
+    expect(a).toBe(b);
+    // The bridge layer, however, keeps varying its phrasing.
+    const p1 = gerarRespostaConversacional("pedido_informacao", { texto: "uma dúvida", jaSaudado: true });
+    const p2 = gerarRespostaConversacional("pedido_informacao", { texto: "outra pergunta diferente", jaSaudado: true });
+    expect(p1).not.toBe(p2);
   });
 
   it("anti-repetição: não repete verbatim a última resposta enviada", () => {

@@ -6,7 +6,7 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 type Intencao =
   | "saudacao" | "agradecimento" | "pedido_informacao" | "encerramento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
-  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "complexo";
+  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "falar_humano" | "complexo";
 
 const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
@@ -42,6 +42,16 @@ const ENCERRAMENTO_TERMOS = [
   "tchau", "ate logo", "até logo", "ate mais", "até mais", "ate breve", "até breve",
   "ate a proxima", "até a próxima", "era so isso", "era só isso", "so isso", "só isso",
   "nada mais", "por enquanto e so", "por enquanto é só", "fica com deus",
+];
+
+// Explicit request to talk to a real person. First time -> gentle retention by
+// the IA; on a second insistence the conversation is escalated to human handoff.
+const HUMANO_TERMOS = [
+  "falar com humano", "falar com um humano", "falar com uma pessoa", "falar com pessoa",
+  "falar com atendente", "falar com um atendente", "falar com alguem", "falar com alguém",
+  "atendimento humano", "atendente humano", "quero um humano", "quero falar com humano",
+  "quero falar com atendente", "quero falar com alguem", "quero falar com alguém",
+  "pessoa real", "ser humano", "humano de verdade", "falar com responsavel", "falar com responsável",
 ];
 
 // Personal intents must win over public-schedule intents so any message using
@@ -83,6 +93,9 @@ function classificar(msg: string): Intencao {
   const txt = (msg || "").toLowerCase().trim();
   if (!txt) return "complexo";
   if (SENSITIVE.some((t) => txt.includes(t))) return "complexo";
+  // Explicit request to talk to a human wins over business/conversational layers
+  // so the gentle-retention -> handoff flow can be applied.
+  if (contemTermo(txt, HUMANO_TERMOS)) return "falar_humano";
   // Business intents win first (greeting + operational request -> operational).
   for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
   // Conversational layers (no handoff), most to least specific. The bridge
@@ -102,6 +115,56 @@ function classificar(msg: string): Intencao {
 const IA_NOME = "Daniel";
 const IA_CASA = "FER";
 const IA_APRESENTACAO = `Sou ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+// Greeting persona line (uses the article "o Daniel" for a warmer, agreed tone).
+const IA_APRESENTACAO_SAUDACAO = `Sou o ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+// The agreed welcoming closing explaining IA help + human escalation + hours.
+const IA_SAUDACAO_EXPLICACAO =
+  "Como posso lhe ajudar? Posso tirar suas dúvidas por aqui e, se necessário, " +
+  "encaminhar você para um atendimento humano e personalizado. Os atendimentos " +
+  "humanos acontecem em horário comercial e/ou nos horários de atendimento da FER.";
+
+/** Returns a safe, presentable first name from a full name, or null. */
+function primeiroNomeSeguro(nomeCompleto?: string | null): string | null {
+  if (!nomeCompleto || typeof nomeCompleto !== "string") return null;
+  const limpo = nomeCompleto.trim().replace(/\s+/g, " ");
+  if (!limpo) return null;
+  const primeiro = limpo.split(" ")[0];
+  // Reject inconsistent / non-name tokens (numbers, symbols, single letters).
+  if (primeiro.length < 2 || !/^[\p{L}'.-]+$/u.test(primeiro)) return null;
+  return primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
+}
+
+/** Period-of-day salutation in pt-BR from a local hour (0-23). */
+function saudacaoPorHorario(horaLocal?: number): string {
+  if (typeof horaLocal !== "number") return "Olá";
+  if (horaLocal < 12) return "Bom dia";
+  if (horaLocal < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+/**
+ * Builds Daniel's agreed first-contact greeting. Uses the user's first name when
+ * it is safely available, otherwise a neutral fallback. Always includes the
+ * persona, the offer to help, the human-escalation note and the human hours.
+ */
+export function montarSaudacaoInicial(opts: { nome?: string | null; horaLocal?: number }): string {
+  const saud = saudacaoPorHorario(opts.horaLocal);
+  const nome = primeiroNomeSeguro(opts.nome);
+  const abertura = nome ? `${saud}, ${nome}.` : `${saud}.`;
+  return `${abertura} ${IA_APRESENTACAO_SAUDACAO}. ${IA_SAUDACAO_EXPLICACAO} 🌿`;
+}
+
+// First request to talk to a human: acknowledge + gently offer IA help first.
+export const RETENCAO_HUMANO_MENSAGEM =
+  "Claro, posso te encaminhar se for necessário. Antes disso, posso tentar te " +
+  "ajudar por aqui com dúvidas sobre horários da casa, palestras, evangelhoterapia, " +
+  "tratamentos, agendamentos, eventos, campanhas e informações gerais. Me diga o " +
+  "que você precisa e, se eu não conseguir resolver, encaminho você para um " +
+  "atendimento humano. 🌿";
+// Second insistence: confirm escalation warmly (then a handoff is opened).
+export const ENCAMINHAMENTO_HUMANO_MENSAGEM =
+  "Sem problemas! Vou te encaminhar agora para um atendimento humano. Em breve " +
+  "alguém da nossa equipe falará com você. 🙏";
 
 // Controlled emoji palette by context — variety with good sense, never spammy.
 const EMOJI_PALETA: Record<string, string[]> = {
@@ -190,6 +253,7 @@ function extrairUltimoEmoji(texto?: string | null): string | null {
 
 interface ConversaContexto {
   horaLocal?: number; jaSaudado?: boolean; texto?: string; ultimaResposta?: string | null;
+  nome?: string | null;
 }
 
 function extrairSaudacaoDoTexto(texto: string): string | null {
@@ -233,19 +297,16 @@ function gerarRespostaConversacional(intencao: Intencao, ctx: ConversaContexto =
   if (ctx.jaSaudado)
     return comEmoji(escolherFrase(CONTINUACAO_FRASES, seed, evitar), escolherEmoji("ponte", emojiSeed, emojiAnterior));
 
-  // FIRST contact: greet + present the persona (Daniel / FER) + invite.
-  let saudacao = saudacaoUsuario || "Olá";
-  if (!saudacaoUsuario && typeof ctx.horaLocal === "number") {
-    if (ctx.horaLocal < 12) saudacao = "Bom dia";
-    else if (ctx.horaLocal < 18) saudacao = "Boa tarde";
-    else saudacao = "Boa noite";
-  }
-  const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
-  return escolherFrase(
-    SAUDACAO_SUFIXOS.map((s) => `${saudacao}! ${emoji} ${IA_APRESENTACAO}. ${s}`),
-    seed,
-    evitar,
-  );
+  // FIRST contact: agreed welcoming greeting — period salutation, the user's
+  // name when safely available, persona, IA help + human escalation + hours.
+  const horaParaSaudacao = (() => {
+    const u = extrairSaudacaoDoTexto(ctx.texto || "");
+    if (u === "Bom dia") return 9;
+    if (u === "Boa tarde") return 15;
+    if (u === "Boa noite") return 20;
+    return ctx.horaLocal;
+  })();
+  return montarSaudacaoInicial({ nome: ctx.nome ?? null, horaLocal: horaParaSaudacao });
 }
 
 // True when the conversation was already greeted recently, so the IA continues
@@ -261,7 +322,7 @@ function jaSaudadoRecentemente(ultimoContatoIso?: string | null, janelaMin = 180
 const AUTORESOLVIVEIS: Intencao[] = [
   "saudacao", "agradecimento", "pedido_informacao", "encerramento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
-  "programacao_publica", "opt_out", "reativar",
+  "programacao_publica", "opt_out", "reativar", "falar_humano",
 ];
 
 // Intents that can only be answered automatically when we know who is asking.
@@ -656,7 +717,28 @@ Deno.serve(async (req) => {
         respostaFonte = "conversa_basica";
         resposta = gerarRespostaConversacional(intencao, {
           horaLocal: horaSaoPaulo(), jaSaudado, texto, ultimaResposta: ultimaRespostaIA,
+          nome: nomeContato,
         });
+      } else if (intencao === "falar_humano") {
+        // Gentle retention on the FIRST request; escalate on a second insistence.
+        // Count prior human requests already recorded for this phone.
+        const { count: pedidosHumano } = await admin
+          .from("notificacoes_log")
+          .select("id", { count: "exact", head: true })
+          .eq("direcao", "entrada")
+          .eq("payload_recebido->>telefone", telefone)
+          .eq("payload_recebido->>intencao", "falar_humano");
+        if ((pedidosHumano ?? 0) >= 1) {
+          // Second insistence -> escalate to a human handoff.
+          respostaFonte = "handoff_humano_segunda";
+          resposta = ENCAMINHAMENTO_HUMANO_MENSAGEM;
+          handoff = true; handoffOrigem = "regra";
+          handoffMotivo = "Solicitação reiterada de atendimento humano";
+        } else {
+          // First request -> acknowledge and gently offer IA help first.
+          respostaFonte = "retencao_humano";
+          resposta = RETENCAO_HUMANO_MENSAGEM;
+        }
       } else if (intencao === "opt_out" && assistido) {
         await admin.from("notificacoes_preferencias").upsert({
           assistido_id: assistido.id, whatsapp_ativo: false,
