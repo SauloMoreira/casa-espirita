@@ -78,6 +78,7 @@ export default function Campanhas() {
       imagem_url: c.imagem_url ?? "",
       imagem_origem: (c.imagem_origem as ImagemOrigem) ?? "url",
       imagem_otimizada: c.imagem_otimizada ?? false,
+      imagem_formato: c.imagem_formato ?? "card",
       ordem: c.ordem.toString(),
       destaque: c.destaque,
       data_inicio: c.data_inicio ?? "",
