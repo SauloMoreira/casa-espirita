@@ -508,6 +508,59 @@ function montarRespostaProgramacao(itens: ItemProgramacao[], label = "hoje"): st
   return `${quando} temos:\n${linhas}\n🌿`;
 }
 
+// ===== Institutional modules: events / campaigns / social action =====
+interface EventoResumo { titulo: string; data?: string | null; local?: string | null; }
+function montarRespostaEventos(eventos: EventoResumo[]): string {
+  const lista = (eventos || []).filter((e) => e && e.titulo);
+  if (lista.length === 0) {
+    return "No momento não encontrei eventos programados. Assim que houver novidades, divulgamos por aqui. 🌿";
+  }
+  if (lista.length === 1) {
+    const e = lista[0];
+    const data = e.data ? ` em ${formatarDataCurta(e.data)}` : "";
+    const local = e.local ? ` (${e.local})` : "";
+    return `Sim, temos o evento "${e.titulo}"${data}${local}. 🌿`;
+  }
+  const linhas = lista
+    .map((e) => `• ${e.titulo}${e.data ? " — " + formatarDataCurta(e.data) : ""}`)
+    .join("\n");
+  return `Temos estes eventos:\n${linhas}\nSe quiser detalhes de algum, é só me dizer. 🌿`;
+}
+
+interface CampanhaResumo { titulo: string; descricao?: string | null; }
+function montarRespostaCampanhas(campanhas: CampanhaResumo[]): string {
+  const lista = (campanhas || []).filter((c) => c && c.titulo);
+  if (lista.length === 0) {
+    return "No momento não há campanhas ativas. Quando abrirmos uma nova, aviso por aqui. 🌿";
+  }
+  if (lista.length === 1) {
+    const c = lista[0];
+    const desc = c.descricao && c.descricao.trim() ? ` ${c.descricao.trim()}` : "";
+    return `Sim, está acontecendo a campanha "${c.titulo}".${desc} Se quiser participar, posso te orientar. 🌿`;
+  }
+  const linhas = lista.map((c) => `• ${c.titulo}`).join("\n");
+  return `Temos estas campanhas em andamento:\n${linhas}\nPosso te ajudar a participar de alguma delas. 🌿`;
+}
+
+interface AlimentoFaltante { nome: string; unidade?: string | null; faltante?: number | null; }
+function montarRespostaAcaoSocial(alimentos: AlimentoFaltante[]): string {
+  const lista = (alimentos || []).filter((a) => a && a.nome);
+  if (lista.length === 0) {
+    return "No momento não há itens em falta registrados na ação social. Obrigado pelo seu cuidado! Se quiser ajudar, nossa equipe pode te orientar. 🌿";
+  }
+  const linhas = lista
+    .map((a) => {
+      const qtd = a.faltante != null && a.faltante > 0
+        ? ` (faltam ${a.faltante}${a.unidade ? " " + a.unidade : ""})`
+        : "";
+      return `• ${a.nome}${qtd}`;
+    })
+    .join("\n");
+  return `Sim, estamos arrecadando para a ação social. Estes itens estão em falta:\n${linhas}\nQualquer doação ajuda muito. 🌿`;
+}
+
+
+
 interface ExcecaoOperacional {
   atividade: string; status: string; mensagem_ia?: string | null; motivo?: string | null;
   nova_data?: string | null; novo_horario?: string | null; horario_afetado?: string | null;
