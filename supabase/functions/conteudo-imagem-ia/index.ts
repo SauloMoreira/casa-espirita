@@ -145,7 +145,9 @@ serve(async (req) => {
     const dataUrl = extrairImagemDataUrl(aiJson);
     if (!dataUrl) return json({ error: "A IA não retornou uma imagem. Tente novamente." }, 502);
 
-    const { bytes, contentType } = dataUrlParaBytes(dataUrl);
+    const original = dataUrlParaBytes(dataUrl);
+    // Pós-processamento: garante que o arquivo salvo respeite o formato alvo escolhido.
+    const { bytes, contentType } = await recortarParaFormato(original.bytes, formato);
     const ext = contentType.includes("webp") ? "webp" : contentType.includes("jpeg") ? "jpg" : "png";
 
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -159,7 +161,7 @@ serve(async (req) => {
     if (upErr) return json({ error: `Falha ao salvar imagem: ${upErr.message}` }, 500);
 
     const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(path);
-    return json({ url: pub.publicUrl, origem: "ai", otimizada: modo === "otimizar" });
+    return json({ url: pub.publicUrl, origem: "ai", otimizada: modo === "otimizar", formato });
   } catch (e) {
     return json({ error: (e as Error).message ?? "Erro inesperado" }, 500);
   }
