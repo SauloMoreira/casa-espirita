@@ -89,4 +89,7 @@
   .gradient-sidebar {
     background: linear-gradient(180deg, hsl(174 35% 20%), hsl(174 35% 26%));
   }
+  .gradient-acao-social {
+    background: linear-gradient(135deg, hsl(168 40% 17%), hsl(174 34% 27%));
+  }
 }
