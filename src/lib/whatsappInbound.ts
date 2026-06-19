@@ -95,7 +95,7 @@ export const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
 export const AUTORESOLVIVEIS: Intencao[] = [
   "saudacao", "agradecimento", "pedido_informacao", "encerramento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
-  "programacao_publica", "opt_out", "reativar",
+  "programacao_publica", "opt_out", "reativar", "falar_humano",
 ];
 
 /** Requires an identified assistido to be answered automatically. */
