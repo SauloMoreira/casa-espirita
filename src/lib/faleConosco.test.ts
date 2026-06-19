@@ -13,7 +13,7 @@ describe("normalizarTelefoneWhatsapp", () => {
   });
 
   it("prefixa o DDI 55 em número local com DDD", () => {
-    expect(normalizarTelefoneWhatsapp("(11) 99999-8888")).toBe("11999998888".length === 11 ? "5511999998888" : "");
+    expect(normalizarTelefoneWhatsapp("(11) 99999-8888")).toBe("5511999998888");
     expect(normalizarTelefoneWhatsapp("11 3333-4444")).toBe("551133334444");
   });
 
