@@ -26,14 +26,14 @@ interface VitrineCardProps {
 export function VitrineCard({
   imagemUrl, titulo, subtitulo, descricao, destaque, meta, formato, featured,
 }: VitrineCardProps) {
-  // A proporção exibida segue o formato salvo. No destaque, a imagem preenche
-  // a coluna lateral em telas largas, mantendo o aspecto salvo no mobile.
+  // A proporção exibida segue o formato salvo em todos os tamanhos de tela.
+  // Antes, o destaque anulava a proporção no desktop com sm:aspect-auto.
   const aspect = formatoAspectClass(formato);
   const Imagem = (
     <div
       className={
         "relative overflow-hidden bg-secondary/30 " +
-        (featured ? `${aspect} sm:aspect-auto sm:h-full sm:min-h-[180px]` : aspect)
+        aspect
       }
     >
       {imagemUrl ? (
@@ -78,7 +78,7 @@ export function VitrineCard({
     <Card
       className={
         "overflow-hidden border-border/60 shadow-sm transition-shadow hover:shadow-md " +
-        (featured ? "sm:col-span-2 sm:grid sm:grid-cols-2 sm:items-stretch" : "")
+        (featured ? "sm:col-span-2 sm:grid sm:grid-cols-2 sm:items-start" : "")
       }
     >
       {Imagem}
