@@ -2377,6 +2377,7 @@ export type Database = {
           assistido_id: string | null
           atendente_responsavel: string | null
           contexto_atividade: string | null
+          contexto_conversa: Json | null
           contexto_data: string | null
           created_at: string
           em_handoff: boolean
@@ -2396,6 +2397,7 @@ export type Database = {
           assistido_id?: string | null
           atendente_responsavel?: string | null
           contexto_atividade?: string | null
+          contexto_conversa?: Json | null
           contexto_data?: string | null
           created_at?: string
           em_handoff?: boolean
@@ -2415,6 +2417,7 @@ export type Database = {
           assistido_id?: string | null
           atendente_responsavel?: string | null
           contexto_atividade?: string | null
+          contexto_conversa?: Json | null
           contexto_data?: string | null
           created_at?: string
           em_handoff?: boolean
