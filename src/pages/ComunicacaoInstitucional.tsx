@@ -304,9 +304,60 @@ export default function ComunicacaoInstitucional() {
                   <Users className="h-4 w-4" />
                   Público estimado no momento: {elegiveis ?? "—"} assistido(s) elegível(is).
                 </div>
-                {prontaParaEnvio({ status: normalizarStatus(revisar.status), publico_estimado: revisar.publico_estimado }) && (
-                  <div className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-950/40 p-2 text-xs text-green-700 dark:text-green-300">
-                    <Send className="h-4 w-4" /> Aprovada. O envio em massa será habilitado no Módulo 5B.
+                {normalizarStatus(revisar.status) === "aprovada" && (
+                  <div className="space-y-3 rounded-xl border border-border/60 p-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-semibold flex items-center gap-1.5">
+                        <Send className="h-4 w-4 text-primary" /> Envio institucional (controlado)
+                      </span>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {ENVIO_STATUS_LABEL[normalizarEnvioStatus(revisar.envio_status)]}
+                      </Badge>
+                    </div>
+
+                    <Progress value={progressoPercentual(revisar)} className="h-2" />
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      {[
+                        { label: "Destinatários", value: revisar.total_destinatarios ?? 0 },
+                        { label: "Enviados", value: revisar.total_enviados ?? 0 },
+                        { label: "Pendentes", value: pendentes(revisar) },
+                        { label: "Bloqueados", value: revisar.total_bloqueados ?? 0 },
+                      ].map((m) => (
+                        <div key={m.label} className="rounded-lg bg-muted/40 p-2">
+                          <p className="text-sm font-bold">{m.value}</p>
+                          <p className="text-[10px] text-muted-foreground">{m.label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                      <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <span>
+                        Envio em lotes de até {LOTE_PADRAO}, somente para quem consentiu (reconfirmado no disparo),
+                        com proteção anti-spam por frequência ({JANELA_ANTISPAM_DIAS} dias) e janela 08h–20h.
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {podePreparar(revisar) && (
+                        <Button size="sm" variant="outline" className="gap-1" disabled={enviando}
+                          onClick={() => handlePreparar(revisar)}>
+                          <ListChecks className="h-4 w-4" /> Preparar fila
+                        </Button>
+                      )}
+                      {podeDisparar(revisar) && (
+                        <Button size="sm" className="gap-1" disabled={enviando}
+                          onClick={() => handleDisparar(revisar)}>
+                          <Rocket className="h-4 w-4" /> {enviando ? "Processando..." : "Disparar lote"}
+                        </Button>
+                      )}
+                      {normalizarEnvioStatus(revisar.envio_status) === "concluido" && (
+                        <span className="text-xs text-green-700 dark:text-green-300 flex items-center gap-1">
+                          <ShieldCheck className="h-4 w-4" /> Envio concluído.
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
