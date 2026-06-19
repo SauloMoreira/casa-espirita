@@ -840,7 +840,7 @@ Deno.serve(async (req) => {
           .from("whatsapp_handoffs")
           .select("closed_at")
           .eq("conversa_id", conversaId)
-          .eq("status", "resolvido")
+          .eq("status", "fechado")
           .order("closed_at", { ascending: false })
           .limit(1)
           .maybeSingle();
