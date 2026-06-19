@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { AlimentosAssistidoCard } from "@/components/acaoSocial/AlimentosAssistidoCard";
 
 const STATUS_LABELS: Record<string, string> = {
   aguardando_inicio: "Aguardando", em_andamento: "Em Andamento", concluido: "Concluído",
@@ -162,6 +163,8 @@ export default function AssistidoDashboard() {
         ))}
       </div>
 
+
+      <AlimentosAssistidoCard />
 
       <div className="grid gap-4 lg:grid-cols-2 items-start">
       {tratamentos.length > 0 && (
