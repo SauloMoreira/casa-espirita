@@ -54,10 +54,16 @@ export default function CentralIA() {
             <span className="hidden md:inline">Indicadores</span>
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="configuracoes" className="flex items-center gap-1.5 text-xs py-2.5">
-              <Settings className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Configurações</span>
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="metricas-whatsapp" className="flex items-center gap-1.5 text-xs py-2.5">
+                <Smartphone className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">IA WhatsApp</span>
+              </TabsTrigger>
+              <TabsTrigger value="configuracoes" className="flex items-center gap-1.5 text-xs py-2.5">
+                <Settings className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Configurações</span>
+              </TabsTrigger>
+            </>
           )}
         </TabsList>
 
