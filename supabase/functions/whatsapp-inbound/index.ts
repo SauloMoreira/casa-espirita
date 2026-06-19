@@ -495,6 +495,20 @@ function capitalizar(s: string): string {
 const MENSAGEM_HANDOFF =
   "Não consegui confirmar isso com segurança agora. Vou encaminhar para atendimento para te orientarmos corretamente. 🌿";
 
+// ===== FASE 5 — Normalização leve de rótulos (handoff/fallback) =====
+// Padroniza as strings de motivo para melhorar a qualidade analítica/agrupamento
+// SEM alterar os gatilhos nem quando o handoff dispara. Apenas remove sufixos
+// dinâmicos (mensagens de erro técnico após ":") mantendo a causa canônica.
+function normalizarRotulo(motivo: string | null | undefined): string | null {
+  if (!motivo) return motivo ?? null;
+  let m = String(motivo).replace(/\s+/g, " ").trim();
+  // Corta detalhes técnicos voláteis após o primeiro ":" para causas técnicas.
+  if (/^(Falha t[ée]cnica no processamento da IA|Falha ao enviar resposta autom[áa]tica)/i.test(m)) {
+    m = m.split(":")[0].trim();
+  }
+  return m;
+}
+
 function montarRespostaProgramacao(itens: ItemProgramacao[], label = "hoje"): string {
   const quando = capitalizar(label);
   const lista = (itens || []).filter((i) => i && i.nome);
