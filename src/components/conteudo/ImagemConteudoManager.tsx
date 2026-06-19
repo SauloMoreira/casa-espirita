@@ -44,7 +44,7 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
     setBusy("upload");
     try {
       const url = await uploadImagemManual(file, tipo);
-      onChange({ url, origem: "upload", otimizada: false });
+      onChange({ url, origem: "upload", otimizada: false, formato });
       setCandidato(null);
       toast({ title: "Imagem enviada" });
     } catch (e: any) {
@@ -62,7 +62,7 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
     setBusy("gerar");
     try {
       const res = await gerarImagemIa(tipo, dados, formato);
-      setCandidato({ url: res.url, otimizada: false });
+      setCandidato({ url: res.url, otimizada: false, formato: res.formato });
     } catch (e: any) {
       toast({ title: "Erro ao gerar", description: e.message, variant: "destructive" });
     } finally {
@@ -75,7 +75,7 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
     setBusy("otimizar");
     try {
       const res = await otimizarImagemIa(value.url, formato);
-      setCandidato({ url: res.url, otimizada: true });
+      setCandidato({ url: res.url, otimizada: true, formato: res.formato });
     } catch (e: any) {
       toast({ title: "Erro ao otimizar", description: e.message, variant: "destructive" });
     } finally {
@@ -85,13 +85,14 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
 
   const aceitarCandidato = () => {
     if (!candidato) return;
-    onChange({ url: candidato.url, origem: "ai", otimizada: candidato.otimizada });
+    onChange({ url: candidato.url, origem: "ai", otimizada: candidato.otimizada, formato: candidato.formato });
+    setFormato(candidato.formato);
     setCandidato(null);
     toast({ title: "Imagem aplicada" });
   };
 
   const handleRemover = () => {
-    onChange({ url: "", origem: "url", otimizada: false });
+    onChange({ url: "", origem: "url", otimizada: false, formato });
     setCandidato(null);
   };
 
