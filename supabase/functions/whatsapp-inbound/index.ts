@@ -1825,7 +1825,7 @@ Deno.serve(async (req) => {
       if (!aberto) {
         await admin.from("whatsapp_handoffs").insert({
           conversa_id: conversaId,
-          motivo: handoffMotivo || "Atendimento humano necessário",
+          motivo: normalizarRotulo(handoffMotivo) || "Atendimento humano necessário",
           origem: handoffOrigem,
           classificado_por_ia: handoffOrigem === "ia",
           status: "aberto",
