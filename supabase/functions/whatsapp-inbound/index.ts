@@ -564,6 +564,24 @@ Deno.serve(async (req) => {
       normalizePhone(a.celular || "") === telefone || normalizePhone(a.telefone || "") === telefone
     );
 
+    // Fallback identification: any registered system user (profiles) by phone.
+    // This does NOT link to an assistido — it only records the contact name/type
+    // so the panel shows the conversation as "identificado" for staff/volunteers.
+    let nomeContato: string | null = assistido?.nome ?? null;
+    let tipoContato: string | null = assistido ? "assistido" : null;
+    if (!assistido) {
+      const { data: perfis } = await admin
+        .from("profiles")
+        .select("nome_completo, celular");
+      const perfil = (perfis || []).find((p: any) =>
+        normalizePhone(p.celular || "") === telefone
+      );
+      if (perfil) {
+        nomeContato = perfil.nome_completo ?? null;
+        tipoContato = "usuario";
+      }
+    }
+
     // Upsert conversa (records the last inbound message text + timestamp).
     // Capture whether the user was already greeted recently BEFORE we update the
     // timestamp, so a continued conversation doesn't repeat the greeting.
@@ -579,11 +597,14 @@ Deno.serve(async (req) => {
         ultimo_contato_em: new Date().toISOString(),
         ultima_mensagem: resumo(texto),
         assistido_id: assistido?.id ?? convExist.assistido_id,
+        nome_contato: nomeContato ?? convExist.nome_contato,
+        tipo_contato: tipoContato ?? convExist.tipo_contato,
         status_conversa: "ativa",
       }).eq("id", conversaId);
     } else {
       const { data: novaConv } = await admin.from("whatsapp_conversas").insert({
         telefone, assistido_id: assistido?.id ?? null, status_conversa: "ativa",
+        nome_contato: nomeContato, tipo_contato: tipoContato,
         ultima_mensagem: resumo(texto),
       }).select("id").single();
       conversaId = novaConv!.id;
