@@ -50,8 +50,10 @@ export const CORRECOES_VOCABULARIO: Record<string, string> = {
 const VOCAB_FUZZY = [
   "palestra", "evangelhoterapia", "tratamento", "atendimento", "entrevista",
   "agendamento", "programacao", "campanha", "campanhas", "eventos", "alimentos",
-  "proximo", "proxima", "amanha", "remarcado", "cancelado",
+  "proximo", "proxima", "amanha", "remarcado", "cancelado", "sessao", "passe", "hoje",
 ];
+// Protected, already-correct words: never fuzzy-corrected into another word.
+const VOCAB_SET = new Set(VOCAB_FUZZY);
 
 /** Classic Levenshtein edit distance (small strings only). */
 export function distanciaEdicao(a: string, b: string): number {
