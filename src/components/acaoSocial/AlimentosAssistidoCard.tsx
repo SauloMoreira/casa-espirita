@@ -28,7 +28,7 @@ export function AlimentosAssistidoCard() {
       <div className="gradient-acao-social px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-acao-social-foreground/10 ring-1 ring-acao-social-foreground/15">
-            <HeartHandshake className="h-4.5 w-4.5 text-acao-social-foreground" />
+            <HeartHandshake className="h-5 w-5 text-acao-social-foreground" />
           </span>
           <div className="min-w-0 space-y-1.5">
             <h3 className="font-display text-base font-semibold tracking-wide text-acao-social-foreground sm:text-lg">
