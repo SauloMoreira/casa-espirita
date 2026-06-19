@@ -1114,6 +1114,28 @@ Deno.serve(async (req) => {
               }
             }
           }
+          // 5) Events scheduled for the requested date (only on a general
+          //    "what's happening?" question, not when a specific activity is named).
+          if (!atividade) {
+            const { data: eventos } = await admin
+              .from("eventos")
+              .select("titulo, data_evento, data_inicio, data_fim")
+              .eq("ativo", true)
+              .or(`data_inicio.eq.${alvo.iso},and(data_inicio.lte.${alvo.iso},data_fim.gte.${alvo.iso})`);
+            const eventosDia: ItemProgramacao[] = (eventos || [])
+              .filter((e: any) => {
+                if (e?.data_evento) return String(e.data_evento).slice(0, 10) === alvo.iso;
+                return true;
+              })
+              .map((e: any) => ({
+                nome: e?.titulo || "Evento",
+                horario: e?.data_evento ? String(e.data_evento).slice(11, 16) : null,
+              }));
+            if (eventosDia.length > 0) {
+              itens = [...itens, ...eventosDia];
+              respostaFonte = respostaFonte ? respostaFonte + "+eventos" : "eventos";
+            }
+          }
           // Always a safe, valid answer (even "no programming") -> no handoff needed.
           resposta = montarRespostaProgramacao(itens, alvo.label);
         }
