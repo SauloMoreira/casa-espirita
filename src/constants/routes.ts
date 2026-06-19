@@ -53,6 +53,7 @@ export const ROUTES = {
   funcoesVoluntariado: "/funcoes-voluntariado",
 
   // Inteligência / institucional
+  painelInstitucional: "/painel-institucional",
   centralIa: "/central-ia",
   excecoes: "/excecoes",
   excecoesOperacionais: "/excecoes-operacionais",
