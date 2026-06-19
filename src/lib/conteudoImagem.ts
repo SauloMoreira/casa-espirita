@@ -117,14 +117,30 @@ export function montarPromptGeracao(
   if (dados.descricao_completa) linhas.push(`Contexto: ${dados.descricao_completa.trim().slice(0, 400)}.`);
   if (tipo === "evento" && dados.local) linhas.push(`Local: ${dados.local.trim()}.`);
 
-  const fmt = FORMATOS.find((f) => f.value === formato) ?? FORMATOS[0];
+  const fmt = formatoConfig(formato);
   linhas.push(
     `Estilo institucional, acolhedor, elegante, limpo, moderno e harmonioso. ` +
       `Paleta serena (tons de verde-azulado/teal e sálvia), iluminação suave. ` +
-      `Composição em ${fmt.label.toLowerCase()} (proporção ${fmt.ratio}). ` +
+      `Composição ${orientacaoFormato(formato)} em ${fmt.label.toLowerCase()}, ` +
+      `enquadramento na proporção ${fmt.ratio} (largura:altura), com o assunto principal centralizado e bem aproveitado nessa proporção. ` +
       `Sem texto sobreposto, sem letras, sem cara de panfleto, sem poluição visual, sem elementos agressivos.`,
   );
   return linhas.join(" ");
+}
+
+/** Descreve a orientação esperada do enquadramento por formato. */
+function orientacaoFormato(formato: ImagemFormato): string {
+  switch (formato) {
+    case "banner_horizontal":
+      return "amplamente horizontal (paisagem larga, aproveitando as laterais)";
+    case "banner_vertical":
+      return "verticalizada (retrato, mais alta do que larga)";
+    case "destaque":
+      return "panorâmica e nobre (faixa larga widescreen, valorizada para destaque)";
+    case "card":
+    default:
+      return "compacta e equilibrada (quadrada)";
+  }
 }
 
 /** Valida se há dados mínimos para gerar imagem com IA. */
