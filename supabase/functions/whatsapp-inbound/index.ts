@@ -429,7 +429,7 @@ function jaSaudadoRecentemente(ultimoContatoIso?: string | null, janelaMin = 180
 const AUTORESOLVIVEIS: Intencao[] = [
   "saudacao", "agradecimento", "pedido_informacao", "encerramento",
   "tratamento_hoje", "proxima_sessao", "horario_entrevista", "confirmacao_agendamento", "onde_ver_app",
-  "programacao_publica", "opt_out", "reativar", "falar_humano",
+  "programacao_publica", "eventos", "campanhas", "acao_social", "opt_out", "reativar", "falar_humano",
 ];
 
 // Intents that can only be answered automatically when we know who is asking.
