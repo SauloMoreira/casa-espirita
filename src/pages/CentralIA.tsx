@@ -28,7 +28,7 @@ export default function CentralIA() {
       </div>
 
       <Tabs defaultValue={isAdmin ? "queixas" : "sugestoes"} className="w-full">
-        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-6" : "grid-cols-3"}`}>
+        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-4 md:grid-cols-7" : "grid-cols-3"}`}>
           {isAdmin && (
             <>
               <TabsTrigger value="queixas" className="flex items-center gap-1.5 text-xs py-2.5">
