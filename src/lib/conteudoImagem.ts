@@ -150,10 +150,11 @@ export function podeGerarComIa(dados: DadosConteudo): boolean {
 
 /** Instrução base para otimização/ajuste de imagem existente. */
 export function montarPromptOtimizacao(formato: ImagemFormato = "card"): string {
-  const fmt = FORMATOS.find((f) => f.value === formato) ?? FORMATOS[0];
+  const fmt = formatoConfig(formato);
   return (
-    `Otimize esta imagem para uso institucional em ${fmt.label.toLowerCase()} (proporção ${fmt.ratio}). ` +
-    `Melhore iluminação, nitidez e enquadramento, centralizando melhor o conteúdo principal. ` +
+    `Otimize esta imagem para uso institucional em ${fmt.label.toLowerCase()}, ` +
+    `reenquadrando a composição para a proporção ${fmt.ratio} (largura:altura), de forma ${orientacaoFormato(formato)}. ` +
+    `Melhore iluminação, nitidez e enquadramento, mantendo o assunto principal bem posicionado e centralizado nessa proporção. ` +
     `Deixe a imagem mais limpa, leve e bem aproveitada no layout. ` +
     `Mantenha o tema e o conteúdo original, sem adicionar texto ou elementos novos.`
   );
