@@ -2561,7 +2561,11 @@ export type Database = {
         Returns: Json
       }
       preparar_envio_institucional: {
-        Args: { p_comunicacao_id: string; p_janela_dias?: number }
+        Args: {
+          p_comunicacao_id: string
+          p_janela_dias?: number
+          p_versao: string
+        }
         Returns: Json
       }
       registrar_presenca: {
