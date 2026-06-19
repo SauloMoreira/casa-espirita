@@ -180,8 +180,16 @@ describe("whatsappInbound — distinção entre pergunta pública e pessoal", ()
   });
 
   it("perguntas pessoais exigem assistido identificado (handoff sem identificação)", () => {
+    expect(decidirHandoff("proxima_sessao", { assistidoIdentificado: false, respostaGerada: false }).handoff).toBe(true);
+    expect(decidirHandoff("horario_entrevista", { assistidoIdentificado: true, respostaGerada: true }).handoff).toBe(false);
+  });
+
+  it("tratamento_hoje sem assistido NÃO força handoff quando há resposta da agenda da casa", () => {
+    // Without an identified assistido, the day's treatment schedule still
+    // produces a valid answer, so the conversation is not escalated.
+    expect(decidirHandoff("tratamento_hoje", { assistidoIdentificado: false, respostaGerada: true }).handoff).toBe(false);
+    // But an empty/failed lookup still escalates.
     expect(decidirHandoff("tratamento_hoje", { assistidoIdentificado: false, respostaGerada: false }).handoff).toBe(true);
-    expect(decidirHandoff("tratamento_hoje", { assistidoIdentificado: true, respostaGerada: true }).handoff).toBe(false);
   });
 });
 
