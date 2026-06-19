@@ -28,6 +28,7 @@ export const ROUTES = {
   presenca: "/presenca",
   sessoesPublicas: "/sessoes-publicas",
   acaoSocial: "/acao-social",
+  campanhas: "/campanhas",
 
   // Tratamentos
   tratamentos: "/tratamentos",
