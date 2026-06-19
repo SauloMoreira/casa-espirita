@@ -118,9 +118,9 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
         onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }}
       />
 
-      {/* Prévia da imagem ativa */}
-      <div className="flex items-start gap-3">
-        <div className="h-28 w-28 shrink-0 rounded-lg bg-secondary/40 overflow-hidden flex items-center justify-center border border-border/40">
+      {/* Prévia da imagem ativa (no formato salvo) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className={`w-28 shrink-0 rounded-lg bg-secondary/40 overflow-hidden flex items-center justify-center border border-border/40 ${formatoAspectClass(value.formato)}`}>
           {temImagem ? (
             <img src={value.url} alt="Prévia da imagem" className="h-full w-full object-cover" />
           ) : (
@@ -142,6 +142,9 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-[10px] text-muted-foreground/80">
+              A geração e a otimização com IA recortam a imagem para este formato.
+            </p>
           </div>
         </div>
       </div>
