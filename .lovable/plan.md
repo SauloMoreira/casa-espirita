@@ -176,9 +176,10 @@ Campos extras no `notificacoes_log` (`confianca`, `escopo`, `usou_llm`, `custo_e
 
 ## 16. Ordem de implementação (entregáveis por fase)
 
-- **Fase 0 — Baseline:** snapshot das métricas atuais (seção 3). Sem deploy.
-- **Fase 1 — Memória + Resolução temporal:** coluna `contexto_conversa`, resumo (seção 12), `resolverTempo` (seção 4), herança com limite (seção 9). Testes. Sem LLM.
-- **Fase 2 — Orquestrador + público/pessoal:** precedência fechada (seção 6), próxima ocorrência com validação de exceção (seção 7), desambiguação (seção 8), regra sem-data (seção 5), confiança e privacidade (seções 10–11).
+- **Fase 0 — Baseline:** ✅ snapshot das métricas atuais (seção 3). Sem deploy.
+- **Fase 1 — Memória + Resolução temporal:** ✅ coluna `contexto_conversa`, resumo (seção 12), `resolverTempo` (seção 4), herança com limite (seção 9). Testes. Sem LLM.
+- **Fase 2 — Orquestrador + público/pessoal:** ✅ módulo puro `whatsappOrquestrador.ts` (precedência fechada seção 6, próxima ocorrência com validação de exceção seção 7, escopo público/pessoal/ambíguo seção 8). Religado no `proxima_sessao` (janela + avanço até a próxima válida) e na próxima ocorrência pública (programação padrão + validação de exceção). 22 testes novos, 502 no total, sem regressão. Fallback determinístico preservado.
+
 - **Fase 3 — Geração final grounded:** geração via **modelo leve/barato disponível no gateway homologado, preferencialmente da família flash/lite**, redigindo a partir do payload (seção 13) com o tom da seção 14; fallback determinístico (helpers atuais) sempre disponível.
 - **Fase 4 — Classificador híbrido (LLM apenas no gap):** o classificador determinístico continua sendo o caminho principal; o LLM é acionado **somente** quando a confiança é baixa ou a intenção é `complexo`/ambígua. **Não** se transforma o classificador inteiro em dependente de modelo — a maioria das mensagens nunca chama LLM na classificação.
 - **Fase 5 — Métricas + calibração + handoff:** campos de log + consultas (seção 15) vs baseline; refino de handoff e prompts.
