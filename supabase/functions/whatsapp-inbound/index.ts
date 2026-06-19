@@ -978,6 +978,20 @@ Deno.serve(async (req) => {
           fonteBase = "programacao_padrao";
         }
 
+        // Events scheduled for the requested date are part of "what's happening".
+        const { data: eventosDiaRaw } = await admin
+          .from("eventos")
+          .select("titulo, data_evento, data_inicio, data_fim")
+          .eq("ativo", true)
+          .or(`data_inicio.eq.${alvo.iso},and(data_inicio.lte.${alvo.iso},data_fim.gte.${alvo.iso})`);
+        const eventosDia: ItemProgramacao[] = (eventosDiaRaw || [])
+          .filter((e: any) => (e?.data_evento ? String(e.data_evento).slice(0, 10) === alvo.iso : true))
+          .map((e: any) => ({
+            nome: e?.titulo || "Evento",
+            horario: e?.data_evento ? String(e.data_evento).slice(11, 16) : null,
+          }));
+        if (eventosDia.length > 0) base = [...base, ...eventosDia];
+
         // 2) ALL operational exceptions registered for the day.
         const { data: excecoesCad } = await admin
           .from("excecoes_operacionais")
