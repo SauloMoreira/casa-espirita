@@ -207,12 +207,21 @@ export default function Instituicao() {
             <div className="space-y-2">
               <Label>Telefone</Label>
               <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" maxLength={15} />
+              <p className="text-xs text-muted-foreground">Telefone institucional (fixo ou geral da casa).</p>
             </div>
+            <div className="space-y-2">
+              <Label>WhatsApp Institucional</Label>
+              <Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" maxLength={15} />
+              <p className="text-xs text-muted-foreground">Número oficial de WhatsApp da casa — usado pelo botão "Fale Conosco" do app.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>E-mail Institucional</Label>
               <Input type="email" value={form.email_institucional} onChange={(e) => setForm({ ...form, email_institucional: e.target.value })} />
             </div>
           </div>
+
 
           {/* Observações */}
           <div className="space-y-2">
