@@ -6,7 +6,83 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 type Intencao =
   | "saudacao" | "agradecimento" | "pedido_informacao" | "encerramento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
-  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "falar_humano" | "complexo";
+  | "onde_ver_app" | "programacao_publica" | "eventos" | "campanhas" | "acao_social"
+  | "opt_out" | "reativar" | "falar_humano" | "complexo";
+
+// ===== CAMADA 1 — normalização + tolerância a erro (barata e determinística) =====
+function normalizarTexto(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const CORRECOES_VOCABULARIO: Record<string, string> = {
+  evangelioterapia: "evangelhoterapia", evangelhioterapia: "evangelhoterapia",
+  evangeloterapia: "evangelhoterapia", evangelhterapia: "evangelhoterapia",
+  tratamnto: "tratamento", tratameto: "tratamento", tratmento: "tratamento",
+  trat: "tratamento", tto: "tratamento",
+  sesao: "sessao", sessoes: "sessao", secao: "sessao",
+  atendimeto: "atendimento", atendimnto: "atendimento",
+  entrevsta: "entrevista", entervista: "entrevista", entrvista: "entrevista",
+  agendamnto: "agendamento", agendameto: "agendamento",
+  palesta: "palestra", palstra: "palestra", palesra: "palestra", palerstra: "palestra",
+  progamacao: "programacao",
+  campnha: "campanha", campanhia: "campanha", campanas: "campanha",
+  aliemntos: "alimentos", alimetos: "alimentos", alimento: "alimentos",
+  qdo: "quando", qd: "quando", qnd: "quando",
+  prox: "proximo", proxmo: "proximo", proxma: "proxima",
+  hj: "hoje", amnha: "amanha", amnh: "amanha", amanhq: "amanha",
+  vc: "voce", vcs: "voces", pq: "porque", blz: "beleza",
+  evento: "eventos",
+};
+
+const VOCAB_FUZZY = [
+  "palestra", "evangelhoterapia", "tratamento", "atendimento", "entrevista",
+  "agendamento", "programacao", "campanha", "campanhas", "eventos", "alimentos",
+  "proximo", "proxima", "amanha", "remarcado", "cancelado", "sessao", "passe", "hoje",
+];
+const VOCAB_SET = new Set(VOCAB_FUZZY);
+
+function distanciaEdicao(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+function corrigirToken(tok: string): string {
+  if (!tok) return tok;
+  if (CORRECOES_VOCABULARIO[tok]) return CORRECOES_VOCABULARIO[tok];
+  if (VOCAB_SET.has(tok)) return tok;
+  if (tok.length < 6) return tok;
+  for (const w of VOCAB_FUZZY) {
+    if (Math.abs(w.length - tok.length) > 1) continue;
+    if (distanciaEdicao(tok, w) === 1) return w;
+  }
+  return tok;
+}
+
+function corrigirTexto(s: string): string {
+  return normalizarTexto(s)
+    .split(" ")
+    .map((t) => {
+      const m = t.match(/^([\p{L}]+)([\s\S]*)$/u);
+      if (!m) return t;
+      return corrigirToken(m[1]) + m[2];
+    })
+    .join(" ");
+}
 
 const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
