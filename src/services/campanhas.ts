@@ -9,6 +9,7 @@ export type CampanhaInput = {
   imagem_url?: string | null;
   imagem_origem?: string;
   imagem_otimizada?: boolean;
+  imagem_formato?: string;
   imagem_atualizada_em?: string | null;
   imagem_atualizada_por?: string | null;
   ordem?: number;
