@@ -22,6 +22,7 @@ import {
 export function FaleConoscoButton() {
   const [telefone, setTelefone] = useState<string | null>(null);
   const [aberto, setAberto] = useState(false);
+  const { profile } = useAuth();
 
   useEffect(() => {
     const fetchTel = () => {
@@ -42,7 +43,10 @@ export function FaleConoscoButton() {
     return () => window.removeEventListener("instituicao-updated", fetchTel);
   }, []);
 
-  const link = montarLinkWhatsapp({ telefone });
+  // Contextual, welcoming opening message: period-of-day salutation, user's
+  // first name when safely available, Daniel intro and human-hours notice.
+  const mensagem = montarSaudacaoFaleConosco({ nomeCompleto: profile?.nome_completo });
+  const link = montarLinkWhatsapp({ telefone, mensagem });
   if (!link) return null;
 
   return (
