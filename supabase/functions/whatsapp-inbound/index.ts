@@ -115,6 +115,56 @@ function classificar(msg: string): Intencao {
 const IA_NOME = "Daniel";
 const IA_CASA = "FER";
 const IA_APRESENTACAO = `Sou ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+// Greeting persona line (uses the article "o Daniel" for a warmer, agreed tone).
+const IA_APRESENTACAO_SAUDACAO = `Sou o ${IA_NOME}, assistente virtual da ${IA_CASA}`;
+// The agreed welcoming closing explaining IA help + human escalation + hours.
+const IA_SAUDACAO_EXPLICACAO =
+  "Como posso lhe ajudar? Posso tirar suas dúvidas por aqui e, se necessário, " +
+  "encaminhar você para um atendimento humano e personalizado. Os atendimentos " +
+  "humanos acontecem em horário comercial e/ou nos horários de atendimento da FER.";
+
+/** Returns a safe, presentable first name from a full name, or null. */
+function primeiroNomeSeguro(nomeCompleto?: string | null): string | null {
+  if (!nomeCompleto || typeof nomeCompleto !== "string") return null;
+  const limpo = nomeCompleto.trim().replace(/\s+/g, " ");
+  if (!limpo) return null;
+  const primeiro = limpo.split(" ")[0];
+  // Reject inconsistent / non-name tokens (numbers, symbols, single letters).
+  if (primeiro.length < 2 || !/^[\p{L}'.-]+$/u.test(primeiro)) return null;
+  return primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
+}
+
+/** Period-of-day salutation in pt-BR from a local hour (0-23). */
+function saudacaoPorHorario(horaLocal?: number): string {
+  if (typeof horaLocal !== "number") return "Olá";
+  if (horaLocal < 12) return "Bom dia";
+  if (horaLocal < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+/**
+ * Builds Daniel's agreed first-contact greeting. Uses the user's first name when
+ * it is safely available, otherwise a neutral fallback. Always includes the
+ * persona, the offer to help, the human-escalation note and the human hours.
+ */
+export function montarSaudacaoInicial(opts: { nome?: string | null; horaLocal?: number }): string {
+  const saud = saudacaoPorHorario(opts.horaLocal);
+  const nome = primeiroNomeSeguro(opts.nome);
+  const abertura = nome ? `${saud}, ${nome}.` : `${saud}.`;
+  return `${abertura} ${IA_APRESENTACAO_SAUDACAO}. ${IA_SAUDACAO_EXPLICACAO} 🌿`;
+}
+
+// First request to talk to a human: acknowledge + gently offer IA help first.
+export const RETENCAO_HUMANO_MENSAGEM =
+  "Claro, posso te encaminhar se for necessário. Antes disso, posso tentar te " +
+  "ajudar por aqui com dúvidas sobre horários da casa, palestras, evangelhoterapia, " +
+  "tratamentos, agendamentos, eventos, campanhas e informações gerais. Me diga o " +
+  "que você precisa e, se eu não conseguir resolver, encaminho você para um " +
+  "atendimento humano. 🌿";
+// Second insistence: confirm escalation warmly (then a handoff is opened).
+export const ENCAMINHAMENTO_HUMANO_MENSAGEM =
+  "Sem problemas! Vou te encaminhar agora para um atendimento humano. Em breve " +
+  "alguém da nossa equipe falará com você. 🙏";
 
 // Controlled emoji palette by context — variety with good sense, never spammy.
 const EMOJI_PALETA: Record<string, string[]> = {
