@@ -446,13 +446,17 @@ describe("whatsappInbound — camada de ponte e condução da conversa", () => {
     expect(emojiNovo).not.toBe(emojiAnt);
   });
 
-  it("varia a formulação conforme a mensagem (não é frase fixa)", () => {
+  it("a saudação inicial acordada é determinística (mesmo horário e nome)", () => {
     const a = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "bom dia" });
     const b = gerarRespostaConversacional("saudacao", { horaLocal: 9, texto: "oi" });
-    expect(a).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel/u);
-    expect(b).toMatch(/^Bom dia! [✨🌿🙏] Sou Daniel/u);
-    // Different inbound text maps to different repertoire paths, both valid.
-    expect(a).not.toBe(b);
+    expect(a).toMatch(/^Bom dia\. Sou o Daniel/u);
+    expect(b).toMatch(/^Bom dia\. Sou o Daniel/u);
+    // Same hour + no name -> the agreed greeting is stable (not random).
+    expect(a).toBe(b);
+    // The bridge layer, however, keeps varying its phrasing.
+    const p1 = gerarRespostaConversacional("pedido_informacao", { texto: "uma dúvida", jaSaudado: true });
+    const p2 = gerarRespostaConversacional("pedido_informacao", { texto: "outra pergunta diferente", jaSaudado: true });
+    expect(p1).not.toBe(p2);
   });
 
   it("anti-repetição: não repete verbatim a última resposta enviada", () => {
