@@ -823,14 +823,20 @@ Deno.serve(async (req) => {
         intencao = "programacao_publica";
       }
 
-      // Temporal-only follow-up ("e amanhã?", "e hoje?") with no other intent:
-      // the user is asking about the house's schedule/events for that day. Answer
-      // from real data instead of escalating to a human, inheriting the activity
-      // from the conversation context when available.
+      // Temporal follow-up ("e amanhã?", "segunda?", "tem trabalho na casa amanhã?")
+      // with no other intent: answer from real data instead of escalating.
+      // - If a specific public activity is named/inherited -> public-schedule branch.
+      // - Otherwise it's a GENERAL question about the day -> consolidated branch
+      //   that lists ALL activities of the house (treatments + public works),
+      //   not just public ones, so the IA never "misses" the parametrization.
       if ((intencao === "complexo" || intencao === "pedido_informacao") && temDataExplicita(texto)) {
-        intencao = "programacao_publica";
-        if (!atividadeMencionada && convExist?.contexto_atividade) {
-          atividadeMencionada = String(convExist.contexto_atividade);
+        const atividadeContexto = (!atividadeMencionada && convExist?.contexto_atividade)
+          ? String(convExist.contexto_atividade) : null;
+        if (atividadeMencionada || detectarAtividade(texto) || atividadeContexto) {
+          intencao = "programacao_publica";
+          if (atividadeContexto) atividadeMencionada = atividadeContexto;
+        } else {
+          intencao = "tratamento_hoje";
         }
       }
 
@@ -971,6 +977,20 @@ Deno.serve(async (req) => {
           base = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
           fonteBase = "programacao_padrao";
         }
+
+        // Events scheduled for the requested date are part of "what's happening".
+        const { data: eventosDiaRaw } = await admin
+          .from("eventos")
+          .select("titulo, data_evento, data_inicio, data_fim")
+          .eq("ativo", true)
+          .or(`data_inicio.eq.${alvo.iso},and(data_inicio.lte.${alvo.iso},data_fim.gte.${alvo.iso})`);
+        const eventosDia: ItemProgramacao[] = (eventosDiaRaw || [])
+          .filter((e: any) => (e?.data_evento ? String(e.data_evento).slice(0, 10) === alvo.iso : true))
+          .map((e: any) => ({
+            nome: e?.titulo || "Evento",
+            horario: e?.data_evento ? String(e.data_evento).slice(11, 16) : null,
+          }));
+        if (eventosDia.length > 0) base = [...base, ...eventosDia];
 
         // 2) ALL operational exceptions registered for the day.
         const { data: excecoesCad } = await admin
