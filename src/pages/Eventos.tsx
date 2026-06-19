@@ -31,6 +31,7 @@ type FormState = {
   imagem_url: string;
   imagem_origem: ImagemOrigem;
   imagem_otimizada: boolean;
+  imagem_formato: string;
   local: string;
   data_evento: string;
   data_evento_fim: string;
@@ -43,7 +44,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   titulo: "", subtitulo: "", descricao_curta: "", descricao_completa: "",
-  imagem_url: "", imagem_origem: "url", imagem_otimizada: false,
+  imagem_url: "", imagem_origem: "url", imagem_otimizada: false, imagem_formato: "card",
   local: "", data_evento: "", data_evento_fim: "",
   ordem: "0", destaque: false, data_inicio: "", data_fim: "", ativo: true,
 };
@@ -97,6 +98,7 @@ export default function Eventos() {
       imagem_url: e.imagem_url ?? "",
       imagem_origem: (e.imagem_origem as ImagemOrigem) ?? "url",
       imagem_otimizada: e.imagem_otimizada ?? false,
+      imagem_formato: e.imagem_formato ?? "card",
       local: e.local ?? "",
       data_evento: toLocalInput(e.data_evento),
       data_evento_fim: toLocalInput(e.data_evento_fim),
@@ -133,6 +135,7 @@ export default function Eventos() {
         imagem_url: imagemUrl,
         imagem_origem: imagemUrl ? form.imagem_origem : "url",
         imagem_otimizada: imagemUrl ? form.imagem_otimizada : false,
+        imagem_formato: imagemUrl ? form.imagem_formato : "card",
         imagem_atualizada_em: imagemMudou ? new Date().toISOString() : (editing?.imagem_atualizada_em ?? null),
         imagem_atualizada_por: imagemMudou ? (authData.user?.id ?? null) : (editing?.imagem_atualizada_por ?? null),
         local: form.local.trim() || null,
@@ -236,9 +239,9 @@ export default function Eventos() {
                   descricao_completa: form.descricao_completa,
                   local: form.local,
                 }}
-                value={{ url: form.imagem_url, origem: form.imagem_origem, otimizada: form.imagem_otimizada }}
+                value={{ url: form.imagem_url, origem: form.imagem_origem, otimizada: form.imagem_otimizada, formato: form.imagem_formato }}
                 atualizadaEm={editing?.imagem_atualizada_em}
-                onChange={(next) => setForm({ ...form, imagem_url: next.url, imagem_origem: next.origem, imagem_otimizada: next.otimizada })}
+                onChange={(next) => setForm({ ...form, imagem_url: next.url, imagem_origem: next.origem, imagem_otimizada: next.otimizada, imagem_formato: next.formato ?? form.imagem_formato })}
               />
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

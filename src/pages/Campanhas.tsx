@@ -31,6 +31,7 @@ type FormState = {
   imagem_url: string;
   imagem_origem: ImagemOrigem;
   imagem_otimizada: boolean;
+  imagem_formato: string;
   ordem: string;
   destaque: boolean;
   data_inicio: string;
@@ -40,7 +41,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   titulo: "", subtitulo: "", descricao_curta: "", descricao_completa: "",
-  imagem_url: "", imagem_origem: "url", imagem_otimizada: false,
+  imagem_url: "", imagem_origem: "url", imagem_otimizada: false, imagem_formato: "card",
   ordem: "0", destaque: false, data_inicio: "", data_fim: "", ativo: true,
 };
 
@@ -77,6 +78,7 @@ export default function Campanhas() {
       imagem_url: c.imagem_url ?? "",
       imagem_origem: (c.imagem_origem as ImagemOrigem) ?? "url",
       imagem_otimizada: c.imagem_otimizada ?? false,
+      imagem_formato: c.imagem_formato ?? "card",
       ordem: c.ordem.toString(),
       destaque: c.destaque,
       data_inicio: c.data_inicio ?? "",
@@ -102,6 +104,7 @@ export default function Campanhas() {
         imagem_url: imagemUrl,
         imagem_origem: imagemUrl ? form.imagem_origem : "url",
         imagem_otimizada: imagemUrl ? form.imagem_otimizada : false,
+        imagem_formato: imagemUrl ? form.imagem_formato : "card",
         imagem_atualizada_em: imagemMudou ? new Date().toISOString() : (editing?.imagem_atualizada_em ?? null),
         imagem_atualizada_por: imagemMudou ? (authData.user?.id ?? null) : (editing?.imagem_atualizada_por ?? null),
         ordem: Number(form.ordem) || 0,
@@ -187,9 +190,9 @@ export default function Campanhas() {
                   descricao_curta: form.descricao_curta,
                   descricao_completa: form.descricao_completa,
                 }}
-                value={{ url: form.imagem_url, origem: form.imagem_origem, otimizada: form.imagem_otimizada }}
+                value={{ url: form.imagem_url, origem: form.imagem_origem, otimizada: form.imagem_otimizada, formato: form.imagem_formato }}
                 atualizadaEm={editing?.imagem_atualizada_em}
-                onChange={(next) => setForm({ ...form, imagem_url: next.url, imagem_origem: next.origem, imagem_otimizada: next.otimizada })}
+                onChange={(next) => setForm({ ...form, imagem_url: next.url, imagem_origem: next.origem, imagem_otimizada: next.otimizada, imagem_formato: next.formato ?? form.imagem_formato })}
               />
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

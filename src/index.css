@@ -56,6 +56,11 @@
     --warning-foreground: 0 0% 100%;
     --info: 200 80% 50%;
     --info-foreground: 0 0% 100%;
+
+    /* Faixa institucional da Ação Social (verde escuro sóbrio, dentro da paleta) */
+    --acao-social: 168 38% 20%;
+    --acao-social-foreground: 150 30% 94%;
+    --acao-social-muted: 150 25% 82%;
   }
 }
 
@@ -83,5 +88,8 @@
   }
   .gradient-sidebar {
     background: linear-gradient(180deg, hsl(174 35% 20%), hsl(174 35% 26%));
+  }
+  .gradient-acao-social {
+    background: linear-gradient(135deg, hsl(168 40% 17%), hsl(174 34% 27%));
   }
 }

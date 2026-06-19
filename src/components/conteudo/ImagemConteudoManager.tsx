@@ -11,11 +11,12 @@ import {
 } from "lucide-react";
 import {
   FORMATOS, origemLabel, validarUploadImagem, podeGerarComIa, formatarAtualizacao,
+  normalizarFormato, formatoAspectClass,
   type ConteudoTipo, type ImagemFormato, type ImagemOrigem, type DadosConteudo,
 } from "@/lib/conteudoImagem";
 import { uploadImagemManual, gerarImagemIa, otimizarImagemIa } from "@/services/conteudoImagem";
 
-export type ImagemValue = { url: string; origem: ImagemOrigem; otimizada: boolean };
+export type ImagemValue = { url: string; origem: ImagemOrigem; otimizada: boolean; formato?: string | null };
 
 interface Props {
   tipo: ConteudoTipo;
@@ -25,16 +26,17 @@ interface Props {
   onChange: (next: ImagemValue) => void;
 }
 
-type Candidato = { url: string; otimizada: boolean } | null;
+type Candidato = { url: string; otimizada: boolean; formato: ImagemFormato } | null;
 
 export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChange }: Props) {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [formato, setFormato] = useState<ImagemFormato>("card");
+  const [formato, setFormato] = useState<ImagemFormato>(normalizarFormato(value.formato));
   const [busy, setBusy] = useState<null | "upload" | "gerar" | "otimizar">(null);
   const [candidato, setCandidato] = useState<Candidato>(null);
 
   const temImagem = !!value.url;
+  const aspectClass = formatoAspectClass(formato);
 
   const handleFile = async (file: File) => {
     const err = validarUploadImagem(file);
@@ -42,7 +44,7 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
     setBusy("upload");
     try {
       const url = await uploadImagemManual(file, tipo);
-      onChange({ url, origem: "upload", otimizada: false });
+      onChange({ url, origem: "upload", otimizada: false, formato });
       setCandidato(null);
       toast({ title: "Imagem enviada" });
     } catch (e: any) {
@@ -60,7 +62,7 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
     setBusy("gerar");
     try {
       const res = await gerarImagemIa(tipo, dados, formato);
-      setCandidato({ url: res.url, otimizada: false });
+      setCandidato({ url: res.url, otimizada: false, formato: res.formato });
     } catch (e: any) {
       toast({ title: "Erro ao gerar", description: e.message, variant: "destructive" });
     } finally {
@@ -73,7 +75,7 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
     setBusy("otimizar");
     try {
       const res = await otimizarImagemIa(value.url, formato);
-      setCandidato({ url: res.url, otimizada: true });
+      setCandidato({ url: res.url, otimizada: true, formato: res.formato });
     } catch (e: any) {
       toast({ title: "Erro ao otimizar", description: e.message, variant: "destructive" });
     } finally {
@@ -83,13 +85,14 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
 
   const aceitarCandidato = () => {
     if (!candidato) return;
-    onChange({ url: candidato.url, origem: "ai", otimizada: candidato.otimizada });
+    onChange({ url: candidato.url, origem: "ai", otimizada: candidato.otimizada, formato: candidato.formato });
+    setFormato(candidato.formato);
     setCandidato(null);
     toast({ title: "Imagem aplicada" });
   };
 
   const handleRemover = () => {
-    onChange({ url: "", origem: "url", otimizada: false });
+    onChange({ url: "", origem: "url", otimizada: false, formato });
     setCandidato(null);
   };
 
@@ -115,9 +118,9 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
         onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }}
       />
 
-      {/* Prévia da imagem ativa */}
-      <div className="flex items-start gap-3">
-        <div className="h-28 w-28 shrink-0 rounded-lg bg-secondary/40 overflow-hidden flex items-center justify-center border border-border/40">
+      {/* Prévia da imagem ativa (no formato salvo) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className={`w-28 shrink-0 rounded-lg bg-secondary/40 overflow-hidden flex items-center justify-center border border-border/40 ${formatoAspectClass(value.formato)}`}>
           {temImagem ? (
             <img src={value.url} alt="Prévia da imagem" className="h-full w-full object-cover" />
           ) : (
@@ -139,6 +142,9 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-[10px] text-muted-foreground/80">
+              A geração e a otimização com IA recortam a imagem para este formato.
+            </p>
           </div>
         </div>
       </div>
@@ -176,14 +182,14 @@ export function ImagemConteudoManager({ tipo, dados, value, atualizadaEm, onChan
           <div className="flex items-start gap-3">
             {candidato.otimizada && temImagem && (
               <div className="text-center">
-                <div className="h-24 w-24 rounded-lg overflow-hidden border border-border/40">
+                <div className={`w-24 rounded-lg overflow-hidden border border-border/40 ${formatoAspectClass(value.formato)}`}>
                   <img src={value.url} alt="Original" className="h-full w-full object-cover" />
                 </div>
                 <span className="text-[10px] text-muted-foreground">Original</span>
               </div>
             )}
             <div className="text-center">
-              <div className="h-24 w-24 rounded-lg overflow-hidden border border-primary/50">
+              <div className={`w-24 rounded-lg overflow-hidden border border-primary/50 ${formatoAspectClass(candidato.formato)}`}>
                 <img src={candidato.url} alt="Nova versão" className="h-full w-full object-cover" />
               </div>
               <span className="text-[10px] text-muted-foreground">Nova versão</span>
