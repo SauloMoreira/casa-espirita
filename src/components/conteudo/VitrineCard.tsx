@@ -33,6 +33,7 @@ export function VitrineCard({
     <div
       className={
         "relative overflow-hidden bg-secondary/30 " +
+        (featured ? "sm:self-start " : "") +
         aspect
       }
     >
@@ -78,7 +79,7 @@ export function VitrineCard({
     <Card
       className={
         "overflow-hidden border-border/60 shadow-sm transition-shadow hover:shadow-md " +
-        (featured ? "sm:col-span-2 sm:grid sm:grid-cols-2 sm:items-start" : "")
+        (featured ? "sm:col-span-2 sm:grid sm:grid-cols-2 sm:items-stretch" : "")
       }
     >
       {Imagem}
