@@ -495,6 +495,63 @@ export type Database = {
         }
         Relationships: []
       }
+      campanhas: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          descricao_completa: string | null
+          descricao_curta: string | null
+          destaque: boolean
+          id: string
+          imagem_origem: string
+          imagem_url: string | null
+          ordem: number
+          subtitulo: string | null
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          descricao_completa?: string | null
+          descricao_curta?: string | null
+          destaque?: boolean
+          id?: string
+          imagem_origem?: string
+          imagem_url?: string | null
+          ordem?: number
+          subtitulo?: string | null
+          titulo: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          descricao_completa?: string | null
+          descricao_curta?: string | null
+          destaque?: boolean
+          id?: string
+          imagem_origem?: string
+          imagem_url?: string | null
+          ordem?: number
+          subtitulo?: string | null
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       checkin_tentativas: {
         Row: {
           created_at: string

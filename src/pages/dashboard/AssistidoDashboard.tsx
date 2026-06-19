@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlimentosAssistidoCard } from "@/components/acaoSocial/AlimentosAssistidoCard";
+import { CampanhasAssistidoBlock } from "@/components/campanhas/CampanhasAssistidoBlock";
 
 const STATUS_LABELS: Record<string, string> = {
   aguardando_inicio: "Aguardando", em_andamento: "Em Andamento", concluido: "Concluído",
@@ -163,6 +164,8 @@ export default function AssistidoDashboard() {
         ))}
       </div>
 
+
+      <CampanhasAssistidoBlock />
 
       <AlimentosAssistidoCard />
 
