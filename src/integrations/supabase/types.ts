@@ -2381,10 +2381,12 @@ export type Database = {
           created_at: string
           em_handoff: boolean
           id: string
+          nome_contato: string | null
           revisada_em: string | null
           revisada_por: string | null
           status_conversa: Database["public"]["Enums"]["conversa_status"]
           telefone: string
+          tipo_contato: string | null
           ultima_mensagem: string | null
           ultima_resposta_ia: string | null
           ultimo_contato_em: string
@@ -2398,10 +2400,12 @@ export type Database = {
           created_at?: string
           em_handoff?: boolean
           id?: string
+          nome_contato?: string | null
           revisada_em?: string | null
           revisada_por?: string | null
           status_conversa?: Database["public"]["Enums"]["conversa_status"]
           telefone: string
+          tipo_contato?: string | null
           ultima_mensagem?: string | null
           ultima_resposta_ia?: string | null
           ultimo_contato_em?: string
@@ -2415,10 +2419,12 @@ export type Database = {
           created_at?: string
           em_handoff?: boolean
           id?: string
+          nome_contato?: string | null
           revisada_em?: string | null
           revisada_por?: string | null
           status_conversa?: Database["public"]["Enums"]["conversa_status"]
           telefone?: string
+          tipo_contato?: string | null
           ultima_mensagem?: string | null
           ultima_resposta_ia?: string | null
           ultimo_contato_em?: string
