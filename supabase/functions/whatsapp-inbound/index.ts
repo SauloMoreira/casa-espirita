@@ -152,6 +152,20 @@ const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
     "que horas e minha", "que horas é minha", "horario da minha", "horário da minha",
   ] },
   { intent: "confirmacao_agendamento", terms: ["confirmar", "confirmado", "ta marcado", "tá marcado", "esta marcado"] },
+  // ===== PUBLIC institutional modules (events, campaigns, social action) =====
+  { intent: "acao_social", terms: [
+    "acao social", "ação social", "alimentos", "alimento", "cesta basica", "cesta básica",
+    "doar", "doacao", "doação", "doacoes", "doações", "arrecada", "arrecadacao", "arrecadação",
+    "esta faltando", "está faltando", "o que falta", "como ajudar", "como posso ajudar a casa",
+  ] },
+  { intent: "campanhas", terms: [
+    "campanha", "campanhas", "socio mantenedor", "sócio mantenedor", "mantenedor",
+    "tem alguma campanha", "campanha ativa", "campanha da casa",
+  ] },
+  { intent: "eventos", terms: [
+    "evento", "eventos", "tem evento", "algum evento", "que eventos", "evento essa semana",
+    "evento ativo", "proximos eventos", "próximos eventos",
+  ] },
   { intent: "programacao_publica", terms: [
     "palestra", "evangelhoterapia", "evangelho terapia", "passe",
     "trabalho publico", "trabalho público", "trabalhos publicos", "trabalhos públicos",
@@ -162,25 +176,35 @@ const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
 ];
 
 function contemTermo(txt: string, termos: string[]): boolean {
-  return termos.some((t) => txt === t || txt.startsWith(t + " ") || txt.includes(" " + t) || txt.includes(t));
+  // `txt` is already normalized (accent-free); normalize each term too.
+  return termos.some((raw) => {
+    const t = normalizarTexto(raw);
+    return txt === t || txt.startsWith(t + " ") || txt.includes(" " + t) || txt.includes(t);
+  });
 }
 
 function classificar(msg: string): Intencao {
-  const txt = (msg || "").toLowerCase().trim();
-  if (!txt) return "complexo";
-  if (SENSITIVE.some((t) => txt.includes(t))) return "complexo";
+  const limpo = (msg || "").toLowerCase().trim();
+  if (!limpo) return "complexo";
+  // CAMADA 1: normalize + correct typos/abbreviations before any matching.
+  const txt = corrigirTexto(limpo);
+  if (SENSITIVE.some((t) => txt.includes(normalizarTexto(t)))) return "complexo";
   // Explicit request to talk to a human wins over business/conversational layers
   // so the gentle-retention -> handoff flow can be applied.
   if (contemTermo(txt, HUMANO_TERMOS)) return "falar_humano";
   // Word-order-agnostic detection: any "treatment/session" word together with a
-  // temporal marker ("hoje tem tratamento", "tratamento hoje", "tem sessão hoje").
-  const TEMPORAL = ["hoje", "amanha", "amanhã", "depois de amanha", "depois de amanhã"];
-  const TRAT_PALAVRAS = ["tratamento", "sessao", "sessão", "atendimento"];
-  if (TEMPORAL.some((d) => txt.includes(d)) && TRAT_PALAVRAS.some((p) => txt.includes(p))) {
+  // temporal marker. Public-scope phrasing is excluded so it stays public.
+  const TEMPORAL = ["hoje", "amanha", "depois de amanha"];
+  const TRAT_PALAVRAS = ["tratamento", "sessao", "atendimento"];
+  const ehPublicoExplicito = txt.includes("publico") || txt.includes("publica");
+  if (!ehPublicoExplicito
+      && TEMPORAL.some((d) => txt.includes(d)) && TRAT_PALAVRAS.some((p) => txt.includes(p))) {
     return "tratamento_hoje";
   }
   // Business intents win first (greeting + operational request -> operational).
-  for (const { intent, terms } of KEYWORDS) if (terms.some((t) => txt.includes(t))) return intent;
+  for (const { intent, terms } of KEYWORDS) {
+    if (terms.some((t) => txt.includes(normalizarTexto(t)))) return intent;
+  }
   // Conversational layers (no handoff), most to least specific. The bridge
   // ("gostaria de informações") wins over a bare greeting so a continued
   // conversation flows naturally instead of repeating the greeting.
