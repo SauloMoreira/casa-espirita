@@ -1797,6 +1797,9 @@ Deno.serve(async (req) => {
         resposta_fonte: respostaFonte,
         fallback_motivo: fallbackMotivo,
         escopo: escopoAtual,
+        classificador_hibrido: usouLlmClassificacao,
+        confianca_classificacao: confiancaClassificacao,
+
       },
       status: "recebido",
     });
