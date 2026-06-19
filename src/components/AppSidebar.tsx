@@ -138,6 +138,7 @@ const navGroups: NavGroup[] = [
     icon: Landmark,
     items: [
       { title: "Instituição", url: "/instituicao", icon: Building2, roles: ["admin"] },
+      { title: "Painel Institucional", url: "/painel-institucional", icon: LayoutDashboard, roles: ["admin"] },
       { title: "Ação Social", url: "/acao-social", icon: Apple, roles: ["admin"] },
       { title: "Campanhas", url: "/campanhas", icon: Megaphone, roles: ["admin"] },
       { title: "Eventos", url: "/eventos", icon: CalendarDays, roles: ["admin"] },
