@@ -5,7 +5,100 @@
 export type Intencao =
   | "saudacao" | "agradecimento" | "pedido_informacao" | "encerramento"
   | "tratamento_hoje" | "proxima_sessao" | "horario_entrevista" | "confirmacao_agendamento"
-  | "onde_ver_app" | "programacao_publica" | "opt_out" | "reativar" | "falar_humano" | "complexo";
+  | "onde_ver_app" | "programacao_publica" | "eventos" | "campanhas" | "acao_social"
+  | "opt_out" | "reativar" | "falar_humano" | "complexo";
+
+// ===================== CAMADA 1 — NORMALIZAÇÃO + TOLERÂNCIA A ERRO =====================
+// Cheap, deterministic text understanding that runs BEFORE any classification.
+// It lowercases, strips accents, fixes common typos/abbreviations and corrects
+// near-miss words (edit distance) against the house vocabulary. This gives the IA
+// real tolerance to typos/variations without any LLM cost.
+
+/** Lowercases, removes accents and collapses whitespace. Never throws. */
+export function normalizarTexto(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Explicit corrections for frequent abbreviations/typos (accent-free keys).
+export const CORRECOES_VOCABULARIO: Record<string, string> = {
+  evangelioterapia: "evangelhoterapia", evangelhioterapia: "evangelhoterapia",
+  evangeloterapia: "evangelhoterapia", evangelhterapia: "evangelhoterapia",
+  tratamnto: "tratamento", tratameto: "tratamento", tratmento: "tratamento",
+  trat: "tratamento", tto: "tratamento",
+  sesao: "sessao", sessoes: "sessao", secao: "sessao",
+  atendimeto: "atendimento", atendimnto: "atendimento",
+  entrevsta: "entrevista", entervista: "entrevista", entrvista: "entrevista",
+  agendamnto: "agendamento", agendameto: "agendamento",
+  palesta: "palestra", palstra: "palestra", palesra: "palestra", palerstra: "palestra",
+  programacao: "programacao", progamacao: "programacao",
+  campnha: "campanha", campanhia: "campanha", campanas: "campanha",
+  aliemntos: "alimentos", alimetos: "alimentos", alimento: "alimentos",
+  qdo: "quando", qd: "quando", qnd: "quando",
+  prox: "proximo", proxmo: "proximo", proxma: "proxima",
+  hj: "hoje", amnha: "amanha", amnh: "amanha", amanhq: "amanha",
+  vc: "voce", vcs: "voces", pq: "porque", blz: "beleza",
+  evento: "eventos",
+};
+
+// Vocabulary used by the fuzzy near-miss corrector (edit distance). Kept small and
+// specific to avoid false positives — short/common verb-like words are excluded.
+const VOCAB_FUZZY = [
+  "palestra", "evangelhoterapia", "tratamento", "atendimento", "entrevista",
+  "agendamento", "programacao", "campanha", "campanhas", "eventos", "alimentos",
+  "proximo", "proxima", "amanha", "remarcado", "cancelado",
+];
+
+/** Classic Levenshtein edit distance (small strings only). */
+export function distanciaEdicao(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+/** Corrects a single (already accent-free) word via the map then fuzzy vocab. */
+export function corrigirToken(tok: string): string {
+  if (!tok) return tok;
+  if (CORRECOES_VOCABULARIO[tok]) return CORRECOES_VOCABULARIO[tok];
+  if (tok.length < 5) return tok;
+  let melhor: string | null = null;
+  let melhorDist = 99;
+  for (const w of VOCAB_FUZZY) {
+    if (Math.abs(w.length - tok.length) > 2) continue;
+    const d = distanciaEdicao(tok, w);
+    const limite = w.length >= 8 ? 2 : 1;
+    if (d > 0 && d <= limite && d < melhorDist) { melhorDist = d; melhor = w; }
+  }
+  return melhor ?? tok;
+}
+
+/**
+ * Normalizes + corrects an entire message: the cheap "understanding" step. Keeps
+ * trailing punctuation attached to each word so phrase matching still works.
+ */
+export function corrigirTexto(s: string): string {
+  return normalizarTexto(s)
+    .split(" ")
+    .map((t) => {
+      const m = t.match(/^([\p{L}]+)([\s\S]*)$/u);
+      if (!m) return t;
+      return corrigirToken(m[1]) + m[2];
+    })
+    .join(" ");
+}
 
 export const SENSITIVE = ["reclama", "absurdo", "pessimo", "péssimo", "horrivel", "horrível",
   "advogado", "processo", "denuncia", "denúncia", "urgente", "emergencia", "emergência"];
