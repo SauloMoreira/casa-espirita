@@ -823,6 +823,17 @@ Deno.serve(async (req) => {
         intencao = "programacao_publica";
       }
 
+      // Temporal-only follow-up ("e amanhã?", "e hoje?") with no other intent:
+      // the user is asking about the house's schedule/events for that day. Answer
+      // from real data instead of escalating to a human, inheriting the activity
+      // from the conversation context when available.
+      if ((intencao === "complexo" || intencao === "pedido_informacao") && temDataExplicita(texto)) {
+        intencao = "programacao_publica";
+        if (!atividadeMencionada && convExist?.contexto_atividade) {
+          atividadeMencionada = String(convExist.contexto_atividade);
+        }
+      }
+
 
       if (intencao === "saudacao" || intencao === "agradecimento"
           || intencao === "pedido_informacao" || intencao === "encerramento") {
@@ -1101,6 +1112,28 @@ Deno.serve(async (req) => {
                   if (itens.length > 0) respostaFonte = "regra_operacional";
                 } catch (_) { /* malformed rule -> treated as no programming */ }
               }
+            }
+          }
+          // 5) Events scheduled for the requested date (only on a general
+          //    "what's happening?" question, not when a specific activity is named).
+          if (!atividade) {
+            const { data: eventos } = await admin
+              .from("eventos")
+              .select("titulo, data_evento, data_inicio, data_fim")
+              .eq("ativo", true)
+              .or(`data_inicio.eq.${alvo.iso},and(data_inicio.lte.${alvo.iso},data_fim.gte.${alvo.iso})`);
+            const eventosDia: ItemProgramacao[] = (eventos || [])
+              .filter((e: any) => {
+                if (e?.data_evento) return String(e.data_evento).slice(0, 10) === alvo.iso;
+                return true;
+              })
+              .map((e: any) => ({
+                nome: e?.titulo || "Evento",
+                horario: e?.data_evento ? String(e.data_evento).slice(11, 16) : null,
+              }));
+            if (eventosDia.length > 0) {
+              itens = [...itens, ...eventosDia];
+              respostaFonte = respostaFonte ? respostaFonte + "+eventos" : "eventos";
             }
           }
           // Always a safe, valid answer (even "no programming") -> no handoff needed.
