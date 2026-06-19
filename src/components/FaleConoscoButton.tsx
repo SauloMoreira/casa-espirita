@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   FALE_CONOSCO_LABEL,
   FALE_CONOSCO_APOIO,
   montarLinkWhatsapp,
+  montarSaudacaoFaleConosco,
 } from "@/lib/faleConosco";
 
 /**
