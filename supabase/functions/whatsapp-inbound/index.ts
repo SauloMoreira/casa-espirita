@@ -326,14 +326,41 @@ const AUTORESOLVIVEIS: Intencao[] = [
 ];
 
 // Intents that can only be answered automatically when we know who is asking.
+// "tratamento_hoje" is NOT here: when there is no identified assistido we still
+// answer it from the house's treatment schedule + exceptions for the day.
 const PRECISA_ASSISTIDO: Intencao[] = [
-  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
+  "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
 ];
 
 const CANCELADO_STATUS = ["cancelado", "cancelada", "remarcado", "remarcada"];
 
 function normalizePhone(p: string): string {
   return (p || "").replace(/\D/g, "");
+}
+
+/**
+ * Canonical Brazilian phone form for comparison: digits only, without the "55"
+ * country code, so a stored "21984221866" matches an inbound "5521984221866".
+ */
+function canonTelefone(p: string): string {
+  let d = normalizePhone(p);
+  if (d.startsWith("55") && d.length >= 12) d = d.slice(2);
+  return d;
+}
+
+/**
+ * Robust phone equality that tolerates the country code (55) and the optional
+ * 9th mobile digit, comparing by the DDD + last 8 digits as a final fallback.
+ */
+function mesmoTelefone(a: string, b: string): boolean {
+  const ca = canonTelefone(a);
+  const cb = canonTelefone(b);
+  if (!ca || !cb) return false;
+  if (ca === cb) return true;
+  if (ca.slice(-10).length === 10 && ca.slice(-10) === cb.slice(-10)) return true;
+  // DDD (first 2 of canonical) + last 8 digits, ignoring a missing/extra 9.
+  const chave = (s: string) => s.slice(0, 2) + s.slice(-8);
+  return chave(ca) === chave(cb);
 }
 
 function resumo(texto: string, max = 160): string {
@@ -622,7 +649,7 @@ Deno.serve(async (req) => {
       .select("id, nome, celular, telefone")
       .is("deleted_at", null);
     const assistido = (assistidos || []).find((a: any) =>
-      normalizePhone(a.celular || "") === telefone || normalizePhone(a.telefone || "") === telefone
+      mesmoTelefone(a.celular || "", telefone) || mesmoTelefone(a.telefone || "", telefone)
     );
 
     // Fallback identification: any registered system user (profiles) by phone.
@@ -635,7 +662,7 @@ Deno.serve(async (req) => {
         .from("profiles")
         .select("nome_completo, celular");
       const perfil = (perfis || []).find((p: any) =>
-        normalizePhone(p.celular || "") === telefone
+        mesmoTelefone(p.celular || "", telefone)
       );
       if (perfil) {
         nomeContato = perfil.nome_completo ?? null;
@@ -804,6 +831,45 @@ Deno.serve(async (req) => {
         resposta = (aplicouExcecao && exUnica?.mensagem_ia && Object.keys(excPorTrat).length === 1)
           ? montarRespostaExcecao(exUnica, alvo.label)
           : montarRespostaTratamentoHoje(itensDia, alvo.label);
+      } else if (intencao === "tratamento_hoje") {
+        // No identified assistido: answer about the house's treatment schedule
+        // for the requested day (exceptions → real sessions → standard schedule)
+        // instead of escalating to a human.
+        const { data: baseIso } = hojeSaoPaulo();
+        const alvo = resolverDataAlvo(texto, baseIso);
+        ctxData = alvo.iso;
+        const { data: excecoesCad } = await admin
+          .from("excecoes_operacionais")
+          .select("atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado, prioridade")
+          .eq("ativo", true)
+          .eq("data_excecao", alvo.iso)
+          .order("prioridade", { ascending: false });
+        if (excecoesCad && excecoesCad.length > 0) {
+          respostaFonte = "excecao_operacional";
+          resposta = montarRespostaExcecao(excecoesCad[0] as any, alvo.label);
+        } else {
+          const { data: sessoes } = await admin
+            .from("sessoes_publicas")
+            .select("horario_inicio, status, tipos_tratamento ( nome )")
+            .eq("data_sessao", alvo.iso)
+            .neq("status", "cancelada");
+          let itens: ItemProgramacao[] = (sessoes || []).map((s: any) => ({
+            nome: s?.tipos_tratamento?.nome || "Atendimento",
+            horario: s?.horario_inicio ?? null,
+          }));
+          if (itens.length > 0) {
+            respostaFonte = "agenda_publica_real";
+          } else {
+            const { data: prog } = await admin
+              .from("programacao_padrao")
+              .select("atividade, horario")
+              .eq("ativo", true)
+              .eq("dia_semana", alvo.diaSemana);
+            itens = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
+            if (itens.length > 0) respostaFonte = "programacao_padrao";
+          }
+          resposta = montarRespostaProgramacao(itens, alvo.label);
+        }
       } else if (intencao === "proxima_sessao" && assistido) {
         const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin

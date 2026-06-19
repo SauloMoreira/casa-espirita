@@ -98,9 +98,13 @@ export const AUTORESOLVIVEIS: Intencao[] = [
   "programacao_publica", "opt_out", "reativar", "falar_humano",
 ];
 
-/** Requires an identified assistido to be answered automatically. */
+/**
+ * Requires an identified assistido to be answered automatically. Note that
+ * "tratamento_hoje" is intentionally NOT here: without an identified assistido it
+ * is still answered from the house's treatment schedule + exceptions for the day.
+ */
 export const PRECISA_ASSISTIDO: Intencao[] = [
-  "tratamento_hoje", "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
+  "proxima_sessao", "horario_entrevista", "opt_out", "reativar",
 ];
 
 /** True when the intent is about the assistido's own personal data. */
