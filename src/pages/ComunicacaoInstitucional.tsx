@@ -60,6 +60,7 @@ export default function ComunicacaoInstitucional() {
   const [saving, setSaving] = useState(false);
   const [elegiveis, setElegiveis] = useState<number | null>(null);
   const [revisar, setRevisar] = useState<ComunicacaoInstitucional | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   const load = async () => {
     setLoading(true);
