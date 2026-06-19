@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      acao_social_alimentos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          observacao: string | null
+          ordem: number
+          quantidade_faltante: number | null
+          quantidade_necessaria: number | null
+          unidade: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          observacao?: string | null
+          ordem?: number
+          quantidade_faltante?: number | null
+          quantidade_necessaria?: number | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          observacao?: string | null
+          ordem?: number
+          quantidade_faltante?: number | null
+          quantidade_necessaria?: number | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       admin_promotion_approvals: {
         Row: {
           approver_id: string
