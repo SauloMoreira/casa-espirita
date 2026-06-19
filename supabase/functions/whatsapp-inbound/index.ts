@@ -1554,17 +1554,31 @@ Deno.serve(async (req) => {
       const send = await adapter.send(telefone, resposta);
       respostaOk = send.ok;
       respostaErro = send.error ?? null;
-      // Remember the exact reply we sent (short context) for anti-repetition.
+      // Remember the exact reply we sent (short context) for anti-repetition,
+      // and persist the structured short memory (entity/scope/temporal/turns).
       if (send.ok) {
-        await admin.from("whatsapp_conversas")
-          .update({ ultima_resposta_ia: resposta }).eq("id", conversaId);
+        const turnosFinais = [...turnosComUser,
+          { papel: "ia", resumo: resumirT(resposta), em: new Date().toISOString() }].slice(-4);
+        await admin.from("whatsapp_conversas").update({
+          ultima_resposta_ia: resposta,
+          contexto_conversa: {
+            assunto_atual: intencao,
+            entidade_atual: ctxAtividade ?? ctxConvAnterior?.entidade_atual ?? null,
+            referencia_temporal: ctxData ?? ctxConvAnterior?.referencia_temporal ?? null,
+            escopo: escopoAtual,
+            assistido_identificado: !!assistido,
+            assistido_id: assistido?.id ?? null,
+            ultimos_turnos: turnosFinais,
+          },
+        }).eq("id", conversaId);
       }
       await admin.from("notificacoes_log").insert({
         fila_id: null, direcao: "saida",
-        payload_enviado: { telefone, mensagem: resposta, autor: handoff ? "sistema" : "ia" },
+        payload_enviado: { telefone, mensagem: resposta, autor: handoff ? "sistema" : "ia", usou_llm: usouLlm },
         payload_recebido: send.raw ?? null,
         status: send.ok ? "enviado" : "falha", erro: send.error ?? null,
       });
+
 
       if (!send.ok && !handoff) {
         // The IA answer could not be delivered -> escalate.
