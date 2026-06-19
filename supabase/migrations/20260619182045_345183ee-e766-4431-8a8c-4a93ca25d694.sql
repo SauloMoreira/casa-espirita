@@ -1,0 +1,1 @@
+UPDATE public.instituicao_config SET telefone = '21990346066';
