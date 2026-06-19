@@ -148,27 +148,39 @@ export function ConversaDetalheDrawer({ conversa, open, onOpenChange, onChanged 
             ) : mensagens.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma mensagem registrada nesta conversa.</p>
             ) : (
-              mensagens.map((m) => (
-                <div key={m.id} className={`flex flex-col gap-1 ${m.direcao === "entrada" ? "items-start" : "items-end"}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                    m.direcao === "entrada"
-                      ? "bg-muted text-foreground rounded-tl-sm"
-                      : m.autor === "humano"
-                        ? "bg-primary text-primary-foreground rounded-tr-sm"
-                        : m.autor === "sistema"
-                          ? "bg-accent text-accent-foreground rounded-tr-sm"
-                          : "bg-secondary text-secondary-foreground rounded-tr-sm"
-                  }`}>
-                    {m.texto || <span className="italic opacity-70">(sem texto)</span>}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <AutorBadge autor={m.autor} />
-                    <span>{dt(m.created_at)}</span>
-                    {m.status === "falha" && <span className="text-destructive">falha no envio</span>}
+              mensagens.map((m) => {
+                const ehDaniel = m.direcao !== "entrada" && m.autor === "ia";
+                return (
+                <div key={m.id} className={`flex gap-2 ${m.direcao === "entrada" ? "justify-start" : "justify-end"}`}>
+                  {ehDaniel && <DanielAvatar size={28} className="mt-0.5" />}
+                  <div className={`flex flex-col gap-1 ${m.direcao === "entrada" ? "items-start" : "items-end"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                      m.direcao === "entrada"
+                        ? "bg-muted text-foreground rounded-tl-sm"
+                        : m.autor === "humano"
+                          ? "bg-primary text-primary-foreground rounded-tr-sm"
+                          : m.autor === "sistema"
+                            ? "bg-accent text-accent-foreground rounded-tr-sm"
+                            : "bg-secondary text-secondary-foreground rounded-tr-sm"
+                    }`}>
+                      {m.texto || <span className="italic opacity-70">(sem texto)</span>}
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <AutorBadge autor={m.autor} />
+                      <span>{dt(m.created_at)}</span>
+                      {m.status === "falha" && <span className="text-destructive">falha no envio</span>}
+                    </div>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
+            {deveExibirDigitando({
+              mensagens,
+              emHandoff: conversa.em_handoff,
+              encerrada,
+              carregando: loading,
+            }) && <DanielTypingIndicator />}
             <div ref={endRef} />
           </div>
         </ScrollArea>
