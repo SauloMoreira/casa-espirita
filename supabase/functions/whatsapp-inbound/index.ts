@@ -831,6 +831,45 @@ Deno.serve(async (req) => {
         resposta = (aplicouExcecao && exUnica?.mensagem_ia && Object.keys(excPorTrat).length === 1)
           ? montarRespostaExcecao(exUnica, alvo.label)
           : montarRespostaTratamentoHoje(itensDia, alvo.label);
+      } else if (intencao === "tratamento_hoje") {
+        // No identified assistido: answer about the house's treatment schedule
+        // for the requested day (exceptions → real sessions → standard schedule)
+        // instead of escalating to a human.
+        const { data: baseIso } = hojeSaoPaulo();
+        const alvo = resolverDataAlvo(texto, baseIso);
+        ctxData = alvo.iso;
+        const { data: excecoesCad } = await admin
+          .from("excecoes_operacionais")
+          .select("atividade, status, mensagem_ia, motivo, nova_data, novo_horario, horario_afetado, prioridade")
+          .eq("ativo", true)
+          .eq("data_excecao", alvo.iso)
+          .order("prioridade", { ascending: false });
+        if (excecoesCad && excecoesCad.length > 0) {
+          respostaFonte = "excecao_operacional";
+          resposta = montarRespostaExcecao(excecoesCad[0] as any, alvo.label);
+        } else {
+          const { data: sessoes } = await admin
+            .from("sessoes_publicas")
+            .select("horario_inicio, status, tipos_tratamento ( nome )")
+            .eq("data_sessao", alvo.iso)
+            .neq("status", "cancelada");
+          let itens: ItemProgramacao[] = (sessoes || []).map((s: any) => ({
+            nome: s?.tipos_tratamento?.nome || "Atendimento",
+            horario: s?.horario_inicio ?? null,
+          }));
+          if (itens.length > 0) {
+            respostaFonte = "agenda_publica_real";
+          } else {
+            const { data: prog } = await admin
+              .from("programacao_padrao")
+              .select("atividade, horario")
+              .eq("ativo", true)
+              .eq("dia_semana", alvo.diaSemana);
+            itens = (prog || []).map((p: any) => ({ nome: p.atividade, horario: p.horario ?? null }));
+            if (itens.length > 0) respostaFonte = "programacao_padrao";
+          }
+          resposta = montarRespostaProgramacao(itens, alvo.label);
+        }
       } else if (intencao === "proxima_sessao" && assistido) {
         const hoje = new Date().toISOString().slice(0, 10);
         const { data: sess } = await admin
