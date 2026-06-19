@@ -612,13 +612,15 @@ export function gerarRespostaConversacional(
     return comEmoji(frase, escolherEmoji("ponte", emojiSeed, emojiAnterior));
   }
 
-  // FIRST contact: greet + present the persona (Daniel / FER) + invite.
-  const saudacao = saudacaoUsuario || saudacaoPorHora(ctx.horaLocal);
-  const emoji = escolherEmoji("saudacao", emojiSeed, emojiAnterior);
-  const candidatos = SAUDACAO_SUFIXOS.map(
-    (s) => `${saudacao}! ${emoji} ${IA_APRESENTACAO}. ${s}`,
-  );
-  return escolherFrase(candidatos, seed, evitar);
+  // FIRST contact: agreed welcoming greeting — period salutation, the user's
+  // name when safely available, persona, IA help + human escalation + hours.
+  const horaParaSaudacao = (() => {
+    if (saudacaoUsuario === "Bom dia") return 9;
+    if (saudacaoUsuario === "Boa tarde") return 15;
+    if (saudacaoUsuario === "Boa noite") return 20;
+    return ctx.horaLocal;
+  })();
+  return montarSaudacaoInicial({ nome: ctx.nome ?? null, horaLocal: horaParaSaudacao });
 }
 
 /** Extracts the trailing emoji of a previous reply (best-effort), for anti-repetition. */
