@@ -647,7 +647,7 @@ Deno.serve(async (req) => {
       .select("id, nome, celular, telefone")
       .is("deleted_at", null);
     const assistido = (assistidos || []).find((a: any) =>
-      normalizePhone(a.celular || "") === telefone || normalizePhone(a.telefone || "") === telefone
+      mesmoTelefone(a.celular || "", telefone) || mesmoTelefone(a.telefone || "", telefone)
     );
 
     // Fallback identification: any registered system user (profiles) by phone.
