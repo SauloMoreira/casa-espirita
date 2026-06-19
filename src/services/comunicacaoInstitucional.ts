@@ -51,7 +51,7 @@ export async function setStatusComunicacao(
   status: ComunicacaoStatus,
   revisorId?: string,
 ): Promise<void> {
-  const patch: Record<string, unknown> = { status };
+  const patch: Partial<ComunicacaoInstitucional> = { status };
   if (status === "aprovada") {
     patch.revisado_at = new Date().toISOString();
     patch.revisado_por = revisorId ?? null;
