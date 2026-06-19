@@ -33,6 +33,7 @@ import {
   LifeBuoy,
   Apple,
   Megaphone,
+  CalendarDays,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -138,6 +139,7 @@ const navGroups: NavGroup[] = [
       { title: "Instituição", url: "/instituicao", icon: Building2, roles: ["admin"] },
       { title: "Ação Social", url: "/acao-social", icon: Apple, roles: ["admin"] },
       { title: "Campanhas", url: "/campanhas", icon: Megaphone, roles: ["admin"] },
+      { title: "Eventos", url: "/eventos", icon: CalendarDays, roles: ["admin"] },
       { title: "Regras Operacionais", url: "/regras", icon: Cog, roles: ["admin"] },
       { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
       { title: "Gestão de Cores", url: "/configuracoes/cores", icon: Palette, roles: ["admin"] },

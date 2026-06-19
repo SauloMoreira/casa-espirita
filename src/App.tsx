@@ -56,6 +56,7 @@ const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
 const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
 const AcaoSocial = lazy(() => import("./pages/AcaoSocial"));
 const Campanhas = lazy(() => import("./pages/Campanhas"));
+const Eventos = lazy(() => import("./pages/Eventos"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -127,6 +128,7 @@ const App = () => (
                   <Route path={ROUTES.sessoesPublicas} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}>{guard(<SessoesPublicas />, "Sessões Públicas")}</ProtectedRoute>} />
                   <Route path={ROUTES.acaoSocial} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<AcaoSocial />, "Ação Social")}</ProtectedRoute>} />
                   <Route path={ROUTES.campanhas} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Campanhas />, "Campanhas")}</ProtectedRoute>} />
+                  <Route path={ROUTES.eventos} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Eventos />, "Eventos")}</ProtectedRoute>} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />
