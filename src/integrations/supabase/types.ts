@@ -641,6 +641,9 @@ export type Database = {
           campanha_id: string | null
           created_at: string
           created_by: string | null
+          envio_concluido_at: string | null
+          envio_iniciado_at: string | null
+          envio_status: string
           evento_id: string | null
           id: string
           mensagem: string
@@ -651,6 +654,10 @@ export type Database = {
           status: string
           tipo: string
           titulo: string
+          total_bloqueados: number
+          total_destinatarios: number
+          total_enviados: number
+          total_falhas: number
           updated_at: string
           updated_by: string | null
         }
@@ -658,6 +665,9 @@ export type Database = {
           campanha_id?: string | null
           created_at?: string
           created_by?: string | null
+          envio_concluido_at?: string | null
+          envio_iniciado_at?: string | null
+          envio_status?: string
           evento_id?: string | null
           id?: string
           mensagem: string
@@ -668,6 +678,10 @@ export type Database = {
           status?: string
           tipo?: string
           titulo: string
+          total_bloqueados?: number
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhas?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -675,6 +689,9 @@ export type Database = {
           campanha_id?: string | null
           created_at?: string
           created_by?: string | null
+          envio_concluido_at?: string | null
+          envio_iniciado_at?: string | null
+          envio_status?: string
           evento_id?: string | null
           id?: string
           mensagem?: string
@@ -685,6 +702,10 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          total_bloqueados?: number
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhas?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -701,6 +722,69 @@ export type Database = {
             columns: ["evento_id"]
             isOneToOne: false
             referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicacoes_institucionais_envios: {
+        Row: {
+          assistido_id: string
+          comunicacao_id: string
+          created_at: string
+          erro: string | null
+          external_message_id: string | null
+          id: string
+          motivo: string | null
+          retry_count: number
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          telefone_normalizado: string | null
+          updated_at: string
+        }
+        Insert: {
+          assistido_id: string
+          comunicacao_id: string
+          created_at?: string
+          erro?: string | null
+          external_message_id?: string | null
+          id?: string
+          motivo?: string | null
+          retry_count?: number
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          telefone_normalizado?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assistido_id?: string
+          comunicacao_id?: string
+          created_at?: string
+          erro?: string | null
+          external_message_id?: string | null
+          id?: string
+          motivo?: string | null
+          retry_count?: number
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          telefone_normalizado?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicacoes_institucionais_envios_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicacoes_institucionais_envios_comunicacao_id_fkey"
+            columns: ["comunicacao_id"]
+            isOneToOne: false
+            referencedRelation: "comunicacoes_institucionais"
             referencedColumns: ["id"]
           },
         ]
@@ -2441,6 +2525,10 @@ export type Database = {
       }
       is_active_admin: { Args: { _uid: string }; Returns: boolean }
       is_active_master: { Args: { _uid: string }; Returns: boolean }
+      marcar_envio_concluido: {
+        Args: { p_comunicacao_id: string }
+        Returns: Json
+      }
       painel_conversas: {
         Args: {
           p_atendente?: string
@@ -2469,6 +2557,14 @@ export type Database = {
           p_resolucao?: string
           p_status?: string
           p_template?: string
+        }
+        Returns: Json
+      }
+      preparar_envio_institucional: {
+        Args: {
+          p_comunicacao_id: string
+          p_janela_dias?: number
+          p_versao: string
         }
         Returns: Json
       }
