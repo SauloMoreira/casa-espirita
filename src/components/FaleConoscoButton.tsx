@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   FALE_CONOSCO_LABEL,
   FALE_CONOSCO_APOIO,
   montarLinkWhatsapp,
-  montarSaudacaoFaleConosco,
 } from "@/lib/faleConosco";
 
 /**
@@ -22,7 +20,6 @@ import {
 export function FaleConoscoButton() {
   const [telefone, setTelefone] = useState<string | null>(null);
   const [aberto, setAberto] = useState(false);
-  const { profile } = useAuth();
 
   useEffect(() => {
     const fetchTel = () => {
@@ -43,10 +40,10 @@ export function FaleConoscoButton() {
     return () => window.removeEventListener("instituicao-updated", fetchTel);
   }, []);
 
-  // Contextual, welcoming opening message: period-of-day salutation, user's
-  // first name when safely available, Daniel intro and human-hours notice.
-  const mensagem = montarSaudacaoFaleConosco({ nomeCompleto: profile?.nome_completo });
-  const link = montarLinkWhatsapp({ telefone, mensagem });
+  // Short, neutral opening message. Daniel's full welcoming greeting comes back
+  // as the FIRST reply from the existing inbound IA, so the conversation starts
+  // naturally instead of the assistido "sending" a long artificial text.
+  const link = montarLinkWhatsapp({ telefone });
   if (!link) return null;
 
   return (
