@@ -91,13 +91,19 @@ export default function Campanhas() {
     if (err) { toast({ title: "Atenção", description: err, variant: "destructive" }); return; }
     setSaving(true);
     try {
+      const imagemUrl = form.imagem_url.trim() || null;
+      const imagemMudou = (editing?.imagem_url ?? "") !== (imagemUrl ?? "");
+      const { data: authData } = await supabase.auth.getUser();
       const payload = {
         titulo: form.titulo.trim(),
         subtitulo: form.subtitulo.trim() || null,
         descricao_curta: form.descricao_curta.trim() || null,
         descricao_completa: form.descricao_completa.trim() || null,
-        imagem_url: form.imagem_url.trim() || null,
-        imagem_origem: "manual",
+        imagem_url: imagemUrl,
+        imagem_origem: imagemUrl ? form.imagem_origem : "url",
+        imagem_otimizada: imagemUrl ? form.imagem_otimizada : false,
+        imagem_atualizada_em: imagemMudou ? new Date().toISOString() : (editing?.imagem_atualizada_em ?? null),
+        imagem_atualizada_por: imagemMudou ? (authData.user?.id ?? null) : (editing?.imagem_atualizada_por ?? null),
         ordem: Number(form.ordem) || 0,
         destaque: form.destaque,
         data_inicio: form.data_inicio || null,
