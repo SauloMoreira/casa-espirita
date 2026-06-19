@@ -255,7 +255,11 @@ export function classificarIntencao(msg: string): Intencao {
   // so the gentle-retention -> handoff flow can be applied.
   if (contemTermo(txt, HUMANO_TERMOS)) return "falar_humano";
   // Treatment word + temporal marker (order-agnostic) -> personal "today" question.
-  if (TEMPORAL_MARCADORES.some((d) => txt.includes(d))
+  // Public-scope phrasing ("atendimento público", "trabalho público") is excluded
+  // so it stays a public-schedule question.
+  const ehPublicoExplicito = txt.includes("publico") || txt.includes("publica");
+  if (!ehPublicoExplicito
+      && TEMPORAL_MARCADORES.some((d) => txt.includes(d))
       && TRATAMENTO_PALAVRAS.some((p) => txt.includes(p))) {
     return "tratamento_hoje";
   }
