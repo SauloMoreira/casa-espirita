@@ -1485,6 +1485,22 @@ Deno.serve(async (req) => {
       }).eq("id", conversaId);
     }
 
+    // ===== FASE 1 — Memória curta estruturada (assunto/entidade/escopo/turnos) =====
+    // Resumo determinístico (sem LLM): mantém no máximo 4 turnos curtos para dar
+    // o "fio da conversa" aos follow-ups e à geração humana.
+    const escopoAtual: string = PESSOAIS.includes(intencao)
+      ? "pessoal"
+      : (intencao === "complexo" || intencao === "pedido_informacao" || intencao === "saudacao"
+          ? "geral" : "publico");
+    const ctxConvAnterior = (convExist?.contexto_conversa as any) || {};
+    const turnosAnteriores: Array<{ papel: string; resumo: string; em: string }> =
+      Array.isArray(ctxConvAnterior?.ultimos_turnos) ? ctxConvAnterior.ultimos_turnos : [];
+    const resumirT = (t: string) => {
+      const c = (t || "").replace(/\s+/g, " ").trim();
+      return c.length > 120 ? c.slice(0, 119) + "…" : c;
+    };
+    const turnosComUser = [...turnosAnteriores,
+      { papel: "user", resumo: resumirT(texto), em: new Date().toISOString() }].slice(-4);
 
     // Log inbound with full audit context (identification + intent + fallback).
     await admin.from("notificacoes_log").insert({
@@ -1495,6 +1511,7 @@ Deno.serve(async (req) => {
         assistido_id: assistido?.id ?? null,
         resposta_fonte: respostaFonte,
         fallback_motivo: fallbackMotivo,
+        escopo: escopoAtual,
       },
       status: "recebido",
     });
@@ -1515,6 +1532,17 @@ Deno.serve(async (req) => {
       await admin.from("whatsapp_conversas").update({ em_handoff: true }).eq("id", conversaId);
       resposta = resposta || MENSAGEM_HANDOFF;
     }
+
+    // ===== FASE 3 — Geração final humana (grounded), só p/ intenções factuais =====
+    let usouLlm = false;
+    if (resposta && !handoff && INTENCOES_HUMANIZAVEIS.has(intencao)) {
+      const h = await humanizarRespostaIA(resposta, {
+        escopo: escopoAtual, jaSaudado, nome: nomeContato, ultimosTurnos: turnosAnteriores,
+      });
+      resposta = h.texto;
+      usouLlm = h.usouLlm;
+    }
+
 
     // Send auto-reply (IA). If sending fails, ensure a handoff exists so the
     // message is never "lost": there is always either a reply or a handoff.
