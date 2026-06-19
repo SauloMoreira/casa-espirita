@@ -823,6 +823,17 @@ Deno.serve(async (req) => {
         intencao = "programacao_publica";
       }
 
+      // Temporal-only follow-up ("e amanhã?", "e hoje?") with no other intent:
+      // the user is asking about the house's schedule/events for that day. Answer
+      // from real data instead of escalating to a human, inheriting the activity
+      // from the conversation context when available.
+      if ((intencao === "complexo" || intencao === "pedido_informacao") && temDataExplicita(texto)) {
+        intencao = "programacao_publica";
+        if (!atividadeMencionada && convExist?.contexto_atividade) {
+          atividadeMencionada = String(convExist.contexto_atividade);
+        }
+      }
+
 
       if (intencao === "saudacao" || intencao === "agradecimento"
           || intencao === "pedido_informacao" || intencao === "encerramento") {
