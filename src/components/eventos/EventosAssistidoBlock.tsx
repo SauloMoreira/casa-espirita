@@ -64,6 +64,7 @@ export function EventosAssistidoBlock() {
           subtitulo={primeiro.subtitulo}
           descricao={primeiro.descricao_curta}
           destaque={primeiro.destaque}
+          formato={primeiro.imagem_formato}
           meta={<EventoMeta e={primeiro} />}
         />
         {restantes.map((e) => (
@@ -74,6 +75,7 @@ export function EventosAssistidoBlock() {
             subtitulo={e.subtitulo}
             descricao={e.descricao_curta}
             destaque={e.destaque}
+            formato={e.imagem_formato}
             meta={<EventoMeta e={e} />}
           />
         ))}

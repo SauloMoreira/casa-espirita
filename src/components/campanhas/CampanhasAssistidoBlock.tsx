@@ -39,6 +39,7 @@ export function CampanhasAssistidoBlock() {
           subtitulo={primeiro.subtitulo}
           descricao={primeiro.descricao_curta}
           destaque={primeiro.destaque}
+          formato={primeiro.imagem_formato}
         />
         {restantes.map((c) => (
           <VitrineCard
@@ -48,6 +49,7 @@ export function CampanhasAssistidoBlock() {
             subtitulo={c.subtitulo}
             descricao={c.descricao_curta}
             destaque={c.destaque}
+            formato={c.imagem_formato}
           />
         ))}
       </div>
