@@ -48,6 +48,16 @@ export const ENCERRAMENTO_TERMOS = [
   "nada mais", "por enquanto e so", "por enquanto é só", "fica com deus",
 ];
 
+// Explicit request to talk to a real person. First time -> gentle retention by
+// the IA; on a second insistence the conversation is escalated to human handoff.
+export const HUMANO_TERMOS = [
+  "falar com humano", "falar com um humano", "falar com uma pessoa", "falar com pessoa",
+  "falar com atendente", "falar com um atendente", "falar com alguem", "falar com alguém",
+  "atendimento humano", "atendente humano", "quero um humano", "quero falar com humano",
+  "quero falar com atendente", "quero falar com alguem", "quero falar com alguém",
+  "pessoa real", "ser humano", "humano de verdade", "falar com responsavel", "falar com responsável",
+];
+
 // Personal intents (about the assistido's own treatments/appointments) MUST win
 // over the public schedule intents, so any message that uses personal markers
 // ("meu", "minha", "tenho", "tratamento", "sessão", "entrevista") is routed to
