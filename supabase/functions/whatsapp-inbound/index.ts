@@ -1265,7 +1265,28 @@ Deno.serve(async (req) => {
           if (atividadeContexto) atividadeMencionada = atividadeContexto;
         } else {
           intencao = "tratamento_hoje";
+      }
+
+      // FASE 4 — Classificador híbrido APENAS no gap: o determinístico (já com
+      // upgrades por atividade/data) ainda resultou em "complexo". O LLM leve
+      // tenta interpretar ambiguidade real / erro de digitação difícil / frase
+      // natural fora do dicionário. Saída inválida/baixa confiança não altera nada
+      // (segue para handoff). Só envia o texto da mensagem — sem dados pessoais.
+      if (deveAcionarHibrido(intencao, texto)) {
+        const hib = await classificarComLLM(texto);
+        usouLlmClassificacao = hib.usouLlm;
+        confiancaClassificacao = hib.usouLlm ? hib.confianca : null;
+        if (hib.aceito) {
+          intencao = hib.intencao;
+          if (!atividadeMencionada && hib.atividade) {
+            // Reconhece a atividade citada pelo híbrido contra o vocabulário do BD.
+            const det = detectarAtividade(hib.atividade);
+            atividadeMencionada = det || hib.atividade;
+          }
         }
+      }
+
+
       }
 
 
