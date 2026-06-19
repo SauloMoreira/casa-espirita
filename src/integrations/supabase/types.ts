@@ -508,6 +508,7 @@ export type Database = {
           id: string
           imagem_atualizada_em: string | null
           imagem_atualizada_por: string | null
+          imagem_formato: string
           imagem_origem: string
           imagem_otimizada: boolean
           imagem_url: string | null
@@ -529,6 +530,7 @@ export type Database = {
           id?: string
           imagem_atualizada_em?: string | null
           imagem_atualizada_por?: string | null
+          imagem_formato?: string
           imagem_origem?: string
           imagem_otimizada?: boolean
           imagem_url?: string | null
@@ -550,6 +552,7 @@ export type Database = {
           id?: string
           imagem_atualizada_em?: string | null
           imagem_atualizada_por?: string | null
+          imagem_formato?: string
           imagem_origem?: string
           imagem_otimizada?: boolean
           imagem_url?: string | null
@@ -943,6 +946,7 @@ export type Database = {
           id: string
           imagem_atualizada_em: string | null
           imagem_atualizada_por: string | null
+          imagem_formato: string
           imagem_origem: string
           imagem_otimizada: boolean
           imagem_url: string | null
@@ -967,6 +971,7 @@ export type Database = {
           id?: string
           imagem_atualizada_em?: string | null
           imagem_atualizada_por?: string | null
+          imagem_formato?: string
           imagem_origem?: string
           imagem_otimizada?: boolean
           imagem_url?: string | null
@@ -991,6 +996,7 @@ export type Database = {
           id?: string
           imagem_atualizada_em?: string | null
           imagem_atualizada_por?: string | null
+          imagem_formato?: string
           imagem_origem?: string
           imagem_otimizada?: boolean
           imagem_url?: string | null
