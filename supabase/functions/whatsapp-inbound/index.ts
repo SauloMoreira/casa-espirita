@@ -717,7 +717,28 @@ Deno.serve(async (req) => {
         respostaFonte = "conversa_basica";
         resposta = gerarRespostaConversacional(intencao, {
           horaLocal: horaSaoPaulo(), jaSaudado, texto, ultimaResposta: ultimaRespostaIA,
+          nome: nomeContato,
         });
+      } else if (intencao === "falar_humano") {
+        // Gentle retention on the FIRST request; escalate on a second insistence.
+        // Count prior human requests already recorded for this phone.
+        const { count: pedidosHumano } = await admin
+          .from("notificacoes_log")
+          .select("id", { count: "exact", head: true })
+          .eq("direcao", "entrada")
+          .eq("payload_recebido->>telefone", telefone)
+          .eq("payload_recebido->>intencao", "falar_humano");
+        if ((pedidosHumano ?? 0) >= 1) {
+          // Second insistence -> escalate to a human handoff.
+          respostaFonte = "handoff_humano_segunda";
+          resposta = ENCAMINHAMENTO_HUMANO_MENSAGEM;
+          handoff = true; handoffOrigem = "regra";
+          handoffMotivo = "Solicitação reiterada de atendimento humano";
+        } else {
+          // First request -> acknowledge and gently offer IA help first.
+          respostaFonte = "retencao_humano";
+          resposta = RETENCAO_HUMANO_MENSAGEM;
+        }
       } else if (intencao === "opt_out" && assistido) {
         await admin.from("notificacoes_preferencias").upsert({
           assistido_id: assistido.id, whatsapp_ativo: false,
