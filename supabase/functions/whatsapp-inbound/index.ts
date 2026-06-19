@@ -1205,6 +1205,63 @@ Deno.serve(async (req) => {
         resposta = "Obrigado por confirmar! Esperamos por você. 🌿";
       } else if (intencao === "onde_ver_app") {
         resposta = "Você pode ver seus agendamentos, tratamentos e avisos direto no app, na área 'Painel' e 'Agenda'. 🌿";
+      } else if (intencao === "eventos") {
+        // Active events, optionally bounded by the requested date window.
+        const { data: eventosRaw } = await admin
+          .from("eventos")
+          .select("titulo, data_evento, data_inicio, data_fim, local, ordem")
+          .eq("ativo", true)
+          .order("data_evento", { ascending: true })
+          .limit(8);
+        const hojeIso = hojeSaoPaulo().data;
+        const eventos: EventoResumo[] = (eventosRaw || [])
+          .filter((e: any) => {
+            // Keep events that are upcoming/ongoing (data_fim >= hoje when set).
+            if (e?.data_fim) return String(e.data_fim) >= hojeIso;
+            if (e?.data_evento) return String(e.data_evento).slice(0, 10) >= hojeIso;
+            return true;
+          })
+          .map((e: any) => ({
+            titulo: e?.titulo || "Evento",
+            data: e?.data_evento ? String(e.data_evento).slice(0, 10) : (e?.data_inicio ?? null),
+            local: e?.local ?? null,
+          }));
+        respostaFonte = "eventos_reais";
+        resposta = montarRespostaEventos(eventos);
+      } else if (intencao === "campanhas") {
+        const hojeIso = hojeSaoPaulo().data;
+        const { data: campsRaw } = await admin
+          .from("campanhas")
+          .select("titulo, descricao_curta, data_inicio, data_fim, ordem, destaque")
+          .eq("ativo", true)
+          .order("destaque", { ascending: false })
+          .order("ordem", { ascending: true })
+          .limit(8);
+        const campanhas: CampanhaResumo[] = (campsRaw || [])
+          .filter((c: any) => {
+            const iniOk = !c?.data_inicio || String(c.data_inicio) <= hojeIso;
+            const fimOk = !c?.data_fim || String(c.data_fim) >= hojeIso;
+            return iniOk && fimOk;
+          })
+          .map((c: any) => ({ titulo: c?.titulo || "Campanha", descricao: c?.descricao_curta ?? null }));
+        respostaFonte = "campanhas_reais";
+        resposta = montarRespostaCampanhas(campanhas);
+      } else if (intencao === "acao_social") {
+        const { data: alimentosRaw } = await admin
+          .from("acao_social_alimentos")
+          .select("nome, unidade, quantidade_faltante, ordem")
+          .eq("ativo", true)
+          .order("ordem", { ascending: true })
+          .limit(20);
+        const alimentos: AlimentoFaltante[] = (alimentosRaw || [])
+          .filter((a: any) => (a?.quantidade_faltante ?? 0) > 0)
+          .map((a: any) => ({
+            nome: a?.nome || "Item",
+            unidade: a?.unidade ?? null,
+            faltante: a?.quantidade_faltante ?? null,
+          }));
+        respostaFonte = "acao_social_real";
+        resposta = montarRespostaAcaoSocial(alimentos);
       } else if (intencao === "programacao_publica") {
         // Public question. Mandatory lookup order:
         // (1) operational exceptions, (2) real public sessions,
