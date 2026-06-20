@@ -262,6 +262,19 @@ export default function AcaoSocial() {
             <Label className="cursor-pointer">Exibir prazo no card dos assistidos</Label>
             <Switch checked={exibirPrazo} onCheckedChange={setExibirPrazo} />
           </div>
+          <div className="space-y-1.5">
+            <Label>Mensagem institucional (opcional)</Label>
+            <Textarea
+              value={mensagem}
+              onChange={(e) => setMensagem(e.target.value)}
+              rows={4}
+              placeholder="Ex.: orientação geral sobre os alimentos doados (prazo de validade, cuidados etc.)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Aparece uma única vez no card dos assistidos. Use para orientações gerais — não
+              repita o texto em cada alimento.
+            </p>
+          </div>
           {(() => {
             const preview = prazoEntregaInfo({
               ...(config ?? ({} as AcaoSocialConfig)),
