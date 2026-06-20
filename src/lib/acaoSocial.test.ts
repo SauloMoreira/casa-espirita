@@ -125,3 +125,17 @@ describe("prazoEntregaInfo", () => {
     expect(prazoEntregaInfo(null)).toBeNull();
   });
 });
+
+describe("mensagemInstitucional", () => {
+  it("retorna o texto cadastrado", () => {
+    expect(mensagemInstitucional(makeConfig({ mensagem_institucional: "Verifiquem a validade." })))
+      .toBe("Verifiquem a validade.");
+  });
+  it("retorna null quando vazia ou só espaços", () => {
+    expect(mensagemInstitucional(makeConfig({ mensagem_institucional: "   " }))).toBeNull();
+    expect(mensagemInstitucional(makeConfig({ mensagem_institucional: null }))).toBeNull();
+  });
+  it("retorna null para config ausente", () => {
+    expect(mensagemInstitucional(null)).toBeNull();
+  });
+});
