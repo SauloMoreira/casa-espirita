@@ -1,3 +1,4 @@
+import { addDays } from "date-fns";
 import { generateSessionDates } from "@/lib/fazerEntrevista";
 import type { SessaoGerada } from "@/types/fazerEntrevista";
 
@@ -150,6 +151,133 @@ export function projetarAgendaRestante(params: {
   );
 
   return { geraAgenda: true, restante, sessoes };
+}
+
+/**
+ * Modos de agendamento (espelham `src/constants/fazerEntrevista.ts`).
+ * Mantidos aqui para a fonte única não depender de constantes da UI.
+ */
+export const MODO_SEQUENCIAL_BLOQUEANTE = "sequencial_bloqueante";
+export const MODO_LIVRE_CONCOMITANTE = "livre_concomitante";
+export const MODO_AGENDADO_POR_DATA_INICIAL = "agendado_por_data_inicial";
+
+
+
+export interface TratamentoProjecaoInput {
+  /** Identificador estável usado para mapear o resultado (ex.: vinculo_id ou index). */
+  ref: string;
+  tratamento_id: string;
+  status: string;
+  quantidade_total: number;
+  quantidade_realizada: number;
+  modo_agendamento: string;
+  ordem_tratamento: number;
+  tipo: ParametrosTipoAgenda;
+  /** Data de início específica (modo por data inicial / override livre). */
+  dataInicio?: Date | null;
+}
+
+export interface TratamentoProjecaoResultado {
+  ref: string;
+  tratamento_id: string;
+  geraAgenda: boolean;
+  motivoNaoGera?: string;
+  restante: number;
+  sessoes: SessaoGerada[];
+  /** Tratamento sequencial anterior que condiciona a liberação deste (se houver). */
+  bloqueadoPorRef?: string | null;
+  /** Última data projetada do tratamento anterior na cadeia (yyyy-MM-dd). */
+  dataFinalAnterior?: string | null;
+}
+
+/**
+ * Projeção CONSOLIDADA de agenda para um conjunto de tratamentos, espelhando
+ * EXATAMENTE a regra do fluxo normal (`submitEntrevista`):
+ *  - sequencial_bloqueante: ordenados por `ordem_tratamento` e ENCADEADOS no
+ *    tempo — cada um começa no dia seguinte à última sessão do anterior;
+ *  - livre_concomitante: independentes, a partir de `baseStart` (ou `dataInicio`);
+ *  - agendado_por_data_inicial: a partir de `dataInicio` (sem data → fila).
+ *
+ * Toda data continua vindo de `generateSessionDates` via `projetarAgendaRestante`.
+ * Esta é a inteligência única compartilhada por fluxo normal, migração e
+ * reconciliação — não existe cálculo de datas paralelo.
+ */
+export function projetarAgendaConsolidada(
+  tratamentos: TratamentoProjecaoInput[],
+  baseStart: Date,
+): TratamentoProjecaoResultado[] {
+  const out = new Map<string, TratamentoProjecaoResultado>();
+
+  const projetar = (t: TratamentoProjecaoInput, inicio: Date | null) =>
+    projetarAgendaRestante({
+      status: t.status,
+      quantidade_total: t.quantidade_total,
+      quantidade_realizada: t.quantidade_realizada,
+      tipo: t.tipo,
+      dataInicio: inicio,
+    });
+
+  const proximaBase = (sessoes: SessaoGerada[]): Date | null => {
+    if (sessoes.length === 0) return null;
+    const ultima = sessoes[sessoes.length - 1].data_sessao;
+    return addDays(new Date(ultima + "T12:00:00"), 1);
+  };
+
+  // Livre concomitante — independentes
+  for (const t of tratamentos.filter((x) => x.modo_agendamento === MODO_LIVRE_CONCOMITANTE)) {
+    const p = projetar(t, t.dataInicio ?? baseStart);
+    out.set(t.ref, { ref: t.ref, tratamento_id: t.tratamento_id, ...p });
+  }
+
+  // Agendado por data inicial — só gera se houver data
+  for (const t of tratamentos.filter((x) => x.modo_agendamento === MODO_AGENDADO_POR_DATA_INICIAL)) {
+    const p = projetar(t, t.dataInicio ?? null);
+    out.set(t.ref, { ref: t.ref, tratamento_id: t.tratamento_id, ...p });
+  }
+
+  // Sequencial bloqueante — encadeado por ordem
+  const sequenciais = tratamentos
+    .filter(
+      (x) =>
+        x.modo_agendamento === MODO_SEQUENCIAL_BLOQUEANTE ||
+        (x.modo_agendamento !== MODO_LIVRE_CONCOMITANTE &&
+          x.modo_agendamento !== MODO_AGENDADO_POR_DATA_INICIAL),
+    )
+    .sort((a, b) => (a.ordem_tratamento ?? 999) - (b.ordem_tratamento ?? 999));
+
+  let chainStart: Date = baseStart;
+  let anteriorRef: string | null = null;
+  let dataFinalAnterior: string | null = null;
+
+  for (const t of sequenciais) {
+    const p = projetar(t, chainStart);
+    out.set(t.ref, {
+      ref: t.ref,
+      tratamento_id: t.tratamento_id,
+      ...p,
+      bloqueadoPorRef: anteriorRef,
+      dataFinalAnterior,
+    });
+    // Avança a cadeia apenas quando o tratamento contribui com sessões reais.
+    const prox = proximaBase(p.sessoes);
+    if (prox) {
+      chainStart = prox;
+      anteriorRef = t.ref;
+      dataFinalAnterior = p.sessoes[p.sessoes.length - 1].data_sessao;
+    }
+  }
+
+  // Preserva a ordem de entrada
+  return tratamentos.map(
+    (t) =>
+      out.get(t.ref) ?? {
+        ref: t.ref,
+        tratamento_id: t.tratamento_id,
+        geraAgenda: false,
+        restante: quantidadeRestante(t.quantidade_total, t.quantidade_realizada),
+        sessoes: [],
+      },
+  );
 }
 
 /** Igualdade canônica entre dois payloads de sessões (prévia == gravação). */
