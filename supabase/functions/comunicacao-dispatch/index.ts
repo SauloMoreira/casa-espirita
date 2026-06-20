@@ -125,10 +125,12 @@ Deno.serve(async (req) => {
         restante--;
         result.processados++;
 
-        // 1) Reconfirma consentimento no momento do envio (opt-out absoluto).
+        // 1) Reconfirma consentimento e preferência de comunicação geral no
+        //    momento do envio. Comunicações institucionais são SEMPRE "geral",
+        //    portanto respeitam tanto o opt-out de canal quanto a flag geral.
         const { data: pref } = await admin
           .from("notificacoes_preferencias")
-          .select("whatsapp_ativo, consentimento_status")
+          .select("whatsapp_ativo, consentimento_status, comunicacao_geral_ativa")
           .eq("assistido_id", env.assistido_id)
           .maybeSingle();
 
@@ -139,6 +141,17 @@ Deno.serve(async (req) => {
           await admin
             .from("comunicacoes_institucionais_envios")
             .update({ status: "bloqueado", motivo: "consentimento_revogado" })
+            .eq("id", env.id);
+          result.bloqueados++;
+          continue;
+        }
+
+        // Preferência de comunicações gerais (default true quando ausente).
+        const aceitaGeral = !pref || pref.comunicacao_geral_ativa !== false;
+        if (!aceitaGeral) {
+          await admin
+            .from("comunicacoes_institucionais_envios")
+            .update({ status: "bloqueado", motivo: "comunicacao_geral_desativada" })
             .eq("id", env.id);
           result.bloqueados++;
           continue;
