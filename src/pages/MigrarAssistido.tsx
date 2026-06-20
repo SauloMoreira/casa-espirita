@@ -498,15 +498,28 @@ export default function MigrarAssistido() {
                     <Label>Realizadas</Label>
                     <Input type="number" min={0} value={l.quantidade_realizada} onChange={(e) => updateLinha(i, { quantidade_realizada: Number(e.target.value) })} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Data de início da projeção</Label>
-                    <Input type="date" value={l.proxima_sessao_data ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_data: e.target.value })} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Horário</Label>
-                    <Input type="time" value={l.proxima_sessao_horario ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_horario: e.target.value })} />
-                  </div>
+                  {exigeDataManual && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Data inicial *</Label>
+                        <Input type="date" value={l.proxima_sessao_data ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_data: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Horário</Label>
+                        <Input type="time" value={l.proxima_sessao_horario ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_horario: e.target.value })} />
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {l.tratamento_id && !exigeDataManual && (
+                  <p className="text-xs text-muted-foreground">
+                    Início inferido automaticamente pela regra oficial (modo: {modo ?? "—"}). Não é
+                    necessário informar data manual.
+                  </p>
+                )}
+
+
 
                 <div className="space-y-2">
                   <Label>Observação operacional</Label>
