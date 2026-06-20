@@ -17,10 +17,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Apple, Plus, Pencil, Trash2 } from "lucide-react";
-import { UNIDADES_ALIMENTO, validarAlimento, type AlimentoAcaoSocial } from "@/lib/acaoSocial";
+import { Apple, Plus, Pencil, Trash2, CalendarClock } from "lucide-react";
+import {
+  UNIDADES_ALIMENTO, validarAlimento, prazoEntregaInfo,
+  type AlimentoAcaoSocial, type AcaoSocialConfig,
+} from "@/lib/acaoSocial";
 import {
   listAlimentos, createAlimento, updateAlimento, deleteAlimento, toggleAlimentoAtivo,
+  getAcaoSocialConfig, saveAcaoSocialConfig,
 } from "@/services/acaoSocial";
 
 type FormState = {
