@@ -35,6 +35,7 @@ import {
   Megaphone,
   CalendarDays,
   Send,
+  History,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -87,6 +88,7 @@ const navGroups: NavGroup[] = [
     icon: HandHeart,
     items: [
       { title: "Assistidos", url: "/assistidos", icon: HandHeart, roles: ["admin", "entrevistador"] },
+      { title: "Migrar Assistido", url: "/migrar-assistido", icon: History, roles: ["admin"] },
       { title: "Agendar Entrevista", url: "/entrevistas", icon: Calendar, roles: ["admin", "entrevistador", "tarefeiro"] },
       { title: "Realizar Entrevista", url: "/fazer-entrevista", icon: ClipboardCheck, roles: ["admin", "entrevistador"] },
       { title: "Agenda", url: "/agenda", icon: BookOpen, roles: ["admin", "entrevistador", "tarefeiro"] },

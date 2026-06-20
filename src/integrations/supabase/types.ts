@@ -257,7 +257,9 @@ export type Database = {
           data_inicio: string | null
           entrevista_id: string | null
           id: string
+          observacao_migracao: string | null
           observacoes: string | null
+          origem: string
           prioridade: string
           quantidade_faltante: number | null
           quantidade_realizada: number
@@ -275,7 +277,9 @@ export type Database = {
           data_inicio?: string | null
           entrevista_id?: string | null
           id?: string
+          observacao_migracao?: string | null
           observacoes?: string | null
+          origem?: string
           prioridade?: string
           quantidade_faltante?: number | null
           quantidade_realizada?: number
@@ -293,7 +297,9 @@ export type Database = {
           data_inicio?: string | null
           entrevista_id?: string | null
           id?: string
+          observacao_migracao?: string | null
           observacoes?: string | null
+          origem?: string
           prioridade?: string
           quantidade_faltante?: number | null
           quantidade_realizada?: number
@@ -337,6 +343,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           created_by: string
+          data_migracao: string | null
           data_nascimento: string | null
           deleted_at: string | null
           email: string | null
@@ -345,9 +352,12 @@ export type Database = {
           foto_url: string | null
           id: string
           logradouro: string | null
+          migrado_legado: boolean
           nome: string
           numero: string | null
+          observacao_migracao: string | null
           observacoes: string | null
+          origem_cadastro: string
           quantidade_palestras: number
           status: string
           telefone: string | null
@@ -363,6 +373,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           created_by: string
+          data_migracao?: string | null
           data_nascimento?: string | null
           deleted_at?: string | null
           email?: string | null
@@ -371,9 +382,12 @@ export type Database = {
           foto_url?: string | null
           id?: string
           logradouro?: string | null
+          migrado_legado?: boolean
           nome: string
           numero?: string | null
+          observacao_migracao?: string | null
           observacoes?: string | null
+          origem_cadastro?: string
           quantidade_palestras?: number
           status?: string
           telefone?: string | null
@@ -389,6 +403,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           created_by?: string
+          data_migracao?: string | null
           data_nascimento?: string | null
           deleted_at?: string | null
           email?: string | null
@@ -397,9 +412,12 @@ export type Database = {
           foto_url?: string | null
           id?: string
           logradouro?: string | null
+          migrado_legado?: boolean
           nome?: string
           numero?: string | null
+          observacao_migracao?: string | null
           observacoes?: string | null
+          origem_cadastro?: string
           quantidade_palestras?: number
           status?: string
           telefone?: string | null
