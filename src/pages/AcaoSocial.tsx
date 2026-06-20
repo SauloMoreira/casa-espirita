@@ -56,6 +56,7 @@ export default function AcaoSocial() {
   const [prazoData, setPrazoData] = useState("");
   const [prazoObs, setPrazoObs] = useState("");
   const [exibirPrazo, setExibirPrazo] = useState(true);
+  const [mensagem, setMensagem] = useState("");
   const [savingPrazo, setSavingPrazo] = useState(false);
 
   const aplicarConfig = (cfg: AcaoSocialConfig | null) => {
@@ -63,6 +64,7 @@ export default function AcaoSocial() {
     setPrazoData(cfg?.prazo_final_entrega?.slice(0, 10) ?? "");
     setPrazoObs(cfg?.observacao_prazo ?? "");
     setExibirPrazo(cfg?.exibir_prazo ?? true);
+    setMensagem(cfg?.mensagem_institucional ?? "");
   };
 
   const load = async () => {
@@ -85,6 +87,7 @@ export default function AcaoSocial() {
         prazo_final_entrega: prazoData || null,
         observacao_prazo: prazoObs.trim() || null,
         exibir_prazo: exibirPrazo,
+        mensagem_institucional: mensagem.trim() || null,
       });
       const cfg = await getAcaoSocialConfig();
       aplicarConfig(cfg);
@@ -258,6 +261,19 @@ export default function AcaoSocial() {
           <div className="flex items-center justify-between rounded-xl border border-border/60 p-3">
             <Label className="cursor-pointer">Exibir prazo no card dos assistidos</Label>
             <Switch checked={exibirPrazo} onCheckedChange={setExibirPrazo} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Mensagem institucional (opcional)</Label>
+            <Textarea
+              value={mensagem}
+              onChange={(e) => setMensagem(e.target.value)}
+              rows={4}
+              placeholder="Ex.: orientação geral sobre os alimentos doados (prazo de validade, cuidados etc.)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Aparece uma única vez no card dos assistidos. Use para orientações gerais — não
+              repita o texto em cada alimento.
+            </p>
           </div>
           {(() => {
             const preview = prazoEntregaInfo({

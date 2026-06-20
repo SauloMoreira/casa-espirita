@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { HeartHandshake, CalendarClock } from "lucide-react";
+import { HeartHandshake, CalendarClock, Info } from "lucide-react";
 import {
   alimentosVisiveis,
   formatFaltante,
   prazoEntregaInfo,
+  mensagemInstitucional,
   type AlimentoAcaoSocial,
   type AcaoSocialConfig,
 } from "@/lib/acaoSocial";
@@ -36,6 +37,7 @@ export function AlimentosAssistidoCard() {
   if (loading || itens.length === 0) return null;
 
   const prazo = prazoEntregaInfo(config);
+  const mensagem = mensagemInstitucional(config);
 
   return (
     <Card className="overflow-hidden border-border/50 shadow-sm">
@@ -70,6 +72,18 @@ export function AlimentosAssistidoCard() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mensagem institucional — exibida uma única vez, nunca por item */}
+      {mensagem && (
+        <div className="border-b border-border/50 px-5 py-3 sm:px-6">
+          <div className="flex items-start gap-2.5">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
+              {mensagem}
+            </p>
           </div>
         </div>
       )}

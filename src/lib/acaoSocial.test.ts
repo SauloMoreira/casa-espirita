@@ -6,6 +6,7 @@ import {
   validarAlimento,
   formatPrazoData,
   prazoEntregaInfo,
+  mensagemInstitucional,
   type AlimentoAcaoSocial,
   type AcaoSocialConfig,
 } from "./acaoSocial";
@@ -97,6 +98,7 @@ const makeConfig = (over: Partial<AcaoSocialConfig>): AcaoSocialConfig =>
     prazo_final_entrega: over.prazo_final_entrega ?? null,
     observacao_prazo: over.observacao_prazo ?? null,
     exibir_prazo: over.exibir_prazo ?? true,
+    mensagem_institucional: over.mensagem_institucional ?? null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     updated_by: null,
@@ -122,5 +124,19 @@ describe("prazoEntregaInfo", () => {
   });
   it("retorna null para config ausente", () => {
     expect(prazoEntregaInfo(null)).toBeNull();
+  });
+});
+
+describe("mensagemInstitucional", () => {
+  it("retorna o texto cadastrado", () => {
+    expect(mensagemInstitucional(makeConfig({ mensagem_institucional: "Verifiquem a validade." })))
+      .toBe("Verifiquem a validade.");
+  });
+  it("retorna null quando vazia ou só espaços", () => {
+    expect(mensagemInstitucional(makeConfig({ mensagem_institucional: "   " }))).toBeNull();
+    expect(mensagemInstitucional(makeConfig({ mensagem_institucional: null }))).toBeNull();
+  });
+  it("retorna null para config ausente", () => {
+    expect(mensagemInstitucional(null)).toBeNull();
   });
 });
