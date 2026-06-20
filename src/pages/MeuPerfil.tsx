@@ -11,19 +11,24 @@ import { AddressFields } from "@/components/AddressFields";
 import { ConsentimentoWhatsappCard } from "@/components/notificacoes/ConsentimentoWhatsappCard";
 import { Switch } from "@/components/ui/switch";
 import {
-  getComunicacaoGeralAtiva,
-  setComunicacaoGeralAtiva,
+  getComunicacaoGeral,
+  setComunicacaoGeral,
+  type ComunicacaoGeralTarget,
 } from "@/services/notificacoes/notificacoesService";
 import { maskPhone, maskCPF, isValidPhone, isValidEmail } from "@/lib/validators";
 import { User, Save, Megaphone } from "lucide-react";
 
 export default function MeuPerfil() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { toast } = useToast();
+  const isAssistido = role === "assistido";
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [assistidoId, setAssistidoId] = useState<string | null>(null);
-  const [comunicacaoGeral, setComunicacaoGeral] = useState(true);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [staffMissing, setStaffMissing] = useState(false);
+  const [comunicacaoGeral, setComunicacaoGeralState] = useState(true);
   const [savingPref, setSavingPref] = useState(false);
 
   const [form, setForm] = useState({
@@ -45,65 +50,114 @@ export default function MeuPerfil() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
-      const { data: assistido } = await supabase
-        .from("assistidos")
+
+      if (isAssistido) {
+        const { data: assistido } = await supabase
+          .from("assistidos")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (assistido) {
+          setAssistidoId(assistido.id);
+          setForm({
+            nome: assistido.nome || "",
+            email: assistido.email || user.email || "",
+            celular: assistido.celular ? maskPhone(assistido.celular) : "",
+            cpf: assistido.cpf ? maskCPF(assistido.cpf) : "",
+            data_nascimento: assistido.data_nascimento || "",
+            foto_url: assistido.foto_url || null,
+            cep: assistido.cep || "",
+            logradouro: assistido.logradouro || "",
+            numero: assistido.numero || "",
+            complemento: assistido.complemento || "",
+            bairro: assistido.bairro || "",
+            cidade: assistido.cidade || "",
+            estado: assistido.estado || "",
+          });
+          try {
+            setComunicacaoGeralState(
+              await getComunicacaoGeral({ tipo: "assistido", assistidoId: assistido.id }),
+            );
+          } catch {
+            setComunicacaoGeralState(true);
+          }
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Staff: fonte oficial é a tabela profiles, por user_id
+      const { data: profile } = await supabase
+        .from("profiles")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (assistido) {
-        setAssistidoId(assistido.id);
-        setForm({
-          nome: assistido.nome || "",
-          email: assistido.email || user.email || "",
-          celular: assistido.celular ? maskPhone(assistido.celular) : "",
-          cpf: assistido.cpf ? maskCPF(assistido.cpf) : "",
-          data_nascimento: assistido.data_nascimento || "",
-          foto_url: assistido.foto_url || null,
-          cep: assistido.cep || "",
-          logradouro: assistido.logradouro || "",
-          numero: assistido.numero || "",
-          complemento: assistido.complemento || "",
-          bairro: assistido.bairro || "",
-          cidade: assistido.cidade || "",
-          estado: assistido.estado || "",
-        });
+      if (profile) {
+        setProfileId(profile.id);
+        setForm((prev) => ({
+          ...prev,
+          nome: profile.nome_completo || "",
+          email: user.email || "",
+          celular: profile.celular ? maskPhone(profile.celular) : "",
+          foto_url: profile.foto_url || null,
+        }));
         try {
-          setComunicacaoGeral(await getComunicacaoGeralAtiva(assistido.id));
+          setComunicacaoGeralState(
+            await getComunicacaoGeral({ tipo: "staff", userId: user.id }),
+          );
         } catch {
-          setComunicacaoGeral(true);
+          setComunicacaoGeralState(true);
         }
+      } else {
+        setStaffMissing(true);
       }
       setLoading(false);
     };
     fetchProfile();
-  }, [user]);
+  }, [user, isAssistido]);
 
   const handleSave = async () => {
-    if (!assistidoId) return;
-
-    // Minimal validation
     if (form.celular && !isValidPhone(form.celular)) {
       toast({ title: "Celular inválido", variant: "destructive" });
       return;
     }
-    if (form.email && !isValidEmail(form.email)) {
-      toast({ title: "E-mail inválido", variant: "destructive" });
-      return;
-    }
 
     setSaving(true);
-    const { error } = await supabase.from("assistidos").update({
-      celular: form.celular.replace(/\D/g, "") || null,
-      foto_url: form.foto_url || null,
-      cep: form.cep.replace(/\D/g, "") || null,
-      logradouro: form.logradouro.trim() || null,
-      numero: form.numero.trim() || null,
-      complemento: form.complemento.trim() || null,
-      bairro: form.bairro.trim() || null,
-      cidade: form.cidade.trim() || null,
-      estado: form.estado.trim().toUpperCase() || null,
-    } as any).eq("id", assistidoId);
+    let error: { message: string } | null = null;
+
+    if (isAssistido) {
+      if (!assistidoId) {
+        setSaving(false);
+        return;
+      }
+      if (form.email && !isValidEmail(form.email)) {
+        toast({ title: "E-mail inválido", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+      ({ error } = await supabase.from("assistidos").update({
+        celular: form.celular.replace(/\D/g, "") || null,
+        foto_url: form.foto_url || null,
+        cep: form.cep.replace(/\D/g, "") || null,
+        logradouro: form.logradouro.trim() || null,
+        numero: form.numero.trim() || null,
+        complemento: form.complemento.trim() || null,
+        bairro: form.bairro.trim() || null,
+        cidade: form.cidade.trim() || null,
+        estado: form.estado.trim().toUpperCase() || null,
+      } as any).eq("id", assistidoId));
+    } else {
+      if (!profileId || !user) {
+        setSaving(false);
+        return;
+      }
+      ({ error } = await supabase.from("profiles").update({
+        celular: form.celular.replace(/\D/g, "") || null,
+        foto_url: form.foto_url || null,
+      } as any).eq("user_id", user.id));
+    }
 
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
@@ -114,14 +168,19 @@ export default function MeuPerfil() {
   };
 
   const handleToggleComunicacaoGeral = async (ativa: boolean) => {
-    if (!assistidoId) return;
-    setComunicacaoGeral(ativa);
+    if (!user) return;
+    const target: ComunicacaoGeralTarget = isAssistido
+      ? { tipo: "assistido", assistidoId: assistidoId! }
+      : { tipo: "staff", userId: user.id };
+    if (isAssistido && !assistidoId) return;
+
+    setComunicacaoGeralState(ativa);
     setSavingPref(true);
     try {
-      await setComunicacaoGeralAtiva(assistidoId, ativa);
+      await setComunicacaoGeral(target, ativa);
       toast({ title: "Preferência de comunicação atualizada!" });
     } catch (e: any) {
-      setComunicacaoGeral(!ativa);
+      setComunicacaoGeralState(!ativa);
       toast({ title: "Erro ao salvar preferência", description: e?.message, variant: "destructive" });
     }
     setSavingPref(false);
@@ -131,11 +190,16 @@ export default function MeuPerfil() {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Carregando...</div>;
   }
 
-  if (!assistidoId) {
+  // Robustez: usuário válido sem registro de origem → mensagem tratável
+  if ((isAssistido && !assistidoId) || (!isAssistido && (staffMissing || !profileId))) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-center px-6">
         <User className="h-10 w-10 mb-3 opacity-30" />
-        <p className="text-sm font-medium">Perfil não encontrado</p>
+        <p className="text-sm font-medium">Não foi possível carregar o seu perfil</p>
+        <p className="text-xs mt-1 max-w-sm">
+          Seu cadastro ainda não está vinculado a um perfil. Entre em contato com a
+          administração para regularizar o seu acesso.
+        </p>
       </div>
     );
   }
@@ -157,7 +221,7 @@ export default function MeuPerfil() {
           <PhotoUpload
             currentUrl={form.foto_url}
             onUrlChange={(url) => setForm({ ...form, foto_url: url })}
-            folder="assistidos"
+            folder={isAssistido ? "assistidos" : "profiles"}
           />
 
           <div className="space-y-2">
@@ -179,36 +243,40 @@ export default function MeuPerfil() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>CPF</Label>
-              <Input value={form.cpf} disabled className="bg-muted" />
+          {isAssistido && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>CPF</Label>
+                <Input value={form.cpf} disabled className="bg-muted" />
+              </div>
+              <div className="space-y-2">
+                <Label>Data de Nascimento</Label>
+                <Input value={form.data_nascimento} disabled className="bg-muted" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Data de Nascimento</Label>
-              <Input value={form.data_nascimento} disabled className="bg-muted" />
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Endereço (opcional)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AddressFields
-            data={{
-              cep: form.cep, logradouro: form.logradouro, numero: form.numero,
-              complemento: form.complemento, bairro: form.bairro, cidade: form.cidade, estado: form.estado,
-            }}
-            onChange={(addr) => setForm({ ...form, ...addr })}
-            errors={{}}
-          />
-        </CardContent>
-      </Card>
+      {isAssistido && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Endereço (opcional)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AddressFields
+              data={{
+                cep: form.cep, logradouro: form.logradouro, numero: form.numero,
+                complemento: form.complemento, bairro: form.bairro, cidade: form.cidade, estado: form.estado,
+              }}
+              onChange={(addr) => setForm({ ...form, ...addr })}
+              errors={{}}
+            />
+          </CardContent>
+        </Card>
+      )}
 
-      {assistidoId && <ConsentimentoWhatsappCard assistidoId={assistidoId} />}
+      {isAssistido && assistidoId && <ConsentimentoWhatsappCard assistidoId={assistidoId} />}
 
       <Card className="glass-card">
         <CardHeader>
@@ -223,9 +291,9 @@ export default function MeuPerfil() {
                 Receber comunicações gerais da FER
               </Label>
               <p className="text-xs text-muted-foreground">
-                Campanhas, eventos e comunicados institucionais. Avisos do seu tratamento
-                (entrevistas, sessões, presença e faltas) continuam sendo enviados
-                independentemente desta opção.
+                {isAssistido
+                  ? "Campanhas, eventos e comunicados institucionais. Avisos do seu tratamento (entrevistas, sessões, presença e faltas) continuam sendo enviados independentemente desta opção."
+                  : "Campanhas, eventos e comunicados institucionais."}
               </p>
             </div>
             <Switch
@@ -237,7 +305,6 @@ export default function MeuPerfil() {
           </div>
         </CardContent>
       </Card>
-
 
       <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
         <Save className="h-4 w-4" />
