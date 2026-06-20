@@ -4,7 +4,10 @@ import {
   alimentosAdmin,
   formatFaltante,
   validarAlimento,
+  formatPrazoData,
+  prazoEntregaInfo,
   type AlimentoAcaoSocial,
+  type AcaoSocialConfig,
 } from "./acaoSocial";
 
 const make = (over: Partial<AlimentoAcaoSocial>): AlimentoAcaoSocial =>
