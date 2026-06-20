@@ -329,7 +329,7 @@ export function previewAgendaMigracao(
 export { isTratamentoPublicoLivre };
 
 
-
+export interface AssistidoLegadoBase {
   nome: string;
   cpf?: string | null;
   celular?: string | null;
