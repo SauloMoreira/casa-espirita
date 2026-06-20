@@ -1446,6 +1446,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ia_site_documentos: {
+        Row: {
+          captured_at: string | null
+          categoria: string
+          corpo: string
+          created_at: string
+          created_by: string | null
+          data_conteudo: string | null
+          hash: string | null
+          id: string
+          prioridade: string
+          resumo: string
+          status: string
+          temporal: boolean
+          titulo: string
+          updated_at: string
+          updated_by: string | null
+          url: string
+          usar_na_ia: boolean
+        }
+        Insert: {
+          captured_at?: string | null
+          categoria?: string
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          data_conteudo?: string | null
+          hash?: string | null
+          id?: string
+          prioridade?: string
+          resumo?: string
+          status?: string
+          temporal?: boolean
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+          url: string
+          usar_na_ia?: boolean
+        }
+        Update: {
+          captured_at?: string | null
+          categoria?: string
+          corpo?: string
+          created_at?: string
+          created_by?: string | null
+          data_conteudo?: string | null
+          hash?: string | null
+          id?: string
+          prioridade?: string
+          resumo?: string
+          status?: string
+          temporal?: boolean
+          titulo?: string
+          updated_at?: string
+          updated_by?: string | null
+          url?: string
+          usar_na_ia?: boolean
+        }
+        Relationships: []
+      }
       ia_sugestoes: {
         Row: {
           assistido_id: string
