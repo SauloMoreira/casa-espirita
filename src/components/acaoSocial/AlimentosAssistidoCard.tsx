@@ -10,6 +10,7 @@ import {
   type AcaoSocialConfig,
 } from "@/lib/acaoSocial";
 import { listAlimentosAtivos, getAcaoSocialConfig } from "@/services/acaoSocial";
+import { MensagemInstitucionalRenderer } from "@/components/acaoSocial/MensagemInstitucionalRenderer";
 
 /**
  * Bloco acolhedor exibido ao assistido com os alimentos mais necessários
