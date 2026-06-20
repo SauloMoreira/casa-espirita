@@ -383,24 +383,19 @@ export function AppSidebar() {
             <TooltipTrigger asChild>
               <div className="flex justify-center mb-2">
                 <div
-                  {...(isAssistido
-                    ? {
-                        role: "button" as const,
-                        tabIndex: 0,
-                        "aria-label": "Abrir meu perfil",
-                        onClick: () => navigate("/meu-perfil"),
-                        onKeyDown: (e: React.KeyboardEvent) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            navigate("/meu-perfil");
-                          }
-                        },
-                      }
-                    : {})}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Abrir meu perfil"
+                  onClick={() => navigate("/meu-perfil")}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate("/meu-perfil");
+                    }
+                  }}
                   className={cn(
                     "h-8 w-8 rounded-full bg-sidebar-accent/60 flex items-center justify-center overflow-hidden ring-2 ring-sidebar-border/30",
-                    isAssistido &&
-                      "cursor-pointer hover:ring-sidebar-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                    "cursor-pointer hover:ring-sidebar-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                   )}
                 >
                   {profile?.foto_url ? (
