@@ -34,12 +34,11 @@ export const STATUS_TRATAMENTO = [
 
 export type StatusTratamento = (typeof STATUS_TRATAMENTO)[number];
 
-/** Status compatíveis com a criação de uma próxima sessão. */
-export const STATUS_COM_PROXIMA_SESSAO: readonly StatusTratamento[] = [
-  "aguardando_agendamento",
-  "liberado",
-  "em_andamento",
-];
+/**
+ * Status que geram agenda — DERIVADO da fonte única (`STATUS_GERA_AGENDA`).
+ * A migração não define elegibilidade própria.
+ */
+export const STATUS_COM_PROXIMA_SESSAO: readonly StatusTratamento[] = STATUS_GERA_AGENDA;
 
 export const STATUS_TRATAMENTO_LABELS: Record<StatusTratamento, string> = {
   aguardando_inicio: "Aguardando início",
@@ -55,9 +54,14 @@ export function isStatusValido(status: string): status is StatusTratamento {
   return (STATUS_TRATAMENTO as readonly string[]).includes(status);
 }
 
+/**
+ * Mantido por compatibilidade: indica se o status, por si só, é gerador de
+ * agenda. Usa a mesma fonte única do fluxo normal.
+ */
 export function statusPermiteProximaSessao(status: string): boolean {
-  return (STATUS_COM_PROXIMA_SESSAO as readonly string[]).includes(status);
+  return (STATUS_GERA_AGENDA as readonly string[]).includes(status);
 }
+
 
 export interface TratamentoLegadoInput {
   tratamento_id: string;
