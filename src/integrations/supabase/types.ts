@@ -2780,6 +2780,10 @@ export type Database = {
         }
         Returns: Json
       }
+      registrar_auditoria_reconciliacao: {
+        Args: { p_assistido_id: string; p_dados: Json }
+        Returns: string
+      }
       registrar_presenca: {
         Args: {
           p_assistido_tratamento_id: string

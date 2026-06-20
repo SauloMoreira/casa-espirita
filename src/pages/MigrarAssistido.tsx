@@ -222,7 +222,7 @@ export default function MigrarAssistido() {
   };
 
 
-  const handleConfirmar = async () => {
+  const handleConfirmar = async (pularAgenda = false) => {
     if (!user || !revisao) return;
 
     const obsFinal = [
@@ -282,10 +282,13 @@ export default function MigrarAssistido() {
             },
           ]),
         ),
+        pularAgenda,
       });
       toast({
-        title: "Assistido migrado com sucesso!",
-        description: `${res.vinculosCriados} tratamento(s) e ${res.sessoesCriadas} sessão(ões) gerada(s).`,
+        title: pularAgenda ? "Assistido salvo (sem agenda)" : "Assistido migrado e reconciliado!",
+        description: pularAgenda
+          ? `${res.vinculosCriados} tratamento(s) salvo(s). Nenhuma agenda foi gerada — use "Recalcular agenda pela regra oficial" depois.`
+          : `${res.vinculosCriados} tratamento(s) e ${res.sessoesCriadas} sessão(ões) gravada(s).`,
       });
       navigate("/assistidos");
     } catch (e: any) {
@@ -650,13 +653,25 @@ export default function MigrarAssistido() {
               );
             })}
 
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => setRevisao(null)} disabled={saving} className="flex-1">
-                Voltar e corrigir
-              </Button>
-              <Button type="button" onClick={handleConfirmar} disabled={saving} className="flex-1 gap-2">
-                <Save className="h-4 w-4" />
-                {saving ? "Gerando..." : "Confirmar migração e gerar agenda"}
+            <div className="space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="button" variant="outline" onClick={() => setRevisao(null)} disabled={saving} className="sm:flex-1">
+                  Voltar e corrigir
+                </Button>
+                <Button type="button" onClick={() => handleConfirmar(false)} disabled={saving} className="sm:flex-[2] gap-2">
+                  <Save className="h-4 w-4" />
+                  {saving ? "Gravando..." : "Salvar e reconciliar/agendar agora"}
+                </Button>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleConfirmar(true)}
+                disabled={saving}
+                className="w-full text-xs text-muted-foreground"
+              >
+                Salvar sem gerar agenda agora (o assistido pode ficar sem próxima sessão)
               </Button>
             </div>
           </CardContent>
