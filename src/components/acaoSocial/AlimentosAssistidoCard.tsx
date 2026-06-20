@@ -37,6 +37,7 @@ export function AlimentosAssistidoCard() {
   if (loading || itens.length === 0) return null;
 
   const prazo = prazoEntregaInfo(config);
+  const mensagem = mensagemInstitucional(config);
 
   return (
     <Card className="overflow-hidden border-border/50 shadow-sm">
