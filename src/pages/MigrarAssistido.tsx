@@ -511,10 +511,66 @@ export default function MigrarAssistido() {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSubmit} disabled={saving} className="w-full gap-2">
-        <Save className="h-4 w-4" />
-        {saving ? "Migrando..." : "Concluir migração"}
-      </Button>
+      {/* Etapa 5 — Revisão da agenda prevista */}
+      {!revisao ? (
+        <Button type="button" onClick={handleRevisar} className="w-full gap-2">
+          <Save className="h-4 w-4" /> Revisar agenda prevista
+        </Button>
+      ) : (
+        <Card className="glass-card border-primary/40">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">5. Revisão da agenda prevista</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              A prévia abaixo segue exatamente a regra padrão de agenda já existente no sistema.
+              Confira antes de confirmar; nada é gravado até você clicar em "Confirmar migração e gerar agenda".
+            </p>
+            {revisao.map((r, i) => (
+              <div key={i} className="rounded-xl border border-border/60 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{r.nome}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {STATUS_TRATAMENTO_LABELS[r.status]}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Total {r.total} · Realizadas {r.realizadas} · Restante {r.restante}
+                </div>
+                {r.geraAgenda ? (
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-foreground">
+                      {r.sessoes.length} sessão(ões) será(ão) criada(s):
+                    </div>
+                    <ul className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-1">
+                      {r.sessoes.map((s, idx) => (
+                        <li key={idx}>
+                          {new Date(s.data_sessao + "T12:00:00").toLocaleDateString("pt-BR")}
+                          {s.horario ? ` · ${s.horario}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 text-xs text-amber-600">
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5" />
+                    <span>Não gera agenda: {r.motivoNaoGera}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setRevisao(null)} disabled={saving} className="flex-1">
+                Voltar e corrigir
+              </Button>
+              <Button type="button" onClick={handleConfirmar} disabled={saving} className="flex-1 gap-2">
+                <Save className="h-4 w-4" />
+                {saving ? "Gerando..." : "Confirmar migração e gerar agenda"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
