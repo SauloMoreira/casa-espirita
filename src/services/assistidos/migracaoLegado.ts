@@ -48,6 +48,12 @@ export interface MigrarAssistidoParams {
       duplicidade?: boolean;
     }
   >;
+  /**
+   * Quando true, grava apenas os vínculos (sem agenda rígida). Usado pelo botão
+   * secundário "Salvar sem gerar agenda agora" — o assistido pode ficar sem
+   * próxima sessão até uma reconciliação posterior.
+   */
+  pularAgenda?: boolean;
 }
 
 
