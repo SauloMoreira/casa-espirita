@@ -267,7 +267,8 @@ export default function MigrarAssistido() {
           proxima_sessao_data: l.proxima_sessao_data,
           proxima_sessao_horario: l.proxima_sessao_horario,
         })),
-        tipoAgendaPorTratamento,
+        tiposPorTratamento,
+        dataBaseProjecao,
         sessoesPrevistasPorIndice: Object.fromEntries(
           revisao.map((r, i) => [i, r.sessoes]),
         ),
