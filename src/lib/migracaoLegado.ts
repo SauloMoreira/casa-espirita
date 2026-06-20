@@ -1,9 +1,25 @@
 import { getDay, isValid, parseISO, startOfDay } from "date-fns";
+import {
+  STATUS_GERA_AGENDA,
+  elegibilidadeAgenda,
+  projetarAgendaRestante,
+  quantidadeRestante,
+  type ParametrosTipoAgenda,
+} from "@/lib/agendaRules";
+import type { SessaoGerada } from "@/types/fazerEntrevista";
 
 /**
  * Lógica pura da migração de assistidos legados (já em tratamento antes do
  * sistema). Sem efeitos colaterais — apenas montagem de payloads e validações.
+ *
+ * IMPORTANTE: a migração NÃO tem regra própria de agenda. Tanto a elegibilidade
+ * (gera agenda agora?) quanto o cálculo de datas vêm da fonte única em
+ * `src/lib/agendaRules.ts` / `generateSessionDates`. Qualquer divergência entre
+ * fluxo normal e legado deve ser tratada como bug.
  */
+
+export { quantidadeRestante };
+
 
 /** Status reais aceitos pelo sistema para assistido_tratamentos. */
 export const STATUS_TRATAMENTO = [
