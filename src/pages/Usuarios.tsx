@@ -71,6 +71,7 @@ interface MergedUser {
   user_id: string;
   role: string;
   profile: Profile | null;
+  email: string | null;
 }
 
 const emptyForm = {
@@ -122,11 +123,19 @@ export default function Usuarios() {
   };
 
   const fetchUsers = async () => {
-    const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-    const { data: profiles } = await supabase.from("profiles").select("*");
+    const [{ data: roles }, { data: profiles }, { data: emails }] = await Promise.all([
+      supabase.from("user_roles").select("user_id, role"),
+      supabase.from("profiles").select("*"),
+      supabase.rpc("lista_usuarios_email"),
+    ]);
     if (roles) {
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-      setUsers(roles.map((r: any) => ({ ...r, profile: profileMap.get(r.user_id) || null })));
+      const emailMap = new Map((emails || []).map((e: any) => [e.user_id, e.email]));
+      setUsers(roles.map((r: any) => ({
+        ...r,
+        profile: profileMap.get(r.user_id) || null,
+        email: emailMap.get(r.user_id) || null,
+      })));
     }
   };
 
@@ -265,7 +274,7 @@ export default function Usuarios() {
       nome_completo: p?.nome_completo || "",
       celular: maskPhone(p?.celular || ""),
       cpf: maskCPF(p?.cpf || ""),
-      email: "", password: "",
+      email: u.email || "", password: "",
       cep: p?.cep || "",
       logradouro: p?.logradouro || "",
       numero: p?.numero || "",
@@ -287,7 +296,8 @@ export default function Usuarios() {
     const s = search.toLowerCase();
     const name = u.profile?.nome_completo?.toLowerCase() || "";
     const cpf = u.profile?.cpf || "";
-    return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || u.user_id.includes(s);
+    const email = u.email?.toLowerCase() || "";
+    return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
   });
 
   return (
@@ -314,7 +324,7 @@ export default function Usuarios() {
                 {errors.nome_completo && <p className="text-xs text-destructive">{errors.nome_completo}</p>}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>CPF *</Label>
                   <Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} className={errors.cpf ? "border-destructive" : ""} />
@@ -325,13 +335,18 @@ export default function Usuarios() {
                   <Input value={form.celular} onChange={(e) => setForm({ ...form, celular: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" maxLength={15} className={errors.celular ? "border-destructive" : ""} />
                   {errors.celular && <p className="text-xs text-destructive">{errors.celular}</p>}
                 </div>
-                {!editUserId && (
-                  <div className="space-y-2">
-                    <Label>E-mail *</Label>
-                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={errors.email ? "border-destructive" : ""} />
-                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                  </div>
-                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>E-mail {editUserId ? "" : "*"}</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  readOnly={!!editUserId}
+                  onChange={editUserId ? undefined : (e) => setForm({ ...form, email: e.target.value })}
+                  className={errors.email ? "border-destructive" : (editUserId ? "bg-muted/40" : "")}
+                />
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
               {!editUserId && (
@@ -404,7 +419,7 @@ export default function Usuarios() {
         <CardHeader className="pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, CPF..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por nome, CPF ou e-mail..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </CardHeader>
         <CardContent>
@@ -420,6 +435,7 @@ export default function Usuarios() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
+                    <TableHead className="hidden md:table-cell">E-mail</TableHead>
                     <TableHead>Perfil</TableHead>
                     <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="w-10"></TableHead>
@@ -430,6 +446,7 @@ export default function Usuarios() {
                     <TableRow key={u.user_id}>
                       <TableCell className="font-medium">{u.profile?.nome_completo || u.user_id.substring(0, 8) + "..."}</TableCell>
                       <TableCell className="hidden md:table-cell font-mono text-xs">{u.profile?.cpf ? maskCPF(u.profile.cpf) : "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">{u.email || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="default">{ROLE_LABELS[u.role] || u.role}</Badge>
                       </TableCell>
