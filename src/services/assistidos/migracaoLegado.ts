@@ -202,7 +202,8 @@ export async function migrarAssistidoLegado(
     // Caso público livre com sugestões: NÃO gera agenda rígida — sugestões são
     // apenas projeção/exibição (schema não diferencia sugestão de sessão).
     // Coerência prévia == gravação: mesmos metadados, sem gravação rígida.
-    const sessoesRigidas = proj.sessoes; // vazio no caso público
+    // `pularAgenda` força gravar apenas os vínculos (botão "salvar sem agendar").
+    const sessoesRigidas = pularAgenda ? [] : proj.sessoes; // vazio no caso público
 
     // Compara com o payload exibido ao operador (quando enviado)
     const enviado = sessoesPrevistasPorIndice[i];
