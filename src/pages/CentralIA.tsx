@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, BookOpen, Lightbulb, MessageSquare, BarChart3, Settings, Smartphone } from "lucide-react";
+import { Brain, BookOpen, Lightbulb, MessageSquare, BarChart3, Settings, Smartphone, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import QueixasTratamentos from "@/components/central-ia/QueixasTratamentos";
 import BibliotecaDoutrinaria from "@/components/central-ia/BibliotecaDoutrinaria";
@@ -8,6 +8,7 @@ import FeedbackAprendizado from "@/components/central-ia/FeedbackAprendizado";
 import IndicadoresAssertividade from "@/components/central-ia/IndicadoresAssertividade";
 import ConfiguracoesIA from "@/components/central-ia/ConfiguracoesIA";
 import MetricasWhatsApp from "@/components/central-ia/MetricasWhatsApp";
+import BaseSiteIA from "@/components/central-ia/BaseSiteIA";
 
 export default function CentralIA() {
   const { role } = useAuth();
@@ -28,7 +29,7 @@ export default function CentralIA() {
       </div>
 
       <Tabs defaultValue={isAdmin ? "queixas" : "sugestoes"} className="w-full">
-        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-4 md:grid-cols-7" : "grid-cols-3"}`}>
+        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-4 md:grid-cols-8" : "grid-cols-3"}`}>
           {isAdmin && (
             <>
               <TabsTrigger value="queixas" className="flex items-center gap-1.5 text-xs py-2.5">
@@ -38,6 +39,10 @@ export default function CentralIA() {
               <TabsTrigger value="biblioteca" className="flex items-center gap-1.5 text-xs py-2.5">
                 <BookOpen className="h-3.5 w-3.5" />
                 <span className="hidden md:inline">Biblioteca</span>
+              </TabsTrigger>
+              <TabsTrigger value="base-site" className="flex items-center gap-1.5 text-xs py-2.5">
+                <Globe className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Base do Site</span>
               </TabsTrigger>
             </>
           )}
@@ -74,6 +79,9 @@ export default function CentralIA() {
             </TabsContent>
             <TabsContent value="biblioteca" className="mt-6">
               <BibliotecaDoutrinaria />
+            </TabsContent>
+            <TabsContent value="base-site" className="mt-6">
+              <BaseSiteIA />
             </TabsContent>
           </>
         )}
