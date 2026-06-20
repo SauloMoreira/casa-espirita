@@ -27,6 +27,7 @@ const SolicitacoesCadastro = lazy(() => import("./pages/SolicitacoesCadastro"));
 const SegurancaConta = lazy(() => import("./pages/SegurancaConta"));
 const Tratamentos = lazy(() => import("./pages/Tratamentos"));
 const Assistidos = lazy(() => import("./pages/Assistidos"));
+const MigrarAssistido = lazy(() => import("./pages/MigrarAssistido"));
 const Entrevistas = lazy(() => import("./pages/Entrevistas"));
 const FazerEntrevista = lazy(() => import("./pages/FazerEntrevista"));
 const Agenda = lazy(() => import("./pages/Agenda"));
