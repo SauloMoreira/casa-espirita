@@ -1,12 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   buildAssistidoLegadoInsert,
-  buildVinculoLegadoInsert,
-  buildProximaSessaoInsert,
   validateTratamentoLegado,
+  previewAgendaTratamento,
   type AssistidoLegadoBase,
   type TratamentoLegadoInput,
 } from "@/lib/migracaoLegado";
+import {
+  normalizarSessoes,
+  sessoesIguais,
+  type ParametrosTipoAgenda,
+} from "@/lib/agendaRules";
+import type { SessaoGerada } from "@/types/fazerEntrevista";
 
 export interface MigrarAssistidoParams {
   userId: string;
@@ -18,8 +23,13 @@ export interface MigrarAssistidoParams {
   dataMigracao: string;
   observacaoMigracao?: string | null;
   tratamentos: TratamentoLegadoInput[];
-  /** dia_semana cadastrado por tratamento_id (0-6 ou null). */
-  diaSemanaPorTratamento?: Record<string, number | null>;
+  /** Parâmetros oficiais de agenda por tratamento_id (dia/horário/frequência). */
+  tipoAgendaPorTratamento: Record<string, ParametrosTipoAgenda>;
+  /**
+   * Payload da prévia exibida ao operador, por índice de tratamento. O serviço
+   * recalcula e compara: só grava se for idêntico ao canônico do backend.
+   */
+  sessoesPrevistasPorIndice?: Record<number, SessaoGerada[]>;
   /** Confirmações administrativas por índice de tratamento. */
   confirmacoes?: Record<
     number,
@@ -59,14 +69,17 @@ async function getSessoesFuturas(assistidoId: string, tratamentoId: string): Pro
     .eq("tratamento_id", tratamentoId)
     .eq("status", "agendado")
     .gte("data_sessao", hoje);
-  return (data ?? []).map((r: any) => r.data_sessao);
+  return (data ?? []).map((r: { data_sessao: string }) => r.data_sessao);
 }
 
 /**
- * Migra um assistido legado: marca origem legado, cria/atualiza o assistido,
- * registra os vínculos de tratamento em andamento e, quando informado e válido,
- * cria a próxima sessão. Não cria entrevistas nem histórico passado e não infere
- * estado global além de marcar o assistido como em tratamento na criação.
+ * Migra um assistido legado preservando o estágio atual. A agenda restante é
+ * calculada pela MESMA regra oficial do fluxo normal (via `previewAgendaTratamento`).
+ *
+ * Garantia prévia == gravação sem confiar cegamente na UI:
+ *  - o serviço recalcula a prévia no backend com os mesmos inputs;
+ *  - normaliza canonicamente e compara com o payload vindo da UI;
+ *  - só grava (via RPC transacional idempotente) se forem idênticos.
  */
 export async function migrarAssistidoLegado(
   params: MigrarAssistidoParams,
@@ -79,7 +92,8 @@ export async function migrarAssistidoLegado(
     dataMigracao,
     observacaoMigracao,
     tratamentos,
-    diaSemanaPorTratamento = {},
+    tipoAgendaPorTratamento,
+    sessoesPrevistasPorIndice = {},
     confirmacoes = {},
   } = params;
 
@@ -106,7 +120,6 @@ export async function migrarAssistidoLegado(
       data_migracao: dataMigracao,
       observacao_migracao: observacaoMigracao?.trim() || null,
     };
-    // Dados sensíveis só são sobrescritos com confirmação explícita.
     if (confirmarSobrescritaSensiveis) {
       updatePayload.nome = base.nome.trim();
       updatePayload.cpf = (base.cpf ?? "").replace(/\D/g, "") || null;
@@ -133,53 +146,155 @@ export async function migrarAssistidoLegado(
     assistidoId = (data as { id: string }).id;
   }
 
-  // 2. Tratamentos
-  let vinculosCriados = 0;
-  let sessoesCriadas = 0;
+  // 2. Revalidar e montar payload canônico por tratamento (backend autoritativo)
+  const tratamentosPayload: Array<{
+    tratamento_id: string;
+    status: string;
+    quantidade_total: number;
+    quantidade_realizada: number;
+    observacao: string | null;
+    sessoes: SessaoGerada[];
+  }> = [];
+
+  let sessoesCriadasPrevistas = 0;
 
   for (let i = 0; i < tratamentos.length; i++) {
     const t = tratamentos[i];
     const conf = confirmacoes[i] ?? {};
+    const tipo = tipoAgendaPorTratamento[t.tratamento_id];
+    if (!tipo) throw new Error("Parâmetros de agenda do tratamento não encontrados.");
 
+    // Recalcula a prévia no backend usando a regra oficial
+    const preview = previewAgendaTratamento(t, tipo, t.proxima_sessao_data);
+
+    // Compara com o payload exibido ao operador (quando enviado)
+    const enviado = sessoesPrevistasPorIndice[i];
+    if (enviado && !sessoesIguais(enviado, preview.sessoes)) {
+      throw new Error(
+        "A prévia exibida divergiu do cálculo oficial. Recarregue a revisão da agenda e tente novamente.",
+      );
+    }
+
+    // Revalidações de consistência imediatamente antes de gravar
     const vinculoAtivo = await getVinculoAtivoExistente(assistidoId, t.tratamento_id);
-    const sessoesFuturas = t.proxima_sessao_data
+    const sessoesFuturas = preview.sessoes.length
       ? await getSessoesFuturas(assistidoId, t.tratamento_id)
       : [];
+    const colide = preview.sessoes.some((s) => sessoesFuturas.includes(s.data_sessao));
 
     const errors = validateTratamentoLegado(t, {
-      diaSemana: diaSemanaPorTratamento[t.tratamento_id] ?? null,
-      sessoesFuturas,
+      diaSemana: tipo.dia_semana ?? null,
+      sessoesFuturas: colide ? sessoesFuturas : [],
       vinculoAtivoExistente: !!vinculoAtivo,
       confirmarStatusIncompativel: conf.statusIncompativel,
       confirmarColisaoSessaoFutura: conf.colisaoSessaoFutura,
       confirmarDuplicidade: conf.duplicidade,
     });
-    if (errors.length > 0) {
-      throw new Error(errors[0]);
+    if (errors.length > 0) throw new Error(errors[0]);
+
+    if (colide && !conf.colisaoSessaoFutura) {
+      throw new Error(
+        "Já existe sessão futura no mesmo dia para este tratamento. Confirme para prosseguir.",
+      );
     }
 
-    const { data: vinculo, error: vErr } = await supabase
-      .from("assistido_tratamentos")
-      .insert(buildVinculoLegadoInsert(assistidoId, t, userId) as never)
-      .select("id")
-      .single();
-    if (vErr || !vinculo) throw new Error(vErr?.message || "Erro ao criar vínculo de tratamento.");
-    vinculosCriados++;
-
-    const sessaoRow = buildProximaSessaoInsert(
-      assistidoId,
-      (vinculo as { id: string }).id,
-      t,
-      userId,
-    );
-    if (sessaoRow) {
-      const { error: sErr } = await supabase
-        .from("agenda_tratamentos_assistido")
-        .insert(sessaoRow as never);
-      if (sErr) throw new Error(sErr.message);
-      sessoesCriadas++;
-    }
+    tratamentosPayload.push({
+      tratamento_id: t.tratamento_id,
+      status: t.status,
+      quantidade_total: Number(t.quantidade_total),
+      quantidade_realizada: Number(t.quantidade_realizada),
+      observacao: t.observacao?.trim() || null,
+      sessoes: normalizarSessoes(preview.sessoes),
+    });
+    sessoesCriadasPrevistas += preview.sessoes.length;
   }
 
-  return { assistidoId, vinculosCriados, sessoesCriadas };
+  // 3. Gravação transacional e idempotente (vínculos + sessões)
+  const { data: rpcData, error: rpcErr } = await supabase.rpc(
+    "migrar_assistido_legado_tratamento",
+    {
+      p_assistido_id: assistidoId,
+      p_tratamentos: tratamentosPayload as never,
+    },
+  );
+  if (rpcErr) throw new Error(rpcErr.message);
+
+  const result = (rpcData ?? {}) as {
+    vinculos_criados?: number;
+    vinculos_atualizados?: number;
+    sessoes_criadas?: number;
+  };
+
+  return {
+    assistidoId,
+    vinculosCriados: (result.vinculos_criados ?? 0) + (result.vinculos_atualizados ?? 0),
+    sessoesCriadas: result.sessoes_criadas ?? sessoesCriadasPrevistas,
+  };
+}
+
+export interface ReconciliarVinculoInput {
+  vinculo_id: string;
+  tratamento_id: string;
+  /** Status corrigido (continuidade real). */
+  status: string;
+  quantidade_total: number;
+  quantidade_realizada: number;
+  observacao?: string | null;
+  /** Data de início da projeção (yyyy-MM-dd) ou null para não gerar agora. */
+  dataInicio?: string | null;
+  tipo: ParametrosTipoAgenda;
+}
+
+/**
+ * Reconciliação segura de um assistido legado JÁ existente (vínculos criados,
+ * sem agenda). Reutiliza a mesma regra oficial e a mesma RPC idempotente —
+ * reexecução não duplica agenda nem corrompe estado.
+ */
+export async function reconciliarAssistidoLegado(
+  assistidoId: string,
+  vinculos: ReconciliarVinculoInput[],
+): Promise<MigrarAssistidoResult> {
+  const tratamentosPayload = vinculos.map((v) => {
+    const preview = previewAgendaTratamento(
+      {
+        tratamento_id: v.tratamento_id,
+        status: v.status,
+        quantidade_total: v.quantidade_total,
+        quantidade_realizada: v.quantidade_realizada,
+        proxima_sessao_data: v.dataInicio,
+      },
+      v.tipo,
+      v.dataInicio,
+    );
+    return {
+      vinculo_id: v.vinculo_id,
+      tratamento_id: v.tratamento_id,
+      status: v.status,
+      quantidade_total: v.quantidade_total,
+      quantidade_realizada: v.quantidade_realizada,
+      observacao: v.observacao?.trim() || null,
+      sessoes: normalizarSessoes(preview.sessoes),
+    };
+  });
+
+  const { data: rpcData, error: rpcErr } = await supabase.rpc(
+    "migrar_assistido_legado_tratamento",
+    {
+      p_assistido_id: assistidoId,
+      p_tratamentos: tratamentosPayload as never,
+    },
+  );
+  if (rpcErr) throw new Error(rpcErr.message);
+
+  const result = (rpcData ?? {}) as {
+    vinculos_criados?: number;
+    vinculos_atualizados?: number;
+    sessoes_criadas?: number;
+  };
+
+  return {
+    assistidoId,
+    vinculosCriados: (result.vinculos_criados ?? 0) + (result.vinculos_atualizados ?? 0),
+    sessoesCriadas: result.sessoes_criadas ?? 0,
+  };
 }
