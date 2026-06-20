@@ -169,7 +169,9 @@ export function montarPromptOtimizacao(formato: ImagemFormato = "card"): string 
     `reenquadrando a composição para a proporção ${fmt.ratio} (largura:altura), de forma ${orientacaoFormato(formato)}. ` +
     `Melhore iluminação, nitidez e enquadramento, mantendo o assunto principal bem posicionado e centralizado nessa proporção. ` +
     `Deixe a imagem mais limpa, leve e bem aproveitada no layout. ` +
-    `Mantenha o tema e o conteúdo original, sem adicionar texto ou elementos novos.`
+    `Mantenha o tema e o conteúdo original. ` +
+    `REGRA ABSOLUTA: não adicione nenhum texto, letras, palavras, números, títulos, legendas ou tipografia em nenhum idioma; ` +
+    `apenas elementos visuais. Se a imagem original tiver texto, não tente reescrevê-lo.`
   );
 }
 
