@@ -187,32 +187,40 @@ export default function MigrarAssistido() {
 
   const handleRevisar = () => {
     if (!validarEntrada()) return;
-    const previa = linhas.map((l) => {
-      const tipo = tipoAgendaPorTratamento[l.tratamento_id];
-      const p = previewAgendaTratamento(
-        {
-          tratamento_id: l.tratamento_id,
-          status: l.status,
-          quantidade_total: Number(l.quantidade_total),
-          quantidade_realizada: Number(l.quantidade_realizada),
-          proxima_sessao_data: l.proxima_sessao_data,
-        },
-        tipo,
-        l.proxima_sessao_data,
-      );
+    const projecoes: PreviewMigracaoItem[] = previewAgendaMigracao(
+      linhas.map((l) => ({
+        tratamento_id: l.tratamento_id,
+        status: l.status,
+        quantidade_total: Number(l.quantidade_total),
+        quantidade_realizada: Number(l.quantidade_realizada),
+        dataInicio: l.proxima_sessao_data ?? null,
+      })),
+      tiposPorTratamento,
+      dataBaseProjecao,
+    );
+    const previa = linhas.map((l, i) => {
+      const p = projecoes[i];
       return {
         nome: tratamentoMap[l.tratamento_id]?.nome ?? "Tratamento",
         status: l.status,
+        modo_agendamento: p.modo_agendamento,
+        ordem: tratamentoMap[l.tratamento_id]?.ordem_tratamento ?? null,
         total: Number(l.quantidade_total),
         realizadas: Number(l.quantidade_realizada),
         restante: p.restante,
         geraAgenda: p.geraAgenda,
         motivoNaoGera: p.motivoNaoGera,
         sessoes: p.sessoes,
+        bloqueadoPorRef: p.bloqueadoPorRef,
+        tratamentoPublicoComSugestao: p.tratamentoPublicoComSugestao,
+        liberadoDesde: p.liberadoDesde,
+        sugestoesAPartirDe: p.sugestoesAPartirDe,
+        sugestoes: p.sugestoes,
       };
     });
     setRevisao(previa);
   };
+
 
   const handleConfirmar = async () => {
     if (!user || !revisao) return;
