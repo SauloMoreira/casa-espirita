@@ -8,11 +8,13 @@ import {
   STATUS_TRATAMENTO,
   STATUS_TRATAMENTO_LABELS,
   statusPermiteProximaSessao,
-  previewAgendaTratamento,
+  previewAgendaMigracao,
   type StatusTratamento,
   type TratamentoLegadoInput,
+  type TipoMigracao,
+  type PreviewMigracaoItem,
 } from "@/lib/migracaoLegado";
-import type { ParametrosTipoAgenda } from "@/lib/agendaRules";
+import { MODO_AGENDADO_POR_DATA_INICIAL } from "@/lib/agendaRules";
 import type { SessaoGerada, EntrevistaAssistido, EntrevistaTipoTratamento } from "@/types/fazerEntrevista";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +88,7 @@ export default function MigrarAssistido() {
 
   // Etapa 2
   const [dataMigracao, setDataMigracao] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataBaseProjecao, setDataBaseProjecao] = useState(() => new Date().toISOString().slice(0, 10));
   const [entrevistaForaSistema, setEntrevistaForaSistema] = useState(true);
   const [observacaoMigracao, setObservacaoMigracao] = useState("");
 
@@ -95,20 +98,29 @@ export default function MigrarAssistido() {
   // Etapa 5
   const [observacaoAdmin, setObservacaoAdmin] = useState("");
 
-  // Etapa 6 — Revisão da agenda prevista (prévia oficial)
+  // Etapa 6 — Revisão da agenda prevista (prévia oficial consolidada)
   const [revisao, setRevisao] = useState<
     | null
     | Array<{
         nome: string;
         status: StatusTratamento;
+        modo_agendamento: string;
+        ordem: number | null;
         total: number;
         realizadas: number;
         restante: number;
         geraAgenda: boolean;
         motivoNaoGera?: string;
         sessoes: SessaoGerada[];
+        bloqueadoPorRef?: string | null;
+        // Caso público livre com sugestões
+        tratamentoPublicoComSugestao?: boolean;
+        liberadoDesde?: string | null;
+        sugestoesAPartirDe?: string | null;
+        sugestoes?: SessaoGerada[];
       }>
   >(null);
+
 
   useEffect(() => {
     fetchInitialData()
@@ -125,7 +137,7 @@ export default function MigrarAssistido() {
     [tratamentos],
   );
 
-  const tipoAgendaPorTratamento = useMemo<Record<string, ParametrosTipoAgenda>>(
+  const tiposPorTratamento = useMemo<Record<string, TipoMigracao>>(
     () =>
       Object.fromEntries(
         tratamentos.map((t) => [
@@ -135,11 +147,16 @@ export default function MigrarAssistido() {
             horario: t.horario,
             frequencia_valor: t.frequencia_valor,
             frequencia_unidade: t.frequencia_unidade,
+            modo_agendamento: t.modo_agendamento,
+            ordem_tratamento: t.ordem_tratamento,
+            trabalho_publico: t.trabalho_publico,
+            permite_entrada_sem_agendamento: t.permite_entrada_sem_agendamento,
           },
         ]),
       ),
     [tratamentos],
   );
+
 
   const updateLinha = (i: number, patch: Partial<TratamentoRow>) => {
     setRevisao(null);
@@ -170,32 +187,40 @@ export default function MigrarAssistido() {
 
   const handleRevisar = () => {
     if (!validarEntrada()) return;
-    const previa = linhas.map((l) => {
-      const tipo = tipoAgendaPorTratamento[l.tratamento_id];
-      const p = previewAgendaTratamento(
-        {
-          tratamento_id: l.tratamento_id,
-          status: l.status,
-          quantidade_total: Number(l.quantidade_total),
-          quantidade_realizada: Number(l.quantidade_realizada),
-          proxima_sessao_data: l.proxima_sessao_data,
-        },
-        tipo,
-        l.proxima_sessao_data,
-      );
+    const projecoes: PreviewMigracaoItem[] = previewAgendaMigracao(
+      linhas.map((l) => ({
+        tratamento_id: l.tratamento_id,
+        status: l.status,
+        quantidade_total: Number(l.quantidade_total),
+        quantidade_realizada: Number(l.quantidade_realizada),
+        dataInicio: l.proxima_sessao_data ?? null,
+      })),
+      tiposPorTratamento,
+      dataBaseProjecao,
+    );
+    const previa = linhas.map((l, i) => {
+      const p = projecoes[i];
       return {
         nome: tratamentoMap[l.tratamento_id]?.nome ?? "Tratamento",
         status: l.status,
+        modo_agendamento: p.modo_agendamento,
+        ordem: tratamentoMap[l.tratamento_id]?.ordem_tratamento ?? null,
         total: Number(l.quantidade_total),
         realizadas: Number(l.quantidade_realizada),
         restante: p.restante,
         geraAgenda: p.geraAgenda,
         motivoNaoGera: p.motivoNaoGera,
         sessoes: p.sessoes,
+        bloqueadoPorRef: p.bloqueadoPorRef,
+        tratamentoPublicoComSugestao: p.tratamentoPublicoComSugestao,
+        liberadoDesde: p.liberadoDesde,
+        sugestoesAPartirDe: p.sugestoesAPartirDe,
+        sugestoes: p.sugestoes,
       };
     });
     setRevisao(previa);
   };
+
 
   const handleConfirmar = async () => {
     if (!user || !revisao) return;
@@ -242,7 +267,8 @@ export default function MigrarAssistido() {
           proxima_sessao_data: l.proxima_sessao_data,
           proxima_sessao_horario: l.proxima_sessao_horario,
         })),
-        tipoAgendaPorTratamento,
+        tiposPorTratamento,
+        dataBaseProjecao,
         sessoesPrevistasPorIndice: Object.fromEntries(
           revisao.map((r, i) => [i, r.sessoes]),
         ),
@@ -388,7 +414,23 @@ export default function MigrarAssistido() {
               <Label>Data da migração</Label>
               <Input type="date" value={dataMigracao} onChange={(e) => setDataMigracao(e.target.value)} />
             </div>
+            <div className="space-y-2">
+              <Label>Data base da projeção</Label>
+              <Input
+                type="date"
+                value={dataBaseProjecao}
+                onChange={(e) => {
+                  setRevisao(null);
+                  setDataBaseProjecao(e.target.value);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Âncora da projeção (padrão: hoje). A regra oficial infere o início de cada tratamento
+                a partir desta base — só o modo "agendado por data inicial" exige data manual.
+              </p>
+            </div>
           </div>
+
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={entrevistaForaSistema} onCheckedChange={(v) => setEntrevistaForaSistema(!!v)} />
             <span>Entrevista/triagem realizada fora do sistema</span>
@@ -407,7 +449,9 @@ export default function MigrarAssistido() {
         </CardHeader>
         <CardContent className="space-y-5">
           {linhas.map((l, i) => {
-            const temData = !!l.proxima_sessao_data?.trim();
+            const modo = tratamentoMap[l.tratamento_id]?.modo_agendamento;
+            const exigeDataManual = modo === MODO_AGENDADO_POR_DATA_INICIAL;
+            const temData = exigeDataManual && !!l.proxima_sessao_data?.trim();
             const statusIncompat = temData && !statusPermiteProximaSessao(l.status);
             return (
               <div key={i} className="rounded-xl border border-border/60 p-4 space-y-3">
@@ -454,15 +498,28 @@ export default function MigrarAssistido() {
                     <Label>Realizadas</Label>
                     <Input type="number" min={0} value={l.quantidade_realizada} onChange={(e) => updateLinha(i, { quantidade_realizada: Number(e.target.value) })} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Data de início da projeção</Label>
-                    <Input type="date" value={l.proxima_sessao_data ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_data: e.target.value })} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Horário</Label>
-                    <Input type="time" value={l.proxima_sessao_horario ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_horario: e.target.value })} />
-                  </div>
+                  {exigeDataManual && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Data inicial *</Label>
+                        <Input type="date" value={l.proxima_sessao_data ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_data: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Horário</Label>
+                        <Input type="time" value={l.proxima_sessao_horario ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_horario: e.target.value })} />
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {l.tratamento_id && !exigeDataManual && (
+                  <p className="text-xs text-muted-foreground">
+                    Início inferido automaticamente pela regra oficial (modo: {modo ?? "—"}). Não é
+                    necessário informar data manual.
+                  </p>
+                )}
+
+
 
                 <div className="space-y-2">
                   <Label>Observação operacional</Label>
@@ -526,39 +583,73 @@ export default function MigrarAssistido() {
               A prévia abaixo segue exatamente a regra padrão de agenda já existente no sistema.
               Confira antes de confirmar; nada é gravado até você clicar em "Confirmar migração e gerar agenda".
             </p>
-            {revisao.map((r, i) => (
-              <div key={i} className="rounded-xl border border-border/60 p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{r.nome}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {STATUS_TRATAMENTO_LABELS[r.status]}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Total {r.total} · Realizadas {r.realizadas} · Restante {r.restante}
-                </div>
-                {r.geraAgenda ? (
-                  <div className="space-y-1">
-                    <div className="text-xs font-medium text-foreground">
-                      {r.sessoes.length} sessão(ões) será(ão) criada(s):
+            {revisao.map((r, i) => {
+              const fmt = (d?: string | null) =>
+                d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—";
+              return (
+                <div key={i} className="rounded-xl border border-border/60 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{r.nome}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {STATUS_TRATAMENTO_LABELS[r.status]}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Modo: {r.modo_agendamento}
+                    {r.ordem != null ? ` · Ordem ${r.ordem}` : ""} · Total {r.total} · Realizadas{" "}
+                    {r.realizadas} · Restante {r.restante}
+                  </div>
+
+                  {r.tratamentoPublicoComSugestao ? (
+                    <div className="space-y-1 rounded-lg bg-primary/5 p-3 text-xs">
+                      <div className="font-medium text-foreground">
+                        Tratamento público livre — liberado para comparecimento
+                      </div>
+                      <div className="text-muted-foreground">
+                        Liberado desde {fmt(r.liberadoDesde)}. Modo: Livre / Concomitante.
+                      </div>
+                      <div className="text-muted-foreground">
+                        Sugestões de comparecimento a partir de {fmt(r.sugestoesAPartirDe)} (após a
+                        cadeia bloqueante aplicável).
+                      </div>
+                      <ul className="text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-1">
+                        {(r.sugestoes ?? []).map((s, idx) => (
+                          <li key={idx}>
+                            {fmt(s.data_sessao)}
+                            {s.horario ? ` · ${s.horario}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="text-muted-foreground">
+                        Presenças válidas do próprio tratamento contam desde a liberação. Datas
+                        sugeridas não são agenda rígida (não geram falta). Palestras, eventos e
+                        outros públicos não contam para este tratamento.
+                      </div>
                     </div>
-                    <ul className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-1">
-                      {r.sessoes.map((s, idx) => (
-                        <li key={idx}>
-                          {new Date(s.data_sessao + "T12:00:00").toLocaleDateString("pt-BR")}
-                          {s.horario ? ` · ${s.horario}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-2 text-xs text-amber-600">
-                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5" />
-                    <span>Não gera agenda: {r.motivoNaoGera}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+                  ) : r.geraAgenda ? (
+                    <div className="space-y-1">
+                      <div className="text-xs font-medium text-foreground">
+                        {r.sessoes.length} sessão(ões) será(ão) criada(s):
+                      </div>
+                      <ul className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-1">
+                        {r.sessoes.map((s, idx) => (
+                          <li key={idx}>
+                            {fmt(s.data_sessao)}
+                            {s.horario ? ` · ${s.horario}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 text-xs text-amber-600">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5" />
+                      <span>Não gera agenda: {r.motivoNaoGera}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => setRevisao(null)} disabled={saving} className="flex-1">
                 Voltar e corrigir

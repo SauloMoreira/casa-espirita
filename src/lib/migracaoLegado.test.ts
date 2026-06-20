@@ -7,8 +7,10 @@ import {
   isStatusValido,
   statusPermiteProximaSessao,
   previewAgendaTratamento,
+  previewAgendaMigracao,
   quantidadeRestante,
   type TratamentoLegadoInput,
+  type TipoMigracao,
 } from "./migracaoLegado";
 import {
   elegibilidadeAgenda,
@@ -306,4 +308,122 @@ describe("comparação canônica de payloads (prévia == gravação)", () => {
     expect(sessoesIguais(canonico, adulterado)).toBe(false);
   });
 });
+
+describe("previewAgendaMigracao — projeção consolidada na migração", () => {
+  const BASE = "2026-06-20"; // sábado
+  const tipos: Record<string, TipoMigracao> = {
+    anti: {
+      dia_semana: 2,
+      horario: "19:00",
+      frequencia_valor: 1,
+      frequencia_unidade: "semanas",
+      modo_agendamento: "sequencial_bloqueante",
+      ordem_tratamento: 2,
+    },
+    mag: {
+      dia_semana: 1,
+      horario: "19:00",
+      frequencia_valor: 1,
+      frequencia_unidade: "semanas",
+      modo_agendamento: "sequencial_bloqueante",
+      ordem_tratamento: 3,
+    },
+    livre: {
+      dia_semana: 4,
+      horario: "20:00",
+      frequencia_valor: 1,
+      frequencia_unidade: "semanas",
+      modo_agendamento: "livre_concomitante",
+      ordem_tratamento: 5,
+    },
+    dataInicial: {
+      dia_semana: 3,
+      horario: "19:00",
+      frequencia_valor: 1,
+      frequencia_unidade: "semanas",
+      modo_agendamento: "agendado_por_data_inicial",
+      ordem_tratamento: 6,
+    },
+    publico: {
+      dia_semana: 5,
+      horario: "19:00",
+      frequencia_valor: 1,
+      frequencia_unidade: "semanas",
+      modo_agendamento: "livre_concomitante",
+      ordem_tratamento: 9,
+      trabalho_publico: true,
+      permite_entrada_sem_agendamento: true,
+    },
+  };
+
+  it("infere sequencial e livre sem data manual", () => {
+    const res = previewAgendaMigracao(
+      [
+        { tratamento_id: "anti", status: "em_andamento", quantidade_total: 7, quantidade_realizada: 2 },
+        { tratamento_id: "livre", status: "em_andamento", quantidade_total: 5, quantidade_realizada: 0 },
+      ],
+      tipos,
+      BASE,
+    );
+    expect(res[0].geraAgenda).toBe(true);
+    expect(res[0].exigeDataManual).toBe(false);
+    expect(res[1].geraAgenda).toBe(true);
+    expect(res[1].exigeDataManual).toBe(false);
+  });
+
+  it("exige data manual apenas para agendado_por_data_inicial", () => {
+    const semData = previewAgendaMigracao(
+      [{ tratamento_id: "dataInicial", status: "em_andamento", quantidade_total: 4, quantidade_realizada: 0 }],
+      tipos,
+      BASE,
+    );
+    expect(semData[0].exigeDataManual).toBe(true);
+    expect(semData[0].geraAgenda).toBe(false);
+
+    const comData = previewAgendaMigracao(
+      [
+        {
+          tratamento_id: "dataInicial",
+          status: "em_andamento",
+          quantidade_total: 4,
+          quantidade_realizada: 0,
+          dataInicio: "2026-06-24", // quarta
+        },
+      ],
+      tipos,
+      BASE,
+    );
+    expect(comData[0].exigeDataManual).toBe(false);
+    expect(comData[0].geraAgenda).toBe(true);
+  });
+
+  it("trata público livre com sugestões, sem agenda rígida", () => {
+    const res = previewAgendaMigracao(
+      [
+        { tratamento_id: "anti", status: "em_andamento", quantidade_total: 7, quantidade_realizada: 2 },
+        { tratamento_id: "publico", status: "em_andamento", quantidade_total: 8, quantidade_realizada: 1 },
+      ],
+      tipos,
+      BASE,
+    );
+    const pub = res[1];
+    expect(pub.geraAgenda).toBe(false);
+    expect(pub.sessoes).toHaveLength(0);
+    expect(pub.tratamentoPublicoComSugestao).toBe(true);
+    expect(pub.liberadoDesde).toBe(BASE);
+    expect(pub.sugestoes!.length).toBeGreaterThan(0);
+    expect(pub.sugestoesAPartirDe).toBeTruthy();
+  });
+
+  it("aplica piso em hoje na data base (contexto migração)", () => {
+    const res = previewAgendaMigracao(
+      [{ tratamento_id: "anti", status: "em_andamento", quantidade_total: 7, quantidade_realizada: 0 }],
+      tipos,
+      "2000-01-01", // passado → piso hoje
+    );
+    const hoje = new Date().toISOString().slice(0, 10);
+    expect(res[0].sessoes.every((s) => s.data_sessao >= hoje)).toBe(true);
+  });
+});
+
 

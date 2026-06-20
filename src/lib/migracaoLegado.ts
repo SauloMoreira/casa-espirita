@@ -2,8 +2,12 @@ import { getDay, isValid, parseISO, startOfDay } from "date-fns";
 import {
   STATUS_GERA_AGENDA,
   projetarAgendaRestante,
+  projetarAgendaConsolidada,
+  isTratamentoPublicoLivre,
   quantidadeRestante,
+  MODO_AGENDADO_POR_DATA_INICIAL,
   type ParametrosTipoAgenda,
+  type TratamentoProjecaoResultado,
 } from "@/lib/agendaRules";
 import type { SessaoGerada } from "@/types/fazerEntrevista";
 
@@ -18,6 +22,7 @@ import type { SessaoGerada } from "@/types/fazerEntrevista";
  */
 
 export { quantidadeRestante };
+
 
 
 /** Status reais aceitos pelo sistema para assistido_tratamentos. */
@@ -210,6 +215,118 @@ export function previewAgendaTratamento(
     dataInicio: inicio,
   });
 }
+
+/** Parâmetros oficiais do tipo + metadados estruturais relevantes à projeção. */
+export interface TipoMigracao extends ParametrosTipoAgenda {
+  modo_agendamento: string;
+  ordem_tratamento: number | null;
+  trabalho_publico?: boolean;
+  permite_entrada_sem_agendamento?: boolean;
+}
+
+/** Linha de tratamento legado para a prévia consolidada. */
+export interface LinhaMigracao {
+  tratamento_id: string;
+  status: string;
+  quantidade_total: number;
+  quantidade_realizada: number;
+  /** Data manual (yyyy-MM-dd) — usada APENAS no modo agendado_por_data_inicial. */
+  dataInicio?: string | null;
+}
+
+export interface PreviewMigracaoItem extends TratamentoProjecaoResultado {
+  /** Índice da linha de origem (preserva ordem de entrada). */
+  indice: number;
+  modo_agendamento: string;
+  /** Modo agendado_por_data_inicial ainda exige data manual? */
+  exigeDataManual: boolean;
+}
+
+/**
+ * Normaliza a data base da projeção no contexto migração/reconciliação,
+ * aplicando piso em HOJE. O piso é regra DESTE contexto — nunca da função
+ * compartilhada global (que mantém a âncora natural do fluxo normal).
+ */
+export function resolverDataBaseProjecao(dataBaseProjecao?: string | Date | null): Date {
+  const hoje = startOfDay(new Date());
+  let base: Date | null = null;
+  if (dataBaseProjecao instanceof Date) {
+    base = startOfDay(dataBaseProjecao);
+  } else if (typeof dataBaseProjecao === "string" && dataBaseProjecao.trim()) {
+    const parsed = new Date(dataBaseProjecao.trim() + "T12:00:00");
+    base = isValid(parsed) ? startOfDay(parsed) : null;
+  }
+  if (!base || base < hoje) return new Date(hoje.getTime() + 12 * 60 * 60 * 1000);
+  return new Date(base.getTime() + 12 * 60 * 60 * 1000);
+}
+
+/**
+ * Prévia CONSOLIDADA da agenda da migração, usando EXCLUSIVAMENTE a regra
+ * oficial (`projetarAgendaConsolidada`). Espelha o fluxo normal:
+ *  - sequencial_bloqueante: encadeado por ordem (max(base, término anterior));
+ *  - livre_concomitante: a partir da base (ou caso público com sugestões);
+ *  - agendado_por_data_inicial: único que exige data manual.
+ *
+ * Não há cálculo de datas/elegibilidade/encadeamento paralelo. A data manual
+ * só é exigida para agendado_por_data_inicial.
+ */
+export function previewAgendaMigracao(
+  linhas: LinhaMigracao[],
+  tiposPorTratamento: Record<string, TipoMigracao>,
+  dataBaseProjecao?: string | Date | null,
+): PreviewMigracaoItem[] {
+  const baseStart = resolverDataBaseProjecao(dataBaseProjecao);
+
+  const parseInicio = (s?: string | null): Date | null => {
+    if (!s || !s.trim()) return null;
+    const d = new Date(s.trim() + "T12:00:00");
+    return isValid(d) ? d : null;
+  };
+
+  const inputs = linhas.map((l, i) => {
+    const tipo = tiposPorTratamento[l.tratamento_id];
+    const modo = tipo?.modo_agendamento ?? "sequencial_bloqueante";
+    // Data manual SOMENTE para agendado_por_data_inicial.
+    const dataInicio =
+      modo === MODO_AGENDADO_POR_DATA_INICIAL ? parseInicio(l.dataInicio) : null;
+    return {
+      ref: String(i),
+      tratamento_id: l.tratamento_id,
+      status: l.status,
+      quantidade_total: Number(l.quantidade_total),
+      quantidade_realizada: Number(l.quantidade_realizada),
+      modo_agendamento: modo,
+      ordem_tratamento: tipo?.ordem_tratamento ?? 999,
+      tipo: {
+        dia_semana: tipo?.dia_semana ?? null,
+        horario: tipo?.horario ?? null,
+        frequencia_valor: tipo?.frequencia_valor ?? null,
+        frequencia_unidade: tipo?.frequencia_unidade ?? null,
+      } as ParametrosTipoAgenda,
+      dataInicio,
+      trabalhoPublico: tipo?.trabalho_publico === true,
+      permiteEntradaSemAgendamento: tipo?.permite_entrada_sem_agendamento === true,
+    };
+  });
+
+  const projecoes = projetarAgendaConsolidada(inputs, baseStart);
+  const porRef = new Map(projecoes.map((p) => [p.ref, p]));
+
+  return linhas.map((l, i) => {
+    const proj = porRef.get(String(i))!;
+    const tipo = tiposPorTratamento[l.tratamento_id];
+    const modo = tipo?.modo_agendamento ?? "sequencial_bloqueante";
+    return {
+      ...proj,
+      indice: i,
+      modo_agendamento: modo,
+      exigeDataManual:
+        modo === MODO_AGENDADO_POR_DATA_INICIAL && !parseInicio(l.dataInicio),
+    };
+  });
+}
+
+export { isTratamentoPublicoLivre };
 
 
 export interface AssistidoLegadoBase {

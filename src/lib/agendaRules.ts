@@ -175,6 +175,10 @@ export interface TratamentoProjecaoInput {
   tipo: ParametrosTipoAgenda;
   /** Data de início específica (modo por data inicial / override livre). */
   dataInicio?: Date | null;
+  /** Flag estrutural do tipo: é trabalho público? (NÃO altera o modo). */
+  trabalhoPublico?: boolean;
+  /** Flag estrutural do tipo: permite entrada sem agendamento? (NÃO altera o modo). */
+  permiteEntradaSemAgendamento?: boolean;
 }
 
 export interface TratamentoProjecaoResultado {
@@ -188,6 +192,93 @@ export interface TratamentoProjecaoResultado {
   bloqueadoPorRef?: string | null;
   /** Última data projetada do tratamento anterior na cadeia (yyyy-MM-dd). */
   dataFinalAnterior?: string | null;
+  /** Caso especial: tratamento público livre/concomitante com sugestões. */
+  tratamentoPublicoComSugestao?: boolean;
+  /** Data (yyyy-MM-dd) a partir da qual o assistido pode comparecer. */
+  liberadoDesde?: string | null;
+  /** O assistido já está liberado para comparecimento? */
+  liberadoParaComparecimento?: boolean;
+  /** Primeira ocorrência válida sugerida (yyyy-MM-dd), após a cadeia aplicável. */
+  sugestoesAPartirDe?: string | null;
+  /** Datas sugeridas (NÃO são agenda rígida — apenas projeção/exibição). */
+  sugestoes?: SessaoGerada[];
+}
+
+/**
+ * Detecta o caso público especial APENAS por metadados estruturais do tipo,
+ * sem hardcode por nome. NÃO altera modo/classificação — apenas habilita a
+ * camada contextual de liberação/sugestão/presença.
+ */
+export function isTratamentoPublicoLivre(t: {
+  modo_agendamento: string;
+  trabalhoPublico?: boolean;
+  permiteEntradaSemAgendamento?: boolean;
+}): boolean {
+  return (
+    t.modo_agendamento === MODO_LIVRE_CONCOMITANTE &&
+    t.trabalhoPublico === true &&
+    t.permiteEntradaSemAgendamento === true
+  );
+}
+
+const dataParaString = (d: Date): string => d.toISOString().slice(0, 10);
+
+/**
+ * Predicado explícito de elegibilidade de uma ocorrência para contar progresso
+ * em tratamento público livre. Centraliza a regra de "qual presença conta":
+ *  - a ocorrência pertence ao trabalho público correto do tratamento;
+ *  - não é palestra/evento genérico não vinculado;
+ *  - a data é >= liberadoDesde;
+ *  - há vínculo correto com o assistido_tratamento_id (quando exigido);
+ *  - não houve consumo duplicado da mesma ocorrência para o mesmo progresso.
+ */
+export interface OcorrenciaPublica {
+  /** Identificador único da ocorrência (sessão pública / presença). */
+  ocorrencia_id: string;
+  /** Tratamento/trabalho público ao qual a ocorrência pertence. */
+  tratamento_id: string;
+  /** Vínculo do assistido associado à ocorrência (quando houver). */
+  assistido_tratamento_id?: string | null;
+  /** Data da ocorrência (yyyy-MM-dd). */
+  data_ocorrencia: string;
+  /**
+   * Indica explicitamente que a ocorrência é uma sessão válida do próprio
+   * trabalho público (e não palestra/evento genérico). Sem isso, não conta.
+   */
+  vinculadaAoTrabalhoPublico: boolean;
+}
+
+export function ocorrenciaContaParaTratamentoPublico(params: {
+  ocorrencia: OcorrenciaPublica;
+  tratamentoId: string;
+  liberadoDesde: string;
+  vinculoId?: string | null;
+  consumidas?: Set<string>;
+}): boolean {
+  const { ocorrencia, tratamentoId, liberadoDesde, vinculoId, consumidas } = params;
+
+  // 1. Deve pertencer ao trabalho público correto do tratamento.
+  if (ocorrencia.tratamento_id !== tratamentoId) return false;
+
+  // 2. Não pode ser palestra/evento genérico não vinculado.
+  if (!ocorrencia.vinculadaAoTrabalhoPublico) return false;
+
+  // 3. A data deve ser >= liberadoDesde.
+  if (ocorrencia.data_ocorrencia < liberadoDesde) return false;
+
+  // 4. Vínculo correto, quando exigido.
+  if (
+    vinculoId &&
+    ocorrencia.assistido_tratamento_id &&
+    ocorrencia.assistido_tratamento_id !== vinculoId
+  ) {
+    return false;
+  }
+
+  // 5. Sem consumo duplicado da mesma ocorrência.
+  if (consumidas?.has(ocorrencia.ocorrencia_id)) return false;
+
+  return true;
 }
 
 /**
@@ -223,19 +314,8 @@ export function projetarAgendaConsolidada(
     return addDays(new Date(ultima + "T12:00:00"), 1);
   };
 
-  // Livre concomitante — independentes
-  for (const t of tratamentos.filter((x) => x.modo_agendamento === MODO_LIVRE_CONCOMITANTE)) {
-    const p = projetar(t, t.dataInicio ?? baseStart);
-    out.set(t.ref, { ref: t.ref, tratamento_id: t.tratamento_id, ...p });
-  }
-
-  // Agendado por data inicial — só gera se houver data
-  for (const t of tratamentos.filter((x) => x.modo_agendamento === MODO_AGENDADO_POR_DATA_INICIAL)) {
-    const p = projetar(t, t.dataInicio ?? null);
-    out.set(t.ref, { ref: t.ref, tratamento_id: t.tratamento_id, ...p });
-  }
-
-  // Sequencial bloqueante — encadeado por ordem
+  // 1) Sequencial bloqueante PRIMEIRO — encadeado por ordem. Resolver a cadeia
+  // antes dos demais garante saber o marco posterior ao fim da cadeia aplicável.
   const sequenciais = tratamentos
     .filter(
       (x) =>
@@ -248,6 +328,7 @@ export function projetarAgendaConsolidada(
   let chainStart: Date = baseStart;
   let anteriorRef: string | null = null;
   let dataFinalAnterior: string | null = null;
+  let cadeiaBloqueanteExiste = false;
 
   for (const t of sequenciais) {
     const p = projetar(t, chainStart);
@@ -264,7 +345,64 @@ export function projetarAgendaConsolidada(
       chainStart = prox;
       anteriorRef = t.ref;
       dataFinalAnterior = p.sessoes[p.sessoes.length - 1].data_sessao;
+      cadeiaBloqueanteExiste = true;
     }
+  }
+
+  // Marco para sugestões do caso público: fim da cadeia bloqueante aplicável,
+  // quando existir; caso contrário, a própria base resolvida.
+  const marcoPublico: Date = cadeiaBloqueanteExiste ? chainStart : baseStart;
+
+  // 2) Livre concomitante — independentes (caso público tratado à parte)
+  for (const t of tratamentos.filter((x) => x.modo_agendamento === MODO_LIVRE_CONCOMITANTE)) {
+    if (isTratamentoPublicoLivre(t)) {
+      const restante = quantidadeRestante(t.quantidade_total, t.quantidade_realizada);
+      const eleg = elegibilidadeAgenda({ status: t.status, restante, temDataInicio: true });
+      const liberadoDesde = dataParaString(baseStart);
+
+      // Sugestões: primeira ocorrência válida do PRÓPRIO tratamento em/após o
+      // marco posterior ao fim da cadeia (ou da base, se não houver cadeia).
+      // São apenas projeção/exibição — NÃO viram agenda rígida.
+      const sugestoes = eleg.geraAgenda
+        ? normalizarSessoes(
+            generateSessionDates(
+              marcoPublico,
+              t.tipo.dia_semana,
+              normalizarHorario(t.tipo.horario),
+              t.tipo.frequencia_valor || 1,
+              t.tipo.frequencia_unidade || "semanas",
+              restante,
+            ),
+          )
+        : [];
+
+      out.set(t.ref, {
+        ref: t.ref,
+        tratamento_id: t.tratamento_id,
+        geraAgenda: false, // nunca gera agenda rígida
+        motivoNaoGera: eleg.geraAgenda
+          ? "Tratamento público livre: liberado para comparecimento com sugestões (não é agenda rígida)."
+          : eleg.motivoNaoGera,
+        restante,
+        sessoes: [],
+        tratamentoPublicoComSugestao: true,
+        liberadoDesde,
+        liberadoParaComparecimento: true,
+        sugestoesAPartirDe: sugestoes[0]?.data_sessao ?? null,
+        sugestoes,
+      });
+      continue;
+    }
+
+    // Livre normal: max(baseStart, dataInicio?) → usa dataInicio quando informado.
+    const p = projetar(t, t.dataInicio ?? baseStart);
+    out.set(t.ref, { ref: t.ref, tratamento_id: t.tratamento_id, ...p });
+  }
+
+  // 3) Agendado por data inicial — só gera se houver data
+  for (const t of tratamentos.filter((x) => x.modo_agendamento === MODO_AGENDADO_POR_DATA_INICIAL)) {
+    const p = projetar(t, t.dataInicio ?? null);
+    out.set(t.ref, { ref: t.ref, tratamento_id: t.tratamento_id, ...p });
   }
 
   // Preserva a ordem de entrada
