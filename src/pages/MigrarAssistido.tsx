@@ -98,20 +98,29 @@ export default function MigrarAssistido() {
   // Etapa 5
   const [observacaoAdmin, setObservacaoAdmin] = useState("");
 
-  // Etapa 6 — Revisão da agenda prevista (prévia oficial)
+  // Etapa 6 — Revisão da agenda prevista (prévia oficial consolidada)
   const [revisao, setRevisao] = useState<
     | null
     | Array<{
         nome: string;
         status: StatusTratamento;
+        modo_agendamento: string;
+        ordem: number | null;
         total: number;
         realizadas: number;
         restante: number;
         geraAgenda: boolean;
         motivoNaoGera?: string;
         sessoes: SessaoGerada[];
+        bloqueadoPorRef?: string | null;
+        // Caso público livre com sugestões
+        tratamentoPublicoComSugestao?: boolean;
+        liberadoDesde?: string | null;
+        sugestoesAPartirDe?: string | null;
+        sugestoes?: SessaoGerada[];
       }>
   >(null);
+
 
   useEffect(() => {
     fetchInitialData()
