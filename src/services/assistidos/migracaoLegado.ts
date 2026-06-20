@@ -285,6 +285,9 @@ export interface ReconciliarVinculoInput {
   ordem_tratamento: number;
   /** Override de data inicial (modo por data inicial / livre). */
   dataInicio?: string | null;
+  /** Flags estruturais do tipo (caso público livre). NÃO alteram o modo. */
+  trabalho_publico?: boolean;
+  permite_entrada_sem_agendamento?: boolean;
 }
 
 /**
