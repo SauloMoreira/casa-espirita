@@ -95,6 +95,21 @@ export default function MigrarAssistido() {
   // Etapa 5
   const [observacaoAdmin, setObservacaoAdmin] = useState("");
 
+  // Etapa 6 — Revisão da agenda prevista (prévia oficial)
+  const [revisao, setRevisao] = useState<
+    | null
+    | Array<{
+        nome: string;
+        status: StatusTratamento;
+        total: number;
+        realizadas: number;
+        restante: number;
+        geraAgenda: boolean;
+        motivoNaoGera?: string;
+        sessoes: SessaoGerada[];
+      }>
+  >(null);
+
   useEffect(() => {
     fetchInitialData()
       .then((d) => {
