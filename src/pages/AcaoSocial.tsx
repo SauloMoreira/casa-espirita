@@ -51,16 +51,51 @@ export default function AcaoSocial() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Configuração do prazo de entrega do mês
+  const [config, setConfig] = useState<AcaoSocialConfig | null>(null);
+  const [prazoData, setPrazoData] = useState("");
+  const [prazoObs, setPrazoObs] = useState("");
+  const [exibirPrazo, setExibirPrazo] = useState(true);
+  const [savingPrazo, setSavingPrazo] = useState(false);
+
+  const aplicarConfig = (cfg: AcaoSocialConfig | null) => {
+    setConfig(cfg);
+    setPrazoData(cfg?.prazo_final_entrega?.slice(0, 10) ?? "");
+    setPrazoObs(cfg?.observacao_prazo ?? "");
+    setExibirPrazo(cfg?.exibir_prazo ?? true);
+  };
+
   const load = async () => {
     setLoading(true);
     try {
-      setItens(await listAlimentos());
+      const [lista, cfg] = await Promise.all([listAlimentos(), getAcaoSocialConfig()]);
+      setItens(lista);
+      aplicarConfig(cfg);
     } catch (e: any) {
       toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSavePrazo = async () => {
+    setSavingPrazo(true);
+    try {
+      await saveAcaoSocialConfig({
+        prazo_final_entrega: prazoData || null,
+        observacao_prazo: prazoObs.trim() || null,
+        exibir_prazo: exibirPrazo,
+      });
+      const cfg = await getAcaoSocialConfig();
+      aplicarConfig(cfg);
+      toast({ title: "Prazo atualizado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar prazo", description: e.message, variant: "destructive" });
+    } finally {
+      setSavingPrazo(false);
+    }
+  };
+
 
   useEffect(() => { load(); }, []);
 
