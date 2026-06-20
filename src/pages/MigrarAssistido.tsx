@@ -8,10 +8,12 @@ import {
   STATUS_TRATAMENTO,
   STATUS_TRATAMENTO_LABELS,
   statusPermiteProximaSessao,
+  previewAgendaTratamento,
   type StatusTratamento,
   type TratamentoLegadoInput,
 } from "@/lib/migracaoLegado";
-import type { EntrevistaAssistido, EntrevistaTipoTratamento } from "@/types/fazerEntrevista";
+import type { ParametrosTipoAgenda } from "@/lib/agendaRules";
+import type { SessaoGerada, EntrevistaAssistido, EntrevistaTipoTratamento } from "@/types/fazerEntrevista";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
