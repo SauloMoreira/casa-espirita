@@ -125,25 +125,80 @@ export default function MigrarAssistido() {
     [tratamentos],
   );
 
-  const updateLinha = (i: number, patch: Partial<TratamentoRow>) =>
+  const tipoAgendaPorTratamento = useMemo<Record<string, ParametrosTipoAgenda>>(
+    () =>
+      Object.fromEntries(
+        tratamentos.map((t) => [
+          t.id,
+          {
+            dia_semana: t.dia_semana,
+            horario: t.horario,
+            frequencia_valor: t.frequencia_valor,
+            frequencia_unidade: t.frequencia_unidade,
+          },
+        ]),
+      ),
+    [tratamentos],
+  );
+
+  const updateLinha = (i: number, patch: Partial<TratamentoRow>) => {
+    setRevisao(null);
     setLinhas((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  };
 
-  const removeLinha = (i: number) => setLinhas((prev) => prev.filter((_, idx) => idx !== i));
+  const removeLinha = (i: number) => {
+    setRevisao(null);
+    setLinhas((prev) => prev.filter((_, idx) => idx !== i));
+  };
 
-  const handleSubmit = async () => {
-    if (!user) return;
+  const validarEntrada = (): boolean => {
+    if (!user) return false;
     if (modo === "novo" && !base.nome.trim()) {
       toast({ title: "Informe o nome do assistido", variant: "destructive" });
-      return;
+      return false;
     }
     if (modo === "existente" && !assistidoExistenteId) {
       toast({ title: "Selecione o assistido existente", variant: "destructive" });
-      return;
+      return false;
     }
     if (linhas.length === 0 || linhas.some((l) => !l.tratamento_id)) {
       toast({ title: "Selecione o tipo em todos os tratamentos", variant: "destructive" });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleRevisar = () => {
+    if (!validarEntrada()) return;
+    const previa = linhas.map((l) => {
+      const tipo = tipoAgendaPorTratamento[l.tratamento_id];
+      const p = previewAgendaTratamento(
+        {
+          tratamento_id: l.tratamento_id,
+          status: l.status,
+          quantidade_total: Number(l.quantidade_total),
+          quantidade_realizada: Number(l.quantidade_realizada),
+          proxima_sessao_data: l.proxima_sessao_data,
+        },
+        tipo,
+        l.proxima_sessao_data,
+      );
+      return {
+        nome: tratamentoMap[l.tratamento_id]?.nome ?? "Tratamento",
+        status: l.status,
+        total: Number(l.quantidade_total),
+        realizadas: Number(l.quantidade_realizada),
+        restante: p.restante,
+        geraAgenda: p.geraAgenda,
+        motivoNaoGera: p.motivoNaoGera,
+        sessoes: p.sessoes,
+      };
+    });
+    setRevisao(previa);
+  };
+
+  const handleConfirmar = async () => {
+    if (!user || !revisao) return;
 
     const obsFinal = [
       entrevistaForaSistema ? "Entrevista/triagem realizada fora do sistema." : "",
@@ -187,8 +242,9 @@ export default function MigrarAssistido() {
           proxima_sessao_data: l.proxima_sessao_data,
           proxima_sessao_horario: l.proxima_sessao_horario,
         })),
-        diaSemanaPorTratamento: Object.fromEntries(
-          tratamentos.map((t) => [t.id, t.dia_semana]),
+        tipoAgendaPorTratamento,
+        sessoesPrevistasPorIndice: Object.fromEntries(
+          revisao.map((r, i) => [i, r.sessoes]),
         ),
         confirmacoes: Object.fromEntries(
           linhas.map((l, i) => [
@@ -203,7 +259,7 @@ export default function MigrarAssistido() {
       });
       toast({
         title: "Assistido migrado com sucesso!",
-        description: `${res.vinculosCriados} tratamento(s) e ${res.sessoesCriadas} próxima(s) sessão(ões).`,
+        description: `${res.vinculosCriados} tratamento(s) e ${res.sessoesCriadas} sessão(ões) gerada(s).`,
       });
       navigate("/assistidos");
     } catch (e: any) {
@@ -212,6 +268,7 @@ export default function MigrarAssistido() {
       setSaving(false);
     }
   };
+
 
   if (loading) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Carregando...</div>;
