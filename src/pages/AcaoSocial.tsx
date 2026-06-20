@@ -56,6 +56,7 @@ export default function AcaoSocial() {
   const [prazoData, setPrazoData] = useState("");
   const [prazoObs, setPrazoObs] = useState("");
   const [exibirPrazo, setExibirPrazo] = useState(true);
+  const [mensagem, setMensagem] = useState("");
   const [savingPrazo, setSavingPrazo] = useState(false);
 
   const aplicarConfig = (cfg: AcaoSocialConfig | null) => {
@@ -63,6 +64,7 @@ export default function AcaoSocial() {
     setPrazoData(cfg?.prazo_final_entrega?.slice(0, 10) ?? "");
     setPrazoObs(cfg?.observacao_prazo ?? "");
     setExibirPrazo(cfg?.exibir_prazo ?? true);
+    setMensagem(cfg?.mensagem_institucional ?? "");
   };
 
   const load = async () => {
