@@ -54,7 +54,7 @@ export default function ResetPassword() {
       // Re-fetch session/profile so guards pick up the cleared flag.
       window.location.href = "/dashboard";
     } catch (error: any) {
-      toast({ title: "Erro", description: error?.message, variant: "destructive" });
+      toast({ title: "Erro", description: traduzirErroSenha(error?.message), variant: "destructive" });
     } finally {
       setLoading(false);
     }
