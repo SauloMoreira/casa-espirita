@@ -174,6 +174,45 @@ export function validateTratamentoLegado(
   return errors;
 }
 
+export interface PreviewAgendaResultado {
+  geraAgenda: boolean;
+  motivoNaoGera?: string;
+  restante: number;
+  sessoes: SessaoGerada[];
+}
+
+/**
+ * Prévia da agenda restante de um tratamento legado, usando EXCLUSIVAMENTE a
+ * regra oficial (`projetarAgendaRestante` → `elegibilidadeAgenda` +
+ * `generateSessionDates`). Não há cálculo de datas nem elegibilidade paralela.
+ *
+ * `dataInicio`: data de início da projeção (yyyy-MM-dd) ou Date. Sem ela, o
+ * tratamento permanece elegível mas não gera agenda agora (fila), exatamente
+ * como no fluxo normal.
+ */
+export function previewAgendaTratamento(
+  input: TratamentoLegadoInput,
+  tipo: ParametrosTipoAgenda,
+  dataInicio: string | Date | null | undefined,
+): PreviewAgendaResultado {
+  let inicio: Date | null = null;
+  if (dataInicio instanceof Date) {
+    inicio = dataInicio;
+  } else if (typeof dataInicio === "string" && dataInicio.trim()) {
+    const parsed = new Date(dataInicio.trim() + "T12:00:00");
+    inicio = isValid(parsed) ? parsed : null;
+  }
+
+  return projetarAgendaRestante({
+    status: input.status,
+    quantidade_total: Number(input.quantidade_total),
+    quantidade_realizada: Number(input.quantidade_realizada),
+    tipo,
+    dataInicio: inicio,
+  });
+}
+
+
 export interface AssistidoLegadoBase {
   nome: string;
   cpf?: string | null;
