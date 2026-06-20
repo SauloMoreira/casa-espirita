@@ -446,6 +446,7 @@ export default function Usuarios() {
                     <TableRow key={u.user_id}>
                       <TableCell className="font-medium">{u.profile?.nome_completo || u.user_id.substring(0, 8) + "..."}</TableCell>
                       <TableCell className="hidden md:table-cell font-mono text-xs">{u.profile?.cpf ? maskCPF(u.profile.cpf) : "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">{u.email || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="default">{ROLE_LABELS[u.role] || u.role}</Badge>
                       </TableCell>
