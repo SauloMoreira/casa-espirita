@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { AlimentoAcaoSocial } from "@/lib/acaoSocial";
+import type { AlimentoAcaoSocial, AcaoSocialConfig } from "@/lib/acaoSocial";
 
 export type AlimentoInput = {
   nome: string;
