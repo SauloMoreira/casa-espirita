@@ -495,7 +495,7 @@ export default function MigrarAssistido() {
             );
           })}
 
-          <Button type="button" variant="outline" size="sm" onClick={() => setLinhas((p) => [...p, emptyTratamento()])} className="gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => { setRevisao(null); setLinhas((p) => [...p, emptyTratamento()]); }} className="gap-2">
             <Plus className="h-4 w-4" /> Adicionar tratamento
           </Button>
         </CardContent>
