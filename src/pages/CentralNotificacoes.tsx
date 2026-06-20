@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
 import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
+import { AlertaCentralCard } from "@/components/notificacoes/AlertaCentralCard";
 import { AtendimentoDrawer } from "@/components/notificacoes/AtendimentoDrawer";
 import { ConversasTab } from "@/components/notificacoes/ConversasTab";
 import {
@@ -124,6 +125,7 @@ export default function CentralNotificacoes() {
           </Button>
         </div>
       </div>
+      <AlertaCentralCard />
 
       <Tabs defaultValue="painel">
         <TabsList>

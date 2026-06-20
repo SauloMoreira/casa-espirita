@@ -801,6 +801,36 @@ export type Database = {
           },
         ]
       }
+      comunicador_alerta_config: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          recebe_alertas_central: boolean
+          ultimo_alerta_em: string | null
+          ultimo_snapshot: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          recebe_alertas_central?: boolean
+          ultimo_alerta_em?: string | null
+          ultimo_snapshot?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          recebe_alertas_central?: boolean
+          ultimo_alerta_em?: string | null
+          ultimo_snapshot?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       configuracoes_gerais: {
         Row: {
           chave: string
@@ -2511,6 +2541,13 @@ export type Database = {
         Args: { _assistido_id: string; _coordinator_id: string }
         Returns: boolean
       }
+      comunicadores_elegiveis: {
+        Args: never
+        Returns: {
+          celular: string
+          user_id: string
+        }[]
+      }
       contar_publico_elegivel: { Args: { p_versao: string }; Returns: number }
       count_active_masters: { Args: never; Returns: number }
       count_apt_admins: { Args: never; Returns: number }
@@ -2525,6 +2562,13 @@ export type Database = {
       entrevista_assistido_belongs_to_coordinator: {
         Args: { _assistido_id: string; _coordinator_id: string }
         Returns: boolean
+      }
+      fila_humana_pendente: {
+        Args: never
+        Returns: {
+          idade_mais_antiga_min: number
+          total_pendentes: number
+        }[]
       }
       fn_enqueue_notificacao: {
         Args: {
@@ -2683,6 +2727,7 @@ export type Database = {
         }
         Returns: Json
       }
+      sou_comunicador_elegivel: { Args: never; Returns: boolean }
       staff_names: {
         Args: { _ids?: string[] }
         Returns: {
