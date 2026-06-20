@@ -3,6 +3,8 @@ import {
   buildAssistidoLegadoInsert,
   validateTratamentoLegado,
   previewAgendaMigracao,
+  resolverDataBaseProjecao,
+  quantidadeRestante,
   type AssistidoLegadoBase,
   type TratamentoLegadoInput,
   type TipoMigracao,
@@ -11,8 +13,10 @@ import {
   normalizarSessoes,
   projetarAgendaConsolidada,
   sessoesIguais,
+  isTratamentoPublicoLivre,
   MODO_AGENDADO_POR_DATA_INICIAL,
   type ParametrosTipoAgenda,
+  type TratamentoProjecaoResultado,
 } from "@/lib/agendaRules";
 import type { SessaoGerada } from "@/types/fazerEntrevista";
 
