@@ -2,8 +2,12 @@ import { getDay, isValid, parseISO, startOfDay } from "date-fns";
 import {
   STATUS_GERA_AGENDA,
   projetarAgendaRestante,
+  projetarAgendaConsolidada,
+  isTratamentoPublicoLivre,
   quantidadeRestante,
+  MODO_AGENDADO_POR_DATA_INICIAL,
   type ParametrosTipoAgenda,
+  type TratamentoProjecaoResultado,
 } from "@/lib/agendaRules";
 import type { SessaoGerada } from "@/types/fazerEntrevista";
 
@@ -18,6 +22,7 @@ import type { SessaoGerada } from "@/types/fazerEntrevista";
  */
 
 export { quantidadeRestante };
+
 
 
 /** Status reais aceitos pelo sistema para assistido_tratamentos. */
