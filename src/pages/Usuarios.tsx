@@ -435,6 +435,7 @@ export default function Usuarios() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
+                    <TableHead className="hidden md:table-cell">E-mail</TableHead>
                     <TableHead>Perfil</TableHead>
                     <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="w-10"></TableHead>
