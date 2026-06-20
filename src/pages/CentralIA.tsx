@@ -29,7 +29,7 @@ export default function CentralIA() {
       </div>
 
       <Tabs defaultValue={isAdmin ? "queixas" : "sugestoes"} className="w-full">
-        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-4 md:grid-cols-7" : "grid-cols-3"}`}>
+        <TabsList className={`grid w-full h-auto ${isAdmin ? "grid-cols-4 md:grid-cols-8" : "grid-cols-3"}`}>
           {isAdmin && (
             <>
               <TabsTrigger value="queixas" className="flex items-center gap-1.5 text-xs py-2.5">
@@ -39,6 +39,10 @@ export default function CentralIA() {
               <TabsTrigger value="biblioteca" className="flex items-center gap-1.5 text-xs py-2.5">
                 <BookOpen className="h-3.5 w-3.5" />
                 <span className="hidden md:inline">Biblioteca</span>
+              </TabsTrigger>
+              <TabsTrigger value="base-site" className="flex items-center gap-1.5 text-xs py-2.5">
+                <Globe className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">Base do Site</span>
               </TabsTrigger>
             </>
           )}
