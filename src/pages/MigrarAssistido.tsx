@@ -414,7 +414,23 @@ export default function MigrarAssistido() {
               <Label>Data da migração</Label>
               <Input type="date" value={dataMigracao} onChange={(e) => setDataMigracao(e.target.value)} />
             </div>
+            <div className="space-y-2">
+              <Label>Data base da projeção</Label>
+              <Input
+                type="date"
+                value={dataBaseProjecao}
+                onChange={(e) => {
+                  setRevisao(null);
+                  setDataBaseProjecao(e.target.value);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Âncora da projeção (padrão: hoje). A regra oficial infere o início de cada tratamento
+                a partir desta base — só o modo "agendado por data inicial" exige data manual.
+              </p>
+            </div>
           </div>
+
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={entrevistaForaSistema} onCheckedChange={(v) => setEntrevistaForaSistema(!!v)} />
             <span>Entrevista/triagem realizada fora do sistema</span>
