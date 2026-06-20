@@ -1,26 +1,41 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { HeartHandshake } from "lucide-react";
-import { alimentosVisiveis, formatFaltante, type AlimentoAcaoSocial } from "@/lib/acaoSocial";
-import { listAlimentosAtivos } from "@/services/acaoSocial";
+import { HeartHandshake, CalendarClock } from "lucide-react";
+import {
+  alimentosVisiveis,
+  formatFaltante,
+  prazoEntregaInfo,
+  type AlimentoAcaoSocial,
+  type AcaoSocialConfig,
+} from "@/lib/acaoSocial";
+import { listAlimentosAtivos, getAcaoSocialConfig } from "@/services/acaoSocial";
 
 /**
  * Bloco acolhedor exibido ao assistido com os alimentos mais necessários
  * no momento. Mostra apenas itens ativos, respeitando a ordem definida pela
- * administração. Não renderiza nada quando não há itens.
+ * administração. Exibe, quando configurado, o prazo de entrega do mês em
+ * destaque no topo. Não renderiza nada quando não há itens.
  */
 export function AlimentosAssistidoCard() {
   const [itens, setItens] = useState<AlimentoAcaoSocial[]>([]);
+  const [config, setConfig] = useState<AcaoSocialConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listAlimentosAtivos()
-      .then((d) => setItens(alimentosVisiveis(d)))
-      .catch(() => setItens([]))
+    Promise.all([
+      listAlimentosAtivos().catch(() => [] as AlimentoAcaoSocial[]),
+      getAcaoSocialConfig().catch(() => null),
+    ])
+      .then(([alimentos, cfg]) => {
+        setItens(alimentosVisiveis(alimentos));
+        setConfig(cfg);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading || itens.length === 0) return null;
+
+  const prazo = prazoEntregaInfo(config);
 
   return (
     <Card className="overflow-hidden border-border/50 shadow-sm">
@@ -41,6 +56,23 @@ export function AlimentosAssistidoCard() {
           </div>
         </div>
       </div>
+
+      {/* Prazo de entrega do mês em destaque — apenas quando configurado */}
+      {prazo && (
+        <div className="border-b border-border/50 bg-acao-social/5 px-5 py-3 sm:px-6">
+          <div className="flex items-start gap-2.5">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-acao-social" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-acao-social">{prazo.texto}</p>
+              {prazo.observacao && (
+                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                  {prazo.observacao}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <CardContent className="pt-4">
         <ul className="divide-y divide-border/50">
