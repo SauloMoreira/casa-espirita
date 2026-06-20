@@ -1,3 +1,4 @@
+import { addDays } from "date-fns";
 import { generateSessionDates } from "@/lib/fazerEntrevista";
 import type { SessaoGerada } from "@/types/fazerEntrevista";
 
