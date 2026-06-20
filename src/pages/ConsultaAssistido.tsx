@@ -347,7 +347,6 @@ function BlocoTratamentos({
               ? Math.round((t.quantidade_realizada / t.quantidade_total) * 100)
               : 0;
           const sessoesGeradas = sessoes.filter((s) => s.vinculo_id === t.vinculo_id).length;
-          const proxima = proximaPorVinculo.get(t.vinculo_id);
           const anterior = anteriorDe(t);
           const bloqueado =
             t.sequencial_bloqueante &&
