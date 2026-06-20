@@ -1801,6 +1801,7 @@ export type Database = {
       notificacoes_preferencias: {
         Row: {
           assistido_id: string
+          comunicacao_geral_ativa: boolean
           consentimento_at: string | null
           consentimento_origem: string | null
           consentimento_status: string
@@ -1816,6 +1817,7 @@ export type Database = {
         }
         Insert: {
           assistido_id: string
+          comunicacao_geral_ativa?: boolean
           consentimento_at?: string | null
           consentimento_origem?: string | null
           consentimento_status?: string
@@ -1831,6 +1833,7 @@ export type Database = {
         }
         Update: {
           assistido_id?: string
+          comunicacao_geral_ativa?: boolean
           consentimento_at?: string | null
           consentimento_origem?: string | null
           consentimento_status?: string
@@ -2847,6 +2850,8 @@ export type Database = {
         | "sessao_lembrete"
         | "remarcacao"
         | "cancelamento"
+        | "presenca_registrada"
+        | "falta_registrada"
       notif_status: "pendente" | "agendado" | "enviado" | "falha" | "cancelado"
     }
     CompositeTypes: {
@@ -2993,6 +2998,8 @@ export const Constants = {
         "sessao_lembrete",
         "remarcacao",
         "cancelamento",
+        "presenca_registrada",
+        "falta_registrada",
       ],
       notif_status: ["pendente", "agendado", "enviado", "falha", "cancelado"],
     },
