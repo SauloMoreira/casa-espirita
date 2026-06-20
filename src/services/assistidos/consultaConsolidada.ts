@@ -104,7 +104,7 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
   const { data: vinculos, error: errV } = await supabase
     .from("assistido_tratamentos")
     .select(
-      "id, tratamento_id, status, quantidade_total, quantidade_realizada, quantidade_faltante, origem, observacoes, observacao_migracao, created_at, tipos_tratamento:tratamento_id(nome, ordem_tratamento, modo_agendamento, tratamento_livre, bloqueia_proximo_tratamento)",
+      "id, tratamento_id, status, quantidade_total, quantidade_realizada, quantidade_faltante, origem, observacoes, observacao_migracao, created_at",
     )
     .eq("assistido_id", assistidoId);
   if (errV) throw new Error(errV.message);
@@ -120,19 +120,57 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
     observacoes: string | null;
     observacao_migracao: string | null;
     created_at: string;
-    tipos_tratamento: {
-      nome: string;
-      ordem_tratamento: number | null;
-      modo_agendamento: string;
-      tratamento_livre: boolean;
-      bloqueia_proximo_tratamento: boolean;
-    } | null;
   };
+
+  const { data: agenda, error: errS } = await supabase
+    .from("agenda_tratamentos_assistido")
+    .select("id, assistido_tratamento_id, tratamento_id, data_sessao, horario, status")
+    .eq("assistido_id", assistidoId)
+    .order("data_sessao");
+  if (errS) throw new Error(errS.message);
+
+  type AgendaRow = {
+    id: string;
+    assistido_tratamento_id: string;
+    tratamento_id: string;
+    data_sessao: string;
+    horario: string | null;
+    status: string;
+  };
+
+  // Carrega os tipos de tratamento referenciados (sem FK declarada → join em JS).
+  const tipoIds = Array.from(
+    new Set([
+      ...((vinculos ?? []) as VinculoRow[]).map((v) => v.tratamento_id),
+      ...((agenda ?? []) as AgendaRow[]).map((a) => a.tratamento_id),
+    ]),
+  ).filter(Boolean);
+
+  type TipoRow = {
+    id: string;
+    nome: string;
+    ordem_tratamento: number | null;
+    modo_agendamento: string | null;
+    tratamento_livre: boolean | null;
+    bloqueia_proximo_tratamento: boolean | null;
+  };
+
+  let tipos: TipoRow[] = [];
+  if (tipoIds.length > 0) {
+    const { data: tt, error: errT } = await supabase
+      .from("tipos_tratamento")
+      .select("id, nome, ordem_tratamento, modo_agendamento, tratamento_livre, bloqueia_proximo_tratamento")
+      .in("id", tipoIds);
+    if (errT) throw new Error(errT.message);
+    tipos = (tt ?? []) as TipoRow[];
+  }
+  const tipoMap = new Map(tipos.map((t) => [t.id, t]));
 
   const tratamentos: TratamentoConsolidado[] = ((vinculos ?? []) as VinculoRow[])
     .map((v) => {
-      const tt = v.tipos_tratamento;
-      const modo = tt?.modo_agendamento ?? (tt?.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
+      const tt = tipoMap.get(v.tratamento_id);
+      const modo =
+        tt?.modo_agendamento ?? (tt?.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
       return {
         vinculo_id: v.id,
         tratamento_id: v.tratamento_id,
@@ -152,15 +190,6 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
     })
     .sort((a, b) => (a.ordem_tratamento ?? 999) - (b.ordem_tratamento ?? 999));
 
-  const { data: agenda, error: errS } = await supabase
-    .from("agenda_tratamentos_assistido")
-    .select(
-      "id, assistido_tratamento_id, tratamento_id, data_sessao, horario, status, tipos_tratamento:tratamento_id(nome)",
-    )
-    .eq("assistido_id", assistidoId)
-    .order("data_sessao");
-  if (errS) throw new Error(errS.message);
-
   // Presenças lançadas, para enriquecer o status visível das sessões.
   const vinculoIds = tratamentos.map((t) => t.vinculo_id);
   let presencas: { assistido_tratamento_id: string; data: string; status_presenca: string }[] = [];
@@ -175,21 +204,11 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
     presencas.map((p) => [`${p.assistido_tratamento_id}|${p.data}`, p.status_presenca]),
   );
 
-  type AgendaRow = {
-    id: string;
-    assistido_tratamento_id: string;
-    tratamento_id: string;
-    data_sessao: string;
-    horario: string | null;
-    status: string;
-    tipos_tratamento: { nome: string } | null;
-  };
-
   const sessoes: SessaoConsolidada[] = ((agenda ?? []) as AgendaRow[]).map((s) => ({
     id: s.id,
     vinculo_id: s.assistido_tratamento_id,
     tratamento_id: s.tratamento_id,
-    tratamento_nome: s.tipos_tratamento?.nome ?? "Tratamento",
+    tratamento_nome: tipoMap.get(s.tratamento_id)?.nome ?? "Tratamento",
     data_sessao: s.data_sessao,
     horario: s.horario,
     status: s.status,
