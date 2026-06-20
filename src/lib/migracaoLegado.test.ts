@@ -6,8 +6,18 @@ import {
   buildProximaSessaoInsert,
   isStatusValido,
   statusPermiteProximaSessao,
+  previewAgendaTratamento,
+  quantidadeRestante,
   type TratamentoLegadoInput,
 } from "./migracaoLegado";
+import {
+  elegibilidadeAgenda,
+  projetarAgendaRestante,
+  sessoesIguais,
+  normalizarSessoes,
+  type ParametrosTipoAgenda,
+} from "./agendaRules";
+import { generateSessionDates } from "./fazerEntrevista";
 
 const futuro = (offsetDays: number, weekdayTarget?: number): string => {
   const d = new Date();
