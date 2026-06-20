@@ -1,7 +1,6 @@
 import { getDay, isValid, parseISO, startOfDay } from "date-fns";
 import {
   STATUS_GERA_AGENDA,
-  elegibilidadeAgenda,
   projetarAgendaRestante,
   quantidadeRestante,
   type ParametrosTipoAgenda,
