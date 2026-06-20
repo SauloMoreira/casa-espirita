@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { HeartHandshake, CalendarClock } from "lucide-react";
+import { HeartHandshake, CalendarClock, Info } from "lucide-react";
 import {
   alimentosVisiveis,
   formatFaltante,
   prazoEntregaInfo,
+  mensagemInstitucional,
   type AlimentoAcaoSocial,
   type AcaoSocialConfig,
 } from "@/lib/acaoSocial";
