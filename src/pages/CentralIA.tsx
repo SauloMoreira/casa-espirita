@@ -80,6 +80,9 @@ export default function CentralIA() {
             <TabsContent value="biblioteca" className="mt-6">
               <BibliotecaDoutrinaria />
             </TabsContent>
+            <TabsContent value="base-site" className="mt-6">
+              <BaseSiteIA />
+            </TabsContent>
           </>
         )}
         <TabsContent value="sugestoes" className="mt-6">
