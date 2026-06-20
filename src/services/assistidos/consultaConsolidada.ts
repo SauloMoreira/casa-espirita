@@ -1,4 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  projetarAgendaConsolidada,
+  type TratamentoProjecaoResultado,
+} from "@/lib/agendaRules";
+import { resolverDataBaseProjecao } from "@/lib/migracaoLegado";
 
 /**
  * Consulta consolidada do assistido (somente leitura) para conferência
