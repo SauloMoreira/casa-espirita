@@ -30,6 +30,8 @@ const CHAVE_LABELS: Record<string, string> = {
   central_alerta_min_pendencias: "Alerta da Central — mínimo de pendências",
   central_alerta_cooldown_min: "Alerta da Central — intervalo entre alertas (min)",
   central_alerta_piora_minutos: "Alerta da Central — limiar de piora (min)",
+  site_ia_ativo: "Base do site — usar como apoio à IA",
+  site_ia_max_documentos: "Base do site — máximo de documentos como contexto",
 };
 
 export default function RegrasOperacionais() {
