@@ -375,3 +375,291 @@ export async function reconciliarAssistidoLegado(
     sessoesCriadas: result.sessoes_criadas ?? 0,
   };
 }
+
+// ===========================================================================
+// Reconciliação oficial por assistido (prévia + execução + auditoria).
+//
+// Reusa EXCLUSIVAMENTE a regra oficial (`projetarAgendaConsolidada` via
+// `reconciliarAssistidoLegado`). A prévia e a execução compartilham a MESMA
+// base e os MESMOS inputs — a execução recalcula e compara antes de gravar
+// (prévia == gravação para tudo o que for persistível).
+// ===========================================================================
+
+/** Classificação da origem de cada tratamento na reconciliação. */
+export type OrigemReconciliacao = "persistivel" | "sugestao" | "nao_aplicavel";
+
+export interface ReconciliacaoItemPreview {
+  vinculo_id: string;
+  tratamento_id: string;
+  nome: string;
+  modo_agendamento: string;
+  status: string;
+  ordem: number | null;
+  total: number;
+  realizadas: number;
+  restante: number;
+  origem: OrigemReconciliacao;
+  geraAgenda: boolean;
+  motivoNaoGera?: string;
+  /** Sessões rígidas que SERÃO gravadas (vazio para sugestão/não aplicável). */
+  sessoes: SessaoGerada[];
+  tratamentoPublicoComSugestao?: boolean;
+  liberadoDesde?: string | null;
+  sugestoesAPartirDe?: string | null;
+  sugestoes?: SessaoGerada[];
+}
+
+export interface ReconciliacaoPreview {
+  assistidoId: string;
+  /** Base resolvida (yyyy-MM-dd) — piso em hoje aplicado neste contexto. */
+  baseStart: string;
+  itens: ReconciliacaoItemPreview[];
+  totalSessoesRigidas: number;
+  totalSomenteSugestao: number;
+}
+
+interface VinculoComTipo {
+  input: ReconciliarVinculoInput;
+  nome: string;
+}
+
+/** Lê o estado real do assistido (vínculos + tipos) para a reconciliação. */
+async function carregarVinculosReconciliacao(assistidoId: string): Promise<VinculoComTipo[]> {
+  const { data: vinculos, error: errV } = await supabase
+    .from("assistido_tratamentos")
+    .select("id, tratamento_id, status, quantidade_total, quantidade_realizada, observacoes")
+    .eq("assistido_id", assistidoId);
+  if (errV) throw new Error(errV.message);
+
+  const rows = (vinculos ?? []) as Array<{
+    id: string;
+    tratamento_id: string;
+    status: string;
+    quantidade_total: number;
+    quantidade_realizada: number;
+    observacoes: string | null;
+  }>;
+
+  const tipoIds = Array.from(new Set(rows.map((r) => r.tratamento_id))).filter(Boolean);
+  if (tipoIds.length === 0) return [];
+
+  const { data: tipos, error: errT } = await supabase
+    .from("tipos_tratamento")
+    .select(
+      "id, nome, modo_agendamento, ordem_tratamento, dia_semana, horario, frequencia_valor, frequencia_unidade, trabalho_publico, permite_entrada_sem_agendamento, tratamento_livre",
+    )
+    .in("id", tipoIds);
+  if (errT) throw new Error(errT.message);
+
+  type TipoRow = {
+    id: string;
+    nome: string;
+    modo_agendamento: string | null;
+    ordem_tratamento: number | null;
+    dia_semana: number | null;
+    horario: string | null;
+    frequencia_valor: number | null;
+    frequencia_unidade: string | null;
+    trabalho_publico: boolean | null;
+    permite_entrada_sem_agendamento: boolean | null;
+    tratamento_livre: boolean | null;
+  };
+  const tipoMap = new Map(((tipos ?? []) as TipoRow[]).map((t) => [t.id, t]));
+
+  return rows.map((r) => {
+    const tt = tipoMap.get(r.tratamento_id);
+    const modo =
+      tt?.modo_agendamento ??
+      (tt?.tratamento_livre ? "livre_concomitante" : "sequencial_bloqueante");
+    const input: ReconciliarVinculoInput = {
+      vinculo_id: r.id,
+      tratamento_id: r.tratamento_id,
+      status: r.status,
+      quantidade_total: Number(r.quantidade_total),
+      quantidade_realizada: Number(r.quantidade_realizada),
+      observacao: r.observacoes,
+      tipo: {
+        dia_semana: tt?.dia_semana ?? null,
+        horario: tt?.horario ?? null,
+        frequencia_valor: tt?.frequencia_valor ?? null,
+        frequencia_unidade: tt?.frequencia_unidade ?? null,
+      },
+      modo_agendamento: modo,
+      ordem_tratamento: tt?.ordem_tratamento ?? 999,
+      trabalho_publico: tt?.trabalho_publico === true,
+      permite_entrada_sem_agendamento: tt?.permite_entrada_sem_agendamento === true,
+    };
+    return { input, nome: tt?.nome ?? "Tratamento" };
+  });
+}
+
+/** Projeta os vínculos do assistido pela regra oficial (igual à execução). */
+function projetarReconciliacao(
+  vinculos: VinculoComTipo[],
+  baseStart: Date,
+): Map<string, TratamentoProjecaoResultado> {
+  const parseInicio = (s?: string | null): Date | null => {
+    if (!s || !s.trim()) return null;
+    const d = new Date(s.trim() + "T12:00:00");
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  const projecoes = projetarAgendaConsolidada(
+    vinculos.map((v) => ({
+      ref: v.input.vinculo_id,
+      tratamento_id: v.input.tratamento_id,
+      status: v.input.status,
+      quantidade_total: v.input.quantidade_total,
+      quantidade_realizada: v.input.quantidade_realizada,
+      modo_agendamento: v.input.modo_agendamento,
+      ordem_tratamento: v.input.ordem_tratamento,
+      tipo: v.input.tipo,
+      dataInicio: parseInicio(v.input.dataInicio),
+      trabalhoPublico: v.input.trabalho_publico === true,
+      permiteEntradaSemAgendamento: v.input.permite_entrada_sem_agendamento === true,
+    })),
+    baseStart,
+  );
+  return new Map(projecoes.map((p) => [p.ref, p]));
+}
+
+function classificarOrigem(proj: TratamentoProjecaoResultado): OrigemReconciliacao {
+  if (proj.tratamentoPublicoComSugestao) return "sugestao";
+  if (proj.geraAgenda && proj.sessoes.length > 0) return "persistivel";
+  return "nao_aplicavel";
+}
+
+/**
+ * Prévia da reconciliação oficial — sem gravar. Usa a mesma base/inputs da
+ * execução para garantir prévia == gravação.
+ */
+export async function previewReconciliacao(
+  assistidoId: string,
+  baseStart?: string | Date | null,
+): Promise<ReconciliacaoPreview> {
+  const base = resolverDataBaseProjecao(baseStart ?? null);
+  const vinculos = await carregarVinculosReconciliacao(assistidoId);
+  const projMap = projetarReconciliacao(vinculos, base);
+
+  let totalSessoesRigidas = 0;
+  let totalSomenteSugestao = 0;
+
+  const itens: ReconciliacaoItemPreview[] = vinculos
+    .map((v) => {
+      const proj = projMap.get(v.input.vinculo_id)!;
+      const origem = classificarOrigem(proj);
+      const sessoes = origem === "persistivel" ? normalizarSessoes(proj.sessoes) : [];
+      if (origem === "persistivel") totalSessoesRigidas += sessoes.length;
+      if (origem === "sugestao") totalSomenteSugestao += 1;
+      return {
+        vinculo_id: v.input.vinculo_id,
+        tratamento_id: v.input.tratamento_id,
+        nome: v.nome,
+        modo_agendamento: v.input.modo_agendamento,
+        status: v.input.status,
+        ordem: v.input.ordem_tratamento ?? null,
+        total: v.input.quantidade_total,
+        realizadas: v.input.quantidade_realizada,
+        restante: quantidadeRestante(v.input.quantidade_total, v.input.quantidade_realizada),
+        origem,
+        geraAgenda: proj.geraAgenda,
+        motivoNaoGera: proj.motivoNaoGera,
+        sessoes,
+        tratamentoPublicoComSugestao: proj.tratamentoPublicoComSugestao,
+        liberadoDesde: proj.liberadoDesde,
+        sugestoesAPartirDe: proj.sugestoesAPartirDe,
+        sugestoes: proj.sugestoes,
+      } as ReconciliacaoItemPreview;
+    })
+    .sort((a, b) => (a.ordem ?? 999) - (b.ordem ?? 999));
+
+  return {
+    assistidoId,
+    baseStart: base.toISOString().slice(0, 10),
+    itens,
+    totalSessoesRigidas,
+    totalSomenteSugestao,
+  };
+}
+
+export interface ReconciliacaoExecucaoResult extends MigrarAssistidoResult {
+  totalSomenteSugestao: number;
+  reprocessamento: boolean;
+  idempotenteSemNovas: boolean;
+}
+
+/**
+ * Executa a reconciliação oficial: recalcula, valida (prévia == gravação para o
+ * que for persistível) e grava apenas a agenda rígida pela RPC idempotente.
+ * Sugestões nunca são persistidas. Registra trilha de auditoria.
+ */
+export async function executarReconciliacao(
+  assistidoId: string,
+  baseStart?: string | Date | null,
+  opts: { esperado?: ReconciliacaoItemPreview[] } = {},
+): Promise<ReconciliacaoExecucaoResult> {
+  const base = resolverDataBaseProjecao(baseStart ?? null);
+  const vinculos = await carregarVinculosReconciliacao(assistidoId);
+  const projMap = projetarReconciliacao(vinculos, base);
+
+  // prévia == gravação: compara o que será persistido com o snapshot exibido.
+  if (opts.esperado) {
+    const espPorVinculo = new Map(opts.esperado.map((e) => [e.vinculo_id, e]));
+    for (const v of vinculos) {
+      const proj = projMap.get(v.input.vinculo_id)!;
+      const origem = classificarOrigem(proj);
+      const persistivel = origem === "persistivel" ? proj.sessoes : [];
+      const esp = espPorVinculo.get(v.input.vinculo_id);
+      const espSessoes = esp && esp.origem === "persistivel" ? esp.sessoes : [];
+      if (!sessoesIguais(espSessoes, persistivel)) {
+        throw new Error(
+          "A prévia exibida divergiu do cálculo oficial. Recarregue a reconciliação e tente novamente.",
+        );
+      }
+    }
+  }
+
+  // Detecta reprocessamento: já havia agenda persistida antes desta execução.
+  const { count: agendaAntes } = await supabase
+    .from("agenda_tratamentos_assistido")
+    .select("id", { count: "exact", head: true })
+    .eq("assistido_id", assistidoId);
+
+  const totalSomenteSugestao = vinculos.filter(
+    (v) => classificarOrigem(projMap.get(v.input.vinculo_id)!) === "sugestao",
+  ).length;
+
+  // Execução oficial — mesma base/inputs da prévia.
+  const result = await reconciliarAssistidoLegado(
+    assistidoId,
+    vinculos.map((v) => v.input),
+    base,
+  );
+
+  const reprocessamento = (agendaAntes ?? 0) > 0;
+  const idempotenteSemNovas = result.sessoesCriadas === 0;
+
+  // Auditoria (best-effort — não interrompe a reconciliação se falhar).
+  try {
+    await supabase.rpc("registrar_auditoria_reconciliacao", {
+      p_assistido_id: assistidoId,
+      p_dados: {
+        base_projecao: base.toISOString().slice(0, 10),
+        sessoes_rigidas_gravadas: result.sessoesCriadas,
+        tratamentos_so_sugestao: totalSomenteSugestao,
+        vinculos: result.vinculosCriados,
+        reprocessamento,
+        idempotente_sem_novas: idempotenteSemNovas,
+      } as never,
+    });
+  } catch {
+    // silencioso: a gravação da agenda é a operação crítica.
+  }
+
+  return {
+    ...result,
+    totalSomenteSugestao,
+    reprocessamento,
+    idempotenteSemNovas,
+  };
+}
