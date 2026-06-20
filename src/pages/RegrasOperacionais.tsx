@@ -25,6 +25,11 @@ const CHAVE_LABELS: Record<string, string> = {
   limite_carga_tarefeiro: "Limite de assistidos por tarefeiro",
   alerta_sessao_proxima_horas: "Antecedência para alerta de sessão (horas)",
   retorno_fraterno_pos_conclusao: "Retorno fraterno após conclusão",
+  central_alerta_ativo: "Alerta da Central — ativar",
+  central_alerta_minutos_pendencia: "Alerta da Central — minutos de espera da pendência",
+  central_alerta_min_pendencias: "Alerta da Central — mínimo de pendências",
+  central_alerta_cooldown_min: "Alerta da Central — intervalo entre alertas (min)",
+  central_alerta_piora_minutos: "Alerta da Central — limiar de piora (min)",
 };
 
 export default function RegrasOperacionais() {
