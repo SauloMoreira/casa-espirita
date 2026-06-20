@@ -175,6 +175,10 @@ export interface TratamentoProjecaoInput {
   tipo: ParametrosTipoAgenda;
   /** Data de início específica (modo por data inicial / override livre). */
   dataInicio?: Date | null;
+  /** Flag estrutural do tipo: é trabalho público? (NÃO altera o modo). */
+  trabalhoPublico?: boolean;
+  /** Flag estrutural do tipo: permite entrada sem agendamento? (NÃO altera o modo). */
+  permiteEntradaSemAgendamento?: boolean;
 }
 
 export interface TratamentoProjecaoResultado {
@@ -188,6 +192,93 @@ export interface TratamentoProjecaoResultado {
   bloqueadoPorRef?: string | null;
   /** Última data projetada do tratamento anterior na cadeia (yyyy-MM-dd). */
   dataFinalAnterior?: string | null;
+  /** Caso especial: tratamento público livre/concomitante com sugestões. */
+  tratamentoPublicoComSugestao?: boolean;
+  /** Data (yyyy-MM-dd) a partir da qual o assistido pode comparecer. */
+  liberadoDesde?: string | null;
+  /** O assistido já está liberado para comparecimento? */
+  liberadoParaComparecimento?: boolean;
+  /** Primeira ocorrência válida sugerida (yyyy-MM-dd), após a cadeia aplicável. */
+  sugestoesAPartirDe?: string | null;
+  /** Datas sugeridas (NÃO são agenda rígida — apenas projeção/exibição). */
+  sugestoes?: SessaoGerada[];
+}
+
+/**
+ * Detecta o caso público especial APENAS por metadados estruturais do tipo,
+ * sem hardcode por nome. NÃO altera modo/classificação — apenas habilita a
+ * camada contextual de liberação/sugestão/presença.
+ */
+export function isTratamentoPublicoLivre(t: {
+  modo_agendamento: string;
+  trabalhoPublico?: boolean;
+  permiteEntradaSemAgendamento?: boolean;
+}): boolean {
+  return (
+    t.modo_agendamento === MODO_LIVRE_CONCOMITANTE &&
+    t.trabalhoPublico === true &&
+    t.permiteEntradaSemAgendamento === true
+  );
+}
+
+const dataParaString = (d: Date): string => d.toISOString().slice(0, 10);
+
+/**
+ * Predicado explícito de elegibilidade de uma ocorrência para contar progresso
+ * em tratamento público livre. Centraliza a regra de "qual presença conta":
+ *  - a ocorrência pertence ao trabalho público correto do tratamento;
+ *  - não é palestra/evento genérico não vinculado;
+ *  - a data é >= liberadoDesde;
+ *  - há vínculo correto com o assistido_tratamento_id (quando exigido);
+ *  - não houve consumo duplicado da mesma ocorrência para o mesmo progresso.
+ */
+export interface OcorrenciaPublica {
+  /** Identificador único da ocorrência (sessão pública / presença). */
+  ocorrencia_id: string;
+  /** Tratamento/trabalho público ao qual a ocorrência pertence. */
+  tratamento_id: string;
+  /** Vínculo do assistido associado à ocorrência (quando houver). */
+  assistido_tratamento_id?: string | null;
+  /** Data da ocorrência (yyyy-MM-dd). */
+  data_ocorrencia: string;
+  /**
+   * Indica explicitamente que a ocorrência é uma sessão válida do próprio
+   * trabalho público (e não palestra/evento genérico). Sem isso, não conta.
+   */
+  vinculadaAoTrabalhoPublico: boolean;
+}
+
+export function ocorrenciaContaParaTratamentoPublico(params: {
+  ocorrencia: OcorrenciaPublica;
+  tratamentoId: string;
+  liberadoDesde: string;
+  vinculoId?: string | null;
+  consumidas?: Set<string>;
+}): boolean {
+  const { ocorrencia, tratamentoId, liberadoDesde, vinculoId, consumidas } = params;
+
+  // 1. Deve pertencer ao trabalho público correto do tratamento.
+  if (ocorrencia.tratamento_id !== tratamentoId) return false;
+
+  // 2. Não pode ser palestra/evento genérico não vinculado.
+  if (!ocorrencia.vinculadaAoTrabalhoPublico) return false;
+
+  // 3. A data deve ser >= liberadoDesde.
+  if (ocorrencia.data_ocorrencia < liberadoDesde) return false;
+
+  // 4. Vínculo correto, quando exigido.
+  if (
+    vinculoId &&
+    ocorrencia.assistido_tratamento_id &&
+    ocorrencia.assistido_tratamento_id !== vinculoId
+  ) {
+    return false;
+  }
+
+  // 5. Sem consumo duplicado da mesma ocorrência.
+  if (consumidas?.has(ocorrencia.ocorrencia_id)) return false;
+
+  return true;
 }
 
 /**
