@@ -98,10 +98,12 @@ export async function migrarAssistidoLegado(
     dataMigracao,
     observacaoMigracao,
     tratamentos,
-    tipoAgendaPorTratamento,
+    tiposPorTratamento,
+    dataBaseProjecao,
     sessoesPrevistasPorIndice = {},
     confirmacoes = {},
   } = params;
+
 
   if (!base.nome?.trim()) throw new Error("Informe o nome do assistido.");
   if (tratamentos.length === 0) throw new Error("Adicione ao menos um tratamento.");
