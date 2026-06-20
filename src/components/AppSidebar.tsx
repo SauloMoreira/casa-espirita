@@ -37,7 +37,7 @@ import {
   Send,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -162,7 +162,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
   const { role, isMaster, user, profile, signOut } = useAuth();
+  const isAssistido = role === "assistido";
   const [inst, setInst] = useState<{ logo_url: string | null; nome_fantasia: string | null } | null>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
