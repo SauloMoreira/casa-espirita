@@ -1740,6 +1740,12 @@ Deno.serve(async (req) => {
           }));
         respostaFonte = "acao_social_real";
         resposta = montarRespostaAcaoSocial(alimentos);
+      } else if (intencao === "programacao_publica" && respostaSite) {
+        // Pergunta conceitual de conhecimento público (sem marcador temporal):
+        // responde com base no site, sem usar a agenda como fonte. A guarda em
+        // siteQualifica garante que perguntas com data não chegam aqui.
+        respostaFonte = "site_conhecimento";
+        resposta = respostaSite;
       } else if (intencao === "programacao_publica") {
         // Public question. Mandatory lookup order:
         // (1) operational exceptions, (2) real public sessions,
