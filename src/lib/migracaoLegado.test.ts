@@ -7,8 +7,10 @@ import {
   isStatusValido,
   statusPermiteProximaSessao,
   previewAgendaTratamento,
+  previewAgendaMigracao,
   quantidadeRestante,
   type TratamentoLegadoInput,
+  type TipoMigracao,
 } from "./migracaoLegado";
 import {
   elegibilidadeAgenda,
