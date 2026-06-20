@@ -82,9 +82,9 @@ export function AlimentosAssistidoCard() {
         <div className="border-b border-border/50 px-5 py-3 sm:px-6">
           <div className="flex items-start gap-2.5">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
-              {mensagem}
-            </p>
+            <div className="min-w-0 flex-1">
+              <MensagemInstitucionalRenderer texto={mensagem} />
+            </div>
           </div>
         </div>
       )}
