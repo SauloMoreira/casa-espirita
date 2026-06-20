@@ -317,15 +317,9 @@ function BlocoTratamentos({
   tratamentos: TratamentoConsolidado[];
   sessoes: SessaoConsolidada[];
 }) {
-  const proximaPorVinculo = useMemo(() => {
-    const hoje = startOfDay(new Date());
-    const m = new Map<string, string>();
-    for (const s of [...sessoes].sort((a, b) => a.data_sessao.localeCompare(b.data_sessao))) {
-      if (m.has(s.vinculo_id)) continue;
-      if (!isBefore(parseISO(s.data_sessao), hoje)) m.set(s.vinculo_id, s.data_sessao);
-    }
-    return m;
-  }, [sessoes]);
+  // A próxima sessão e sua origem (Agendada/Projetada/Sugestão/Sem próxima)
+  // vêm calculadas pelo serviço, sem misturar fontes na tela.
+
 
   // Para a cadeia sequencial, identificar o tratamento anterior por ordem.
   const sequenciais = tratamentos
