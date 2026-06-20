@@ -9,8 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { ConsentimentoWhatsappCard } from "@/components/notificacoes/ConsentimentoWhatsappCard";
+import { Switch } from "@/components/ui/switch";
+import {
+  getComunicacaoGeralAtiva,
+  setComunicacaoGeralAtiva,
+} from "@/services/notificacoes/notificacoesService";
 import { maskPhone, maskCPF, isValidPhone, isValidEmail } from "@/lib/validators";
-import { User, Save } from "lucide-react";
+import { User, Save, Megaphone } from "lucide-react";
 
 export default function MeuPerfil() {
   const { user } = useAuth();
