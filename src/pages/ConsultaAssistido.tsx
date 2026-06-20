@@ -15,13 +15,28 @@ import {
   Phone,
   Mail,
   IdCard,
+  RefreshCw,
+  Sparkles,
+  CalendarCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   buscarAssistidos,
   carregarVisaoConsolidada,
@@ -30,6 +45,11 @@ import {
   type SessaoConsolidada,
   type VisaoConsolidada,
 } from "@/services/assistidos/consultaConsolidada";
+import {
+  previewReconciliacao,
+  executarReconciliacao,
+  type ReconciliacaoPreview,
+} from "@/services/assistidos/migracaoLegado";
 
 const STATUS_LABEL: Record<string, string> = {
   aguardando_inicio: "Aguardando início",
