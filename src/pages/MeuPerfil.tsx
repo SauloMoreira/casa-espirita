@@ -113,6 +113,20 @@ export default function MeuPerfil() {
     setSaving(false);
   };
 
+  const handleToggleComunicacaoGeral = async (ativa: boolean) => {
+    if (!assistidoId) return;
+    setComunicacaoGeral(ativa);
+    setSavingPref(true);
+    try {
+      await setComunicacaoGeralAtiva(assistidoId, ativa);
+      toast({ title: "Preferência de comunicação atualizada!" });
+    } catch (e: any) {
+      setComunicacaoGeral(!ativa);
+      toast({ title: "Erro ao salvar preferência", description: e?.message, variant: "destructive" });
+    }
+    setSavingPref(false);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Carregando...</div>;
   }
