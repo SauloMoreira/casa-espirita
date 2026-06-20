@@ -125,6 +125,7 @@ export default function CentralNotificacoes() {
           </Button>
         </div>
       </div>
+      <AlertaCentralCard />
 
       <Tabs defaultValue="painel">
         <TabsList>
