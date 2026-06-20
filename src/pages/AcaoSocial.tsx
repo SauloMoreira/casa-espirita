@@ -90,7 +90,7 @@ export default function AcaoSocial() {
         prazo_final_entrega: prazoData || null,
         observacao_prazo: prazoObs.trim() || null,
         exibir_prazo: exibirPrazo,
-        mensagem_institucional: mensagem.trim() || null,
+        mensagem_institucional: limparMensagemInstitucional(mensagem),
       });
       const cfg = await getAcaoSocialConfig();
       aplicarConfig(cfg);
