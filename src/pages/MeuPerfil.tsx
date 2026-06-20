@@ -68,6 +68,11 @@ export default function MeuPerfil() {
           cidade: assistido.cidade || "",
           estado: assistido.estado || "",
         });
+        try {
+          setComunicacaoGeral(await getComunicacaoGeralAtiva(assistido.id));
+        } catch {
+          setComunicacaoGeral(true);
+        }
       }
       setLoading(false);
     };
