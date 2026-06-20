@@ -17,10 +17,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Apple, Plus, Pencil, Trash2 } from "lucide-react";
-import { UNIDADES_ALIMENTO, validarAlimento, type AlimentoAcaoSocial } from "@/lib/acaoSocial";
+import { Apple, Plus, Pencil, Trash2, CalendarClock } from "lucide-react";
+import {
+  UNIDADES_ALIMENTO, validarAlimento, prazoEntregaInfo,
+  type AlimentoAcaoSocial, type AcaoSocialConfig,
+} from "@/lib/acaoSocial";
 import {
   listAlimentos, createAlimento, updateAlimento, deleteAlimento, toggleAlimentoAtivo,
+  getAcaoSocialConfig, saveAcaoSocialConfig,
 } from "@/services/acaoSocial";
 
 type FormState = {
@@ -47,16 +51,51 @@ export default function AcaoSocial() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Configuração do prazo de entrega do mês
+  const [config, setConfig] = useState<AcaoSocialConfig | null>(null);
+  const [prazoData, setPrazoData] = useState("");
+  const [prazoObs, setPrazoObs] = useState("");
+  const [exibirPrazo, setExibirPrazo] = useState(true);
+  const [savingPrazo, setSavingPrazo] = useState(false);
+
+  const aplicarConfig = (cfg: AcaoSocialConfig | null) => {
+    setConfig(cfg);
+    setPrazoData(cfg?.prazo_final_entrega?.slice(0, 10) ?? "");
+    setPrazoObs(cfg?.observacao_prazo ?? "");
+    setExibirPrazo(cfg?.exibir_prazo ?? true);
+  };
+
   const load = async () => {
     setLoading(true);
     try {
-      setItens(await listAlimentos());
+      const [lista, cfg] = await Promise.all([listAlimentos(), getAcaoSocialConfig()]);
+      setItens(lista);
+      aplicarConfig(cfg);
     } catch (e: any) {
       toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSavePrazo = async () => {
+    setSavingPrazo(true);
+    try {
+      await saveAcaoSocialConfig({
+        prazo_final_entrega: prazoData || null,
+        observacao_prazo: prazoObs.trim() || null,
+        exibir_prazo: exibirPrazo,
+      });
+      const cfg = await getAcaoSocialConfig();
+      aplicarConfig(cfg);
+      toast({ title: "Prazo atualizado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar prazo", description: e.message, variant: "destructive" });
+    } finally {
+      setSavingPrazo(false);
+    }
+  };
+
 
   useEffect(() => { load(); }, []);
 
@@ -188,6 +227,70 @@ export default function AcaoSocial() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Configuração do prazo de entrega do mês */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-primary" /> Prazo de entrega das doações
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Defina até quando as doações podem ser entregues neste período. O prazo vale para toda
+            a lista e aparece em destaque no card dos assistidos.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Prazo final de entrega</Label>
+              <Input type="date" value={prazoData} onChange={(e) => setPrazoData(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Observação (opcional)</Label>
+              <Input
+                value={prazoObs}
+                onChange={(e) => setPrazoObs(e.target.value)}
+                placeholder="Ex.: entregar na secretaria"
+                maxLength={140}
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 p-3">
+            <Label className="cursor-pointer">Exibir prazo no card dos assistidos</Label>
+            <Switch checked={exibirPrazo} onCheckedChange={setExibirPrazo} />
+          </div>
+          {(() => {
+            const preview = prazoEntregaInfo({
+              ...(config ?? ({} as AcaoSocialConfig)),
+              prazo_final_entrega: prazoData || null,
+              observacao_prazo: prazoObs.trim() || null,
+              exibir_prazo: exibirPrazo,
+            });
+            return preview ? (
+              <div className="rounded-xl border border-border/50 bg-acao-social/5 px-4 py-3">
+                <p className="text-xs text-muted-foreground">Prévia para o assistido:</p>
+                <p className="mt-1 text-sm font-semibold text-acao-social">{preview.texto}</p>
+                {preview.observacao && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{preview.observacao}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {exibirPrazo
+                  ? "Sem prazo cadastrado — o bloco não aparece para os assistidos."
+                  : "Exibição desativada — o bloco não aparece para os assistidos."}
+              </p>
+            );
+          })()}
+          <div className="flex justify-end">
+            <Button onClick={handleSavePrazo} disabled={savingPrazo} className="rounded-xl">
+              {savingPrazo ? "Salvando..." : "Salvar prazo"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+
 
       <Card className="border-border/60 shadow-sm">
         <CardHeader>

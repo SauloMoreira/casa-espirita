@@ -59,6 +59,36 @@ export type Database = {
         }
         Relationships: []
       }
+      acao_social_config: {
+        Row: {
+          created_at: string
+          exibir_prazo: boolean
+          id: string
+          observacao_prazo: string | null
+          prazo_final_entrega: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          exibir_prazo?: boolean
+          id?: string
+          observacao_prazo?: string | null
+          prazo_final_entrega?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          exibir_prazo?: boolean
+          id?: string
+          observacao_prazo?: string | null
+          prazo_final_entrega?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       admin_promotion_approvals: {
         Row: {
           approver_id: string

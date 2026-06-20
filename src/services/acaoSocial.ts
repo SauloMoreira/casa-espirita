@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { AlimentoAcaoSocial } from "@/lib/acaoSocial";
+import type { AlimentoAcaoSocial, AcaoSocialConfig } from "@/lib/acaoSocial";
 
 export type AlimentoInput = {
   nome: string;
@@ -54,4 +54,36 @@ export async function deleteAlimento(id: string): Promise<void> {
 
 export async function toggleAlimentoAtivo(id: string, ativo: boolean): Promise<void> {
   return updateAlimento(id, { ativo });
+}
+
+const CONFIG_TABLE = "acao_social_config";
+
+export type AcaoSocialConfigInput = {
+  prazo_final_entrega?: string | null;
+  observacao_prazo?: string | null;
+  exibir_prazo?: boolean;
+};
+
+/** Busca a configuração única da Ação Social (prazo de entrega do mês). */
+export async function getAcaoSocialConfig(): Promise<AcaoSocialConfig | null> {
+  const { data, error } = await supabase
+    .from(CONFIG_TABLE)
+    .select("*")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as AcaoSocialConfig | null) ?? null;
+}
+
+/** Cria ou atualiza a configuração única da Ação Social. */
+export async function saveAcaoSocialConfig(input: AcaoSocialConfigInput): Promise<void> {
+  const existing = await getAcaoSocialConfig();
+  if (existing) {
+    const { error } = await supabase.from(CONFIG_TABLE).update(input).eq("id", existing.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from(CONFIG_TABLE).insert(input);
+    if (error) throw error;
+  }
 }
