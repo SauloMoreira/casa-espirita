@@ -321,6 +321,8 @@ export async function reconciliarAssistidoLegado(
       ordem_tratamento: v.ordem_tratamento,
       tipo: v.tipo,
       dataInicio: parseInicio(v.dataInicio),
+      trabalhoPublico: v.trabalho_publico === true,
+      permiteEntradaSemAgendamento: v.permite_entrada_sem_agendamento === true,
     })),
     baseStart,
   );
