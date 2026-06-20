@@ -1994,7 +1994,7 @@ Deno.serve(async (req) => {
 
     // ===== FASE 3 — Geração final humana (grounded), só p/ intenções factuais =====
     let usouLlm = false;
-    if (resposta && !handoff && INTENCOES_HUMANIZAVEIS.has(intencao)) {
+    if (resposta && !handoff && (INTENCOES_HUMANIZAVEIS.has(intencao) || respostaFonte === "site_conhecimento")) {
       const h = await humanizarRespostaIA(resposta, {
         escopo: escopoAtual, jaSaudado, nome: nomeContato, ultimosTurnos: turnosAnteriores,
       });
