@@ -456,3 +456,211 @@ function BlocoSessoes({
     </Card>
   );
 }
+
+/** Linha "próxima sessão" com origem explícita (sem misturar fontes). */
+function ProximaSessaoLinha({ t }: { t: TratamentoConsolidado }) {
+  if (t.proxima_origem === "agendada") {
+    return (
+      <p className="flex items-center gap-1">
+        <CalendarCheck className="h-3.5 w-3.5 text-primary" />
+        Próxima sessão: {fmtData(t.proxima_data!)}
+        <Badge variant="default" className="ml-1 h-4 px-1 text-[10px]">Agendada</Badge>
+      </p>
+    );
+  }
+  if (t.proxima_origem === "projetada") {
+    return (
+      <p className="flex items-center gap-1">
+        <Clock className="h-3.5 w-3.5" />
+        Próxima sessão (projeção oficial): {fmtData(t.proxima_data!)}
+        <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">Projetada</Badge>
+      </p>
+    );
+  }
+  if (t.proxima_origem === "sugestao") {
+    return (
+      <div className="space-y-0.5">
+        <p className="flex items-center gap-1">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          {t.proxima_data ? `Sugestão a partir de ${fmtData(t.proxima_data)}` : "Liberado para comparecimento"}
+          <Badge variant="outline" className="ml-1 h-4 px-1 text-[10px]">Sugestão</Badge>
+        </p>
+        {t.liberado_desde && (
+          <p className="text-[11px]">Liberado desde {fmtData(t.liberado_desde)} · não é agenda rígida (não gera falta).</p>
+        )}
+      </div>
+    );
+  }
+  return (
+    <p className="flex items-center gap-1">
+      {t.status === "concluido" ? (
+        <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+      ) : (
+        <Clock className="h-3.5 w-3.5" />
+      )}
+      Sem próxima sessão
+    </p>
+  );
+}
+
+/** Ação administrativa: recalcular agenda pela regra oficial (com prévia). */
+function ReconciliacaoAdmin({
+  assistidoId,
+  assistidoNome,
+  onReconciliado,
+  toast,
+}: {
+  assistidoId: string;
+  assistidoNome: string;
+  onReconciliado: () => void;
+  toast: ReturnType<typeof useToast>["toast"];
+}) {
+  const [open, setOpen] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [gravando, setGravando] = useState(false);
+  const [previa, setPrevia] = useState<ReconciliacaoPreview | null>(null);
+
+  const fmt = (d?: string | null) =>
+    d ? format(parseISO(d), "dd/MM/yyyy", { locale: ptBR }) : "—";
+
+  const abrir = async () => {
+    setOpen(true);
+    setCarregando(true);
+    setPrevia(null);
+    try {
+      setPrevia(await previewReconciliacao(assistidoId));
+    } catch (e) {
+      toast({
+        title: "Erro ao calcular reconciliação",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+      setOpen(false);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const confirmar = async () => {
+    if (!previa) return;
+    setGravando(true);
+    try {
+      const res = await executarReconciliacao(assistidoId, previa.baseStart, {
+        esperado: previa.itens,
+      });
+      toast({
+        title: "Agenda reconciliada",
+        description: `${res.sessoesCriadas} sessão(ões) rígida(s) gravada(s) · ${res.totalSomenteSugestao} tratamento(s) só com sugestão${res.idempotenteSemNovas ? " · sem novas gravações (idempotente)" : ""}.`,
+      });
+      setOpen(false);
+      onReconciliado();
+    } catch (e) {
+      toast({
+        title: "Não foi possível reconciliar",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setGravando(false);
+    }
+  };
+
+  const ORIGEM_BADGE: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+    persistivel: { label: "Será gravada", variant: "default" },
+    sugestao: { label: "Apenas sugestão", variant: "outline" },
+    nao_aplicavel: { label: "Sem agenda", variant: "secondary" },
+  };
+
+  return (
+    <Card className="rounded-xl border-primary/30">
+      <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-0.5">
+          <p className="text-sm font-medium">Reconciliação oficial da agenda</p>
+          <p className="text-xs text-muted-foreground">
+            Recalcula tudo pela regra oficial e grava o que for agenda rígida. Sugestões públicas não são gravadas.
+          </p>
+        </div>
+        <Button onClick={abrir} variant="outline" className="gap-2 shrink-0">
+          <RefreshCw className="h-4 w-4" /> Recalcular agenda pela regra oficial
+        </Button>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={(v) => !gravando && setOpen(v)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Prévia da reconciliação — {assistidoNome}</DialogTitle>
+            <DialogDescription>
+              Confira antes de gravar. Nada é persistido até confirmar. Base da projeção:{" "}
+              {previa ? fmt(previa.baseStart) : "—"}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {carregando && (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Calculando...
+            </div>
+          )}
+
+          {previa && !carregando && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="default">{previa.totalSessoesRigidas} sessão(ões) a gravar</Badge>
+                <Badge variant="outline">{previa.totalSomenteSugestao} só sugestão</Badge>
+              </div>
+              {previa.itens.map((it) => {
+                const b = ORIGEM_BADGE[it.origem];
+                return (
+                  <div key={it.vinculo_id} className="rounded-lg border p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {it.ordem != null && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[11px] font-medium">
+                          {it.ordem}
+                        </span>
+                      )}
+                      <span className="text-sm font-medium">{it.nome}</span>
+                      <Badge variant={b.variant} className="h-5 text-[10px]">{b.label}</Badge>
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {it.realizadas}/{it.total} · restam {it.restante}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Modo: {it.modo_agendamento} · Status: {STATUS_LABEL[it.status] ?? it.status}
+                    </p>
+
+                    {it.origem === "persistivel" && it.sessoes.length > 0 && (
+                      <ul className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground sm:grid-cols-3">
+                        {it.sessoes.map((s, i) => (
+                          <li key={i}>{fmt(s.data_sessao)}{s.horario ? ` · ${s.horario}` : ""}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {it.origem === "sugestao" && (
+                      <div className="mt-2 rounded-md bg-primary/5 p-2 text-[11px] text-muted-foreground">
+                        Liberado desde {fmt(it.liberadoDesde)} · sugestões a partir de {fmt(it.sugestoesAPartirDe)}. Não é agenda rígida.
+                      </div>
+                    )}
+                    {it.origem === "nao_aplicavel" && (
+                      <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <AlertTriangle className="h-3 w-3" /> {it.motivoNaoGera ?? "Não gera agenda."}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={gravando}>
+              Voltar
+            </Button>
+            <Button onClick={confirmar} disabled={gravando || carregando || !previa} className="gap-2">
+              {gravando ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarCheck className="h-4 w-4" />}
+              Confirmar e gravar agenda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
