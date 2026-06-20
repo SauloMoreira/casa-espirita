@@ -111,7 +111,8 @@ export default function RegrasOperacionais() {
   };
 
   const isBooleanRule = (chave: string) =>
-    chave === "retorno_fraterno_pos_conclusao" || chave === "central_alerta_ativo";
+    chave === "retorno_fraterno_pos_conclusao" || chave === "central_alerta_ativo"
+    || chave === "site_ia_ativo";
 
   return (
     <div className="space-y-6">
