@@ -2737,6 +2737,10 @@ export type Database = {
         Args: { p_fim: string; p_inicio: string }
         Returns: Json
       }
+      migrar_assistido_legado_tratamento: {
+        Args: { p_assistido_id: string; p_tratamentos: Json }
+        Returns: Json
+      }
       painel_conversas: {
         Args: {
           p_atendente?: string
