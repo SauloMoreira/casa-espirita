@@ -387,14 +387,7 @@ function BlocoTratamentos({
                   </p>
                 </div>
                 <div className="space-y-1 text-xs text-muted-foreground">
-                  <p className="flex items-center gap-1">
-                    {t.status === "concluido" ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                    ) : (
-                      <Clock className="h-3.5 w-3.5" />
-                    )}
-                    {proxima ? `Próxima sessão: ${fmtData(proxima)}` : "Sem próxima sessão agendada"}
-                  </p>
+                  <ProximaSessaoLinha t={t} />
                   {t.sequencial_bloqueante && anterior && (
                     <p className={bloqueado ? "text-amber-600 dark:text-amber-500" : ""}>
                       {bloqueado
