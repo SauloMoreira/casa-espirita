@@ -121,6 +121,98 @@ describe("projetarAgendaConsolidada — encadeamento sequencial bloqueante", () 
   });
 });
 
+// Caso piloto Andréa Vilela: DOIS sequenciais concluídos no início, terceiro em
+// andamento, quarto aguardando (encadeado) e público após a cadeia.
+describe("projetarAgendaConsolidada — caso piloto Andréa Vilela", () => {
+  const andrea = (): TratamentoProjecaoInput[] => [
+    {
+      ref: "desob",
+      tratamento_id: "td",
+      status: "concluido",
+      quantidade_total: 7,
+      quantidade_realizada: 7,
+      modo_agendamento: "sequencial_bloqueante",
+      ordem_tratamento: 1,
+      tipo: tipo(3, "19:00"),
+    },
+    {
+      ref: "anti",
+      tratamento_id: "ta",
+      status: "concluido",
+      quantidade_total: 7,
+      quantidade_realizada: 7,
+      modo_agendamento: "sequencial_bloqueante",
+      ordem_tratamento: 2,
+      tipo: tipo(2, "19:00"),
+    },
+    {
+      ref: "mag",
+      tratamento_id: "tm",
+      status: "em_andamento",
+      quantidade_total: 7,
+      quantidade_realizada: 2,
+      modo_agendamento: "sequencial_bloqueante",
+      ordem_tratamento: 3,
+      tipo: tipo(1, "19:00"),
+    },
+    {
+      ref: "cura",
+      tratamento_id: "tc",
+      status: "aguardando_inicio",
+      quantidade_total: 7,
+      quantidade_realizada: 0,
+      modo_agendamento: "sequencial_bloqueante",
+      ordem_tratamento: 4,
+      tipo: tipo(1, "18:00"),
+    },
+    {
+      ref: "evang",
+      tratamento_id: "te",
+      status: "aguardando_inicio",
+      quantidade_total: 7,
+      quantidade_realizada: 0,
+      modo_agendamento: "livre_concomitante",
+      ordem_tratamento: 5,
+      tipo: tipo(5, "19:00"),
+      trabalhoPublico: true,
+      permiteEntradaSemAgendamento: true,
+    },
+  ];
+
+  it("gera agenda rígida só para Magnetismo (5) e Cura (7); público vira sugestão", () => {
+    const res = projetarAgendaConsolidada(andrea(), BASE);
+    const byRef = Object.fromEntries(res.map((r) => [r.ref, r]));
+
+    // Concluídos → sem agenda
+    expect(byRef.desob.sessoes).toHaveLength(0);
+    expect(byRef.anti.sessoes).toHaveLength(0);
+
+    // Magnetismo: 5 restantes a partir da próxima segunda (22/06)
+    expect(byRef.mag.geraAgenda).toBe(true);
+    expect(byRef.mag.sessoes.map((s) => s.data_sessao)).toEqual([
+      "2026-06-22",
+      "2026-06-29",
+      "2026-07-06",
+      "2026-07-13",
+      "2026-07-20",
+    ]);
+
+    // Cura: 7, encadeada APÓS o término do Magnetismo (20/07) → 27/07
+    expect(byRef.cura.geraAgenda).toBe(true);
+    expect(byRef.cura.sessoes).toHaveLength(7);
+    expect(byRef.cura.sessoes[0].data_sessao).toBe("2026-07-27");
+    expect(byRef.cura.sessoes[6].data_sessao).toBe("2026-09-07");
+
+    // Evangelhoterapia: público livre → sugestão após a cadeia, sem agenda rígida
+    expect(byRef.evang.geraAgenda).toBe(false);
+    expect(byRef.evang.sessoes).toHaveLength(0);
+    expect(byRef.evang.tratamentoPublicoComSugestao).toBe(true);
+    expect(byRef.evang.liberadoDesde).toBe("2026-06-20");
+    // cadeia termina 07/09 (seg) → marco 08/09 → primeira sexta 11/09
+    expect(byRef.evang.sugestoesAPartirDe).toBe("2026-09-11");
+  });
+});
+
 const publico = (over: Partial<TratamentoProjecaoInput> = {}): TratamentoProjecaoInput => ({
   ref: "evang",
   tratamento_id: "tev",
