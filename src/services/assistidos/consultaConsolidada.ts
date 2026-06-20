@@ -33,6 +33,9 @@ export interface AssistidoCabecalho extends AssistidoResumoBusca {
   foto_url: string | null;
 }
 
+/** Origem da informação de "próxima sessão" exibida na tela consolidada. */
+export type OrigemProxima = "agendada" | "projetada" | "sugestao" | "sem_proxima";
+
 export interface TratamentoConsolidado {
   vinculo_id: string;
   tratamento_id: string;
@@ -48,6 +51,14 @@ export interface TratamentoConsolidado {
   observacao_migracao: string | null;
   sequencial_bloqueante: boolean;
   bloqueia_proximo: boolean;
+  /** Origem da próxima sessão: persistida, projetada, sugestão ou nenhuma. */
+  proxima_origem: OrigemProxima;
+  /** Data (yyyy-MM-dd) da próxima sessão/sugestão, conforme `proxima_origem`. */
+  proxima_data: string | null;
+  /** Caso público livre: liberado desde / a partir de (sugestões). */
+  publico: boolean;
+  liberado_desde: string | null;
+  sugestoes_a_partir_de: string | null;
 }
 
 export interface SessaoConsolidada {
