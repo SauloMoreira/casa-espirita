@@ -122,6 +122,40 @@ export async function setComunicacaoGeralAtiva(assistidoId: string, ativa: boole
   if (error) throw error;
 }
 
+/**
+ * Alvo da preferência de comunicação geral. Centraliza a fonte de dados:
+ * - assistido → notificacoes_preferencias (por assistido_id)
+ * - staff     → profiles (por user_id)
+ */
+export type ComunicacaoGeralTarget =
+  | { tipo: "assistido"; assistidoId: string }
+  | { tipo: "staff"; userId: string };
+
+/** Leitura única da preferência de comunicação geral, independente do papel. */
+export async function getComunicacaoGeral(target: ComunicacaoGeralTarget): Promise<boolean> {
+  if (target.tipo === "assistido") {
+    return getComunicacaoGeralAtiva(target.assistidoId);
+  }
+  const { data } = await supabase
+    .from("profiles")
+    .select("comunicacao_geral_ativa")
+    .eq("user_id", target.userId)
+    .maybeSingle();
+  return data ? (data as any).comunicacao_geral_ativa !== false : true;
+}
+
+/** Gravação única da preferência de comunicação geral, independente do papel. */
+export async function setComunicacaoGeral(target: ComunicacaoGeralTarget, ativa: boolean): Promise<void> {
+  if (target.tipo === "assistido") {
+    return setComunicacaoGeralAtiva(target.assistidoId, ativa);
+  }
+  const { error } = await supabase
+    .from("profiles")
+    .update({ comunicacao_geral_ativa: ativa } as any)
+    .eq("user_id", target.userId);
+  if (error) throw error;
+}
+
 export async function listFila(limit = 100): Promise<FilaItem[]> {
   const { data, error } = await supabase
     .from("notificacoes_fila")
