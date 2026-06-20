@@ -35,6 +35,7 @@ import {
   Megaphone,
   CalendarDays,
   Send,
+  History,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
