@@ -88,6 +88,7 @@ export default function MigrarAssistido() {
 
   // Etapa 2
   const [dataMigracao, setDataMigracao] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataBaseProjecao, setDataBaseProjecao] = useState(() => new Date().toISOString().slice(0, 10));
   const [entrevistaForaSistema, setEntrevistaForaSistema] = useState(true);
   const [observacaoMigracao, setObservacaoMigracao] = useState("");
 
