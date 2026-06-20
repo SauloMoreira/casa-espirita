@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { getAdapter } from "../_shared/channel-adapter.ts";
 import { guardCronOrStaff } from "../_shared/auth.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { classificarEvento } from "../_shared/comunicacaoCanal.ts";
 
 
 const LIMITE_DIARIO_PADRAO = 3;
@@ -81,18 +82,29 @@ Deno.serve(async (req) => {
       // Load preferences + template
       const { data: pref } = await admin
         .from("notificacoes_preferencias")
-        .select("whatsapp_ativo, horario_inicio_envio, horario_fim_envio")
+        .select("whatsapp_ativo, comunicacao_geral_ativa, horario_inicio_envio, horario_fim_envio")
         .eq("assistido_id", item.assistido_id)
         .maybeSingle();
 
       const whatsappAtivo = pref ? pref.whatsapp_ativo : true; // default opt-in
+      const comunicacaoGeralAtiva = pref ? pref.comunicacao_geral_ativa !== false : true;
       const janelaInicio = pref?.horario_inicio_envio || "08:00";
       const janelaFim = pref?.horario_fim_envio || "20:00";
 
-      // opt-out
+      // Classificação geral × operacional (fonte única compartilhada).
+      const classe = classificarEvento(item.evento_origem);
+
+      // opt-out de canal (vale para qualquer mensagem)
       if (!whatsappAtivo) {
         await admin.from("notificacoes_fila").update({ status: "cancelado", erro: "opt_out" }).eq("id", item.id);
         await logFila(admin, item.id, "saida", null, null, "cancelado", "opt_out");
+        result.ignorados++;
+        continue;
+      }
+      // comunicações GERAIS respeitam a flag; operacionais NUNCA são bloqueadas por ela
+      if (classe === "geral" && !comunicacaoGeralAtiva) {
+        await admin.from("notificacoes_fila").update({ status: "cancelado", erro: "comunicacao_geral_desativada" }).eq("id", item.id);
+        await logFila(admin, item.id, "saida", null, null, "cancelado", "comunicacao_geral_desativada");
         result.ignorados++;
         continue;
       }

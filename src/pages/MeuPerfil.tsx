@@ -9,8 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
 import { ConsentimentoWhatsappCard } from "@/components/notificacoes/ConsentimentoWhatsappCard";
+import { Switch } from "@/components/ui/switch";
+import {
+  getComunicacaoGeralAtiva,
+  setComunicacaoGeralAtiva,
+} from "@/services/notificacoes/notificacoesService";
 import { maskPhone, maskCPF, isValidPhone, isValidEmail } from "@/lib/validators";
-import { User, Save } from "lucide-react";
+import { User, Save, Megaphone } from "lucide-react";
 
 export default function MeuPerfil() {
   const { user } = useAuth();
@@ -18,6 +23,8 @@ export default function MeuPerfil() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [assistidoId, setAssistidoId] = useState<string | null>(null);
+  const [comunicacaoGeral, setComunicacaoGeral] = useState(true);
+  const [savingPref, setSavingPref] = useState(false);
 
   const [form, setForm] = useState({
     nome: "",
@@ -61,6 +68,11 @@ export default function MeuPerfil() {
           cidade: assistido.cidade || "",
           estado: assistido.estado || "",
         });
+        try {
+          setComunicacaoGeral(await getComunicacaoGeralAtiva(assistido.id));
+        } catch {
+          setComunicacaoGeral(true);
+        }
       }
       setLoading(false);
     };
@@ -99,6 +111,20 @@ export default function MeuPerfil() {
       toast({ title: "Perfil atualizado com sucesso!" });
     }
     setSaving(false);
+  };
+
+  const handleToggleComunicacaoGeral = async (ativa: boolean) => {
+    if (!assistidoId) return;
+    setComunicacaoGeral(ativa);
+    setSavingPref(true);
+    try {
+      await setComunicacaoGeralAtiva(assistidoId, ativa);
+      toast({ title: "Preferência de comunicação atualizada!" });
+    } catch (e: any) {
+      setComunicacaoGeral(!ativa);
+      toast({ title: "Erro ao salvar preferência", description: e?.message, variant: "destructive" });
+    }
+    setSavingPref(false);
   };
 
   if (loading) {
@@ -183,6 +209,35 @@ export default function MeuPerfil() {
       </Card>
 
       {assistidoId && <ConsentimentoWhatsappCard assistidoId={assistidoId} />}
+
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-primary" /> Preferências de Comunicação
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="comunicacao-geral" className="text-sm font-medium">
+                Receber comunicações gerais da FER
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Campanhas, eventos e comunicados institucionais. Avisos do seu tratamento
+                (entrevistas, sessões, presença e faltas) continuam sendo enviados
+                independentemente desta opção.
+              </p>
+            </div>
+            <Switch
+              id="comunicacao-geral"
+              checked={comunicacaoGeral}
+              disabled={savingPref}
+              onCheckedChange={handleToggleComunicacaoGeral}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
 
       <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
         <Save className="h-4 w-4" />
