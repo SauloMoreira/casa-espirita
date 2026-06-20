@@ -8,10 +8,12 @@ import {
   STATUS_TRATAMENTO,
   STATUS_TRATAMENTO_LABELS,
   statusPermiteProximaSessao,
+  previewAgendaTratamento,
   type StatusTratamento,
   type TratamentoLegadoInput,
 } from "@/lib/migracaoLegado";
-import type { EntrevistaAssistido, EntrevistaTipoTratamento } from "@/types/fazerEntrevista";
+import type { ParametrosTipoAgenda } from "@/lib/agendaRules";
+import type { SessaoGerada, EntrevistaAssistido, EntrevistaTipoTratamento } from "@/types/fazerEntrevista";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,6 +95,21 @@ export default function MigrarAssistido() {
   // Etapa 5
   const [observacaoAdmin, setObservacaoAdmin] = useState("");
 
+  // Etapa 6 — Revisão da agenda prevista (prévia oficial)
+  const [revisao, setRevisao] = useState<
+    | null
+    | Array<{
+        nome: string;
+        status: StatusTratamento;
+        total: number;
+        realizadas: number;
+        restante: number;
+        geraAgenda: boolean;
+        motivoNaoGera?: string;
+        sessoes: SessaoGerada[];
+      }>
+  >(null);
+
   useEffect(() => {
     fetchInitialData()
       .then((d) => {
@@ -108,25 +125,80 @@ export default function MigrarAssistido() {
     [tratamentos],
   );
 
-  const updateLinha = (i: number, patch: Partial<TratamentoRow>) =>
+  const tipoAgendaPorTratamento = useMemo<Record<string, ParametrosTipoAgenda>>(
+    () =>
+      Object.fromEntries(
+        tratamentos.map((t) => [
+          t.id,
+          {
+            dia_semana: t.dia_semana,
+            horario: t.horario,
+            frequencia_valor: t.frequencia_valor,
+            frequencia_unidade: t.frequencia_unidade,
+          },
+        ]),
+      ),
+    [tratamentos],
+  );
+
+  const updateLinha = (i: number, patch: Partial<TratamentoRow>) => {
+    setRevisao(null);
     setLinhas((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  };
 
-  const removeLinha = (i: number) => setLinhas((prev) => prev.filter((_, idx) => idx !== i));
+  const removeLinha = (i: number) => {
+    setRevisao(null);
+    setLinhas((prev) => prev.filter((_, idx) => idx !== i));
+  };
 
-  const handleSubmit = async () => {
-    if (!user) return;
+  const validarEntrada = (): boolean => {
+    if (!user) return false;
     if (modo === "novo" && !base.nome.trim()) {
       toast({ title: "Informe o nome do assistido", variant: "destructive" });
-      return;
+      return false;
     }
     if (modo === "existente" && !assistidoExistenteId) {
       toast({ title: "Selecione o assistido existente", variant: "destructive" });
-      return;
+      return false;
     }
     if (linhas.length === 0 || linhas.some((l) => !l.tratamento_id)) {
       toast({ title: "Selecione o tipo em todos os tratamentos", variant: "destructive" });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleRevisar = () => {
+    if (!validarEntrada()) return;
+    const previa = linhas.map((l) => {
+      const tipo = tipoAgendaPorTratamento[l.tratamento_id];
+      const p = previewAgendaTratamento(
+        {
+          tratamento_id: l.tratamento_id,
+          status: l.status,
+          quantidade_total: Number(l.quantidade_total),
+          quantidade_realizada: Number(l.quantidade_realizada),
+          proxima_sessao_data: l.proxima_sessao_data,
+        },
+        tipo,
+        l.proxima_sessao_data,
+      );
+      return {
+        nome: tratamentoMap[l.tratamento_id]?.nome ?? "Tratamento",
+        status: l.status,
+        total: Number(l.quantidade_total),
+        realizadas: Number(l.quantidade_realizada),
+        restante: p.restante,
+        geraAgenda: p.geraAgenda,
+        motivoNaoGera: p.motivoNaoGera,
+        sessoes: p.sessoes,
+      };
+    });
+    setRevisao(previa);
+  };
+
+  const handleConfirmar = async () => {
+    if (!user || !revisao) return;
 
     const obsFinal = [
       entrevistaForaSistema ? "Entrevista/triagem realizada fora do sistema." : "",
@@ -170,8 +242,9 @@ export default function MigrarAssistido() {
           proxima_sessao_data: l.proxima_sessao_data,
           proxima_sessao_horario: l.proxima_sessao_horario,
         })),
-        diaSemanaPorTratamento: Object.fromEntries(
-          tratamentos.map((t) => [t.id, t.dia_semana]),
+        tipoAgendaPorTratamento,
+        sessoesPrevistasPorIndice: Object.fromEntries(
+          revisao.map((r, i) => [i, r.sessoes]),
         ),
         confirmacoes: Object.fromEntries(
           linhas.map((l, i) => [
@@ -186,7 +259,7 @@ export default function MigrarAssistido() {
       });
       toast({
         title: "Assistido migrado com sucesso!",
-        description: `${res.vinculosCriados} tratamento(s) e ${res.sessoesCriadas} próxima(s) sessão(ões).`,
+        description: `${res.vinculosCriados} tratamento(s) e ${res.sessoesCriadas} sessão(ões) gerada(s).`,
       });
       navigate("/assistidos");
     } catch (e: any) {
@@ -195,6 +268,7 @@ export default function MigrarAssistido() {
       setSaving(false);
     }
   };
+
 
   if (loading) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Carregando...</div>;
@@ -381,7 +455,7 @@ export default function MigrarAssistido() {
                     <Input type="number" min={0} value={l.quantidade_realizada} onChange={(e) => updateLinha(i, { quantidade_realizada: Number(e.target.value) })} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Próxima sessão</Label>
+                    <Label>Data de início da projeção</Label>
                     <Input type="date" value={l.proxima_sessao_data ?? ""} onChange={(e) => updateLinha(i, { proxima_sessao_data: e.target.value })} />
                   </div>
                   <div className="space-y-2">
@@ -421,7 +495,7 @@ export default function MigrarAssistido() {
             );
           })}
 
-          <Button type="button" variant="outline" size="sm" onClick={() => setLinhas((p) => [...p, emptyTratamento()])} className="gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => { setRevisao(null); setLinhas((p) => [...p, emptyTratamento()]); }} className="gap-2">
             <Plus className="h-4 w-4" /> Adicionar tratamento
           </Button>
         </CardContent>
@@ -437,10 +511,66 @@ export default function MigrarAssistido() {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSubmit} disabled={saving} className="w-full gap-2">
-        <Save className="h-4 w-4" />
-        {saving ? "Migrando..." : "Concluir migração"}
-      </Button>
+      {/* Etapa 5 — Revisão da agenda prevista */}
+      {!revisao ? (
+        <Button type="button" onClick={handleRevisar} className="w-full gap-2">
+          <Save className="h-4 w-4" /> Revisar agenda prevista
+        </Button>
+      ) : (
+        <Card className="glass-card border-primary/40">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">5. Revisão da agenda prevista</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              A prévia abaixo segue exatamente a regra padrão de agenda já existente no sistema.
+              Confira antes de confirmar; nada é gravado até você clicar em "Confirmar migração e gerar agenda".
+            </p>
+            {revisao.map((r, i) => (
+              <div key={i} className="rounded-xl border border-border/60 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{r.nome}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {STATUS_TRATAMENTO_LABELS[r.status]}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Total {r.total} · Realizadas {r.realizadas} · Restante {r.restante}
+                </div>
+                {r.geraAgenda ? (
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-foreground">
+                      {r.sessoes.length} sessão(ões) será(ão) criada(s):
+                    </div>
+                    <ul className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-1">
+                      {r.sessoes.map((s, idx) => (
+                        <li key={idx}>
+                          {new Date(s.data_sessao + "T12:00:00").toLocaleDateString("pt-BR")}
+                          {s.horario ? ` · ${s.horario}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 text-xs text-amber-600">
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5" />
+                    <span>Não gera agenda: {r.motivoNaoGera}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setRevisao(null)} disabled={saving} className="flex-1">
+                Voltar e corrigir
+              </Button>
+              <Button type="button" onClick={handleConfirmar} disabled={saving} className="flex-1 gap-2">
+                <Save className="h-4 w-4" />
+                {saving ? "Gerando..." : "Confirmar migração e gerar agenda"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

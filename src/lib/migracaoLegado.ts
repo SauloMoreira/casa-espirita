@@ -1,9 +1,24 @@
 import { getDay, isValid, parseISO, startOfDay } from "date-fns";
+import {
+  STATUS_GERA_AGENDA,
+  projetarAgendaRestante,
+  quantidadeRestante,
+  type ParametrosTipoAgenda,
+} from "@/lib/agendaRules";
+import type { SessaoGerada } from "@/types/fazerEntrevista";
 
 /**
  * Lógica pura da migração de assistidos legados (já em tratamento antes do
  * sistema). Sem efeitos colaterais — apenas montagem de payloads e validações.
+ *
+ * IMPORTANTE: a migração NÃO tem regra própria de agenda. Tanto a elegibilidade
+ * (gera agenda agora?) quanto o cálculo de datas vêm da fonte única em
+ * `src/lib/agendaRules.ts` / `generateSessionDates`. Qualquer divergência entre
+ * fluxo normal e legado deve ser tratada como bug.
  */
+
+export { quantidadeRestante };
+
 
 /** Status reais aceitos pelo sistema para assistido_tratamentos. */
 export const STATUS_TRATAMENTO = [
@@ -18,12 +33,11 @@ export const STATUS_TRATAMENTO = [
 
 export type StatusTratamento = (typeof STATUS_TRATAMENTO)[number];
 
-/** Status compatíveis com a criação de uma próxima sessão. */
-export const STATUS_COM_PROXIMA_SESSAO: readonly StatusTratamento[] = [
-  "aguardando_agendamento",
-  "liberado",
-  "em_andamento",
-];
+/**
+ * Status que geram agenda — DERIVADO da fonte única (`STATUS_GERA_AGENDA`).
+ * A migração não define elegibilidade própria.
+ */
+export const STATUS_COM_PROXIMA_SESSAO: readonly StatusTratamento[] = STATUS_GERA_AGENDA;
 
 export const STATUS_TRATAMENTO_LABELS: Record<StatusTratamento, string> = {
   aguardando_inicio: "Aguardando início",
@@ -39,9 +53,14 @@ export function isStatusValido(status: string): status is StatusTratamento {
   return (STATUS_TRATAMENTO as readonly string[]).includes(status);
 }
 
+/**
+ * Mantido por compatibilidade: indica se o status, por si só, é gerador de
+ * agenda. Usa a mesma fonte única do fluxo normal.
+ */
 export function statusPermiteProximaSessao(status: string): boolean {
-  return (STATUS_COM_PROXIMA_SESSAO as readonly string[]).includes(status);
+  return (STATUS_GERA_AGENDA as readonly string[]).includes(status);
 }
+
 
 export interface TratamentoLegadoInput {
   tratamento_id: string;
@@ -153,6 +172,45 @@ export function validateTratamentoLegado(
 
   return errors;
 }
+
+export interface PreviewAgendaResultado {
+  geraAgenda: boolean;
+  motivoNaoGera?: string;
+  restante: number;
+  sessoes: SessaoGerada[];
+}
+
+/**
+ * Prévia da agenda restante de um tratamento legado, usando EXCLUSIVAMENTE a
+ * regra oficial (`projetarAgendaRestante` → `elegibilidadeAgenda` +
+ * `generateSessionDates`). Não há cálculo de datas nem elegibilidade paralela.
+ *
+ * `dataInicio`: data de início da projeção (yyyy-MM-dd) ou Date. Sem ela, o
+ * tratamento permanece elegível mas não gera agenda agora (fila), exatamente
+ * como no fluxo normal.
+ */
+export function previewAgendaTratamento(
+  input: TratamentoLegadoInput,
+  tipo: ParametrosTipoAgenda,
+  dataInicio: string | Date | null | undefined,
+): PreviewAgendaResultado {
+  let inicio: Date | null = null;
+  if (dataInicio instanceof Date) {
+    inicio = dataInicio;
+  } else if (typeof dataInicio === "string" && dataInicio.trim()) {
+    const parsed = new Date(dataInicio.trim() + "T12:00:00");
+    inicio = isValid(parsed) ? parsed : null;
+  }
+
+  return projetarAgendaRestante({
+    status: input.status,
+    quantidade_total: Number(input.quantidade_total),
+    quantidade_realizada: Number(input.quantidade_realizada),
+    tipo,
+    dataInicio: inicio,
+  });
+}
+
 
 export interface AssistidoLegadoBase {
   nome: string;

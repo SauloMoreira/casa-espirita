@@ -6,8 +6,18 @@ import {
   buildProximaSessaoInsert,
   isStatusValido,
   statusPermiteProximaSessao,
+  previewAgendaTratamento,
+  quantidadeRestante,
   type TratamentoLegadoInput,
 } from "./migracaoLegado";
+import {
+  elegibilidadeAgenda,
+  projetarAgendaRestante,
+  sessoesIguais,
+  normalizarSessoes,
+  type ParametrosTipoAgenda,
+} from "./agendaRules";
+import { generateSessionDates } from "./fazerEntrevista";
 
 const futuro = (offsetDays: number, weekdayTarget?: number): string => {
   const d = new Date();
@@ -158,3 +168,142 @@ describe("builders", () => {
     expect(row!.horario).toBe("19:30");
   });
 });
+
+const tipoBase = (over: Partial<ParametrosTipoAgenda> = {}): ParametrosTipoAgenda => ({
+  dia_semana: 1, // segunda
+  horario: "19:00",
+  frequencia_valor: 1,
+  frequencia_unidade: "semanas",
+  ...over,
+});
+
+describe("quantidadeRestante", () => {
+  it("calcula restante e nunca fica negativo", () => {
+    expect(quantidadeRestante(7, 2)).toBe(5);
+    expect(quantidadeRestante(7, 7)).toBe(0);
+    expect(quantidadeRestante(7, 10)).toBe(0);
+  });
+});
+
+describe("elegibilidadeAgenda (fonte única)", () => {
+  it("gera para aguardando_inicio/liberado/em_andamento com restante e data", () => {
+    for (const status of ["aguardando_inicio", "liberado", "em_andamento"]) {
+      expect(
+        elegibilidadeAgenda({ status, restante: 5, temDataInicio: true }).geraAgenda,
+      ).toBe(true);
+    }
+  });
+
+  it("não gera para concluido/cancelado/suspenso, com motivo", () => {
+    for (const status of ["concluido", "cancelado", "suspenso"]) {
+      const r = elegibilidadeAgenda({ status, restante: 5, temDataInicio: true });
+      expect(r.geraAgenda).toBe(false);
+      expect(r.motivoNaoGera).toBeTruthy();
+    }
+  });
+
+  it("não gera quando restante = 0", () => {
+    const r = elegibilidadeAgenda({ status: "em_andamento", restante: 0, temDataInicio: true });
+    expect(r.geraAgenda).toBe(false);
+    expect(r.motivoNaoGera).toMatch(/restante/i);
+  });
+
+  it("aguardando_agendamento sem data segue para fila (regra normal)", () => {
+    const r = elegibilidadeAgenda({ status: "aguardando_agendamento", restante: 5, temDataInicio: false });
+    expect(r.geraAgenda).toBe(false);
+    expect(r.motivoNaoGera).toMatch(/fila/i);
+  });
+
+  it("não gera sem data de início mesmo em status gerador", () => {
+    const r = elegibilidadeAgenda({ status: "em_andamento", restante: 5, temDataInicio: false });
+    expect(r.geraAgenda).toBe(false);
+  });
+});
+
+describe("previewAgendaTratamento", () => {
+  it("gera todas as sessões restantes pela regra oficial", () => {
+    const data = futuro(2, 1); // segunda
+    const p = previewAgendaTratamento(
+      baseInput({ status: "em_andamento", quantidade_total: 7, quantidade_realizada: 2, proxima_sessao_data: data }),
+      tipoBase(),
+      data,
+    );
+    expect(p.geraAgenda).toBe(true);
+    expect(p.restante).toBe(5);
+    expect(p.sessoes).toHaveLength(5);
+    for (const s of p.sessoes) {
+      expect(new Date(s.data_sessao + "T00:00:00").getDay()).toBe(1);
+    }
+  });
+
+  it("não gera quando concluído (com motivo)", () => {
+    const p = previewAgendaTratamento(
+      baseInput({ status: "concluido", quantidade_total: 7, quantidade_realizada: 7 }),
+      tipoBase(),
+      futuro(2, 1),
+    );
+    expect(p.geraAgenda).toBe(false);
+    expect(p.sessoes).toHaveLength(0);
+    expect(p.motivoNaoGera).toBeTruthy();
+  });
+
+  it("não gera sem data de início (fica elegível para fila)", () => {
+    const p = previewAgendaTratamento(
+      baseInput({ status: "em_andamento" }),
+      tipoBase(),
+      null,
+    );
+    expect(p.geraAgenda).toBe(false);
+    expect(p.sessoes).toHaveLength(0);
+  });
+});
+
+describe("paridade fluxo normal x legado", () => {
+  it("mesma projeção restante para total/realizada equivalentes", () => {
+    const data = futuro(2, 1);
+    const inicio = new Date(data + "T12:00:00");
+    const tipo = tipoBase();
+
+    const restante = 7 - 2;
+    const normal = normalizarSessoes(
+      generateSessionDates(inicio, tipo.dia_semana, tipo.horario, tipo.frequencia_valor!, tipo.frequencia_unidade!, restante),
+    );
+
+    const legado = previewAgendaTratamento(
+      baseInput({ status: "em_andamento", quantidade_total: 7, quantidade_realizada: 2, proxima_sessao_data: data }),
+      tipo,
+      data,
+    );
+
+    expect(sessoesIguais(normal, legado.sessoes)).toBe(true);
+  });
+});
+
+describe("comparação canônica de payloads (prévia == gravação)", () => {
+  it("considera iguais payloads com ordem/horário equivalentes", () => {
+    const a = [
+      { data_sessao: "2026-07-06", horario: "19:00" },
+      { data_sessao: "2026-06-29", horario: "19:00:00" },
+    ];
+    const b = [
+      { data_sessao: "2026-06-29", horario: "19:00" },
+      { data_sessao: "2026-07-06", horario: "19:00" },
+    ];
+    expect(sessoesIguais(a, b)).toBe(true);
+  });
+
+  it("detecta divergência real de datas (payload da UI rejeitado)", () => {
+    const canonico = projetarAgendaRestante({
+      status: "em_andamento",
+      quantidade_total: 7,
+      quantidade_realizada: 2,
+      tipo: tipoBase(),
+      dataInicio: new Date(futuro(2, 1) + "T12:00:00"),
+    }).sessoes;
+    const adulterado = canonico.map((s, i) =>
+      i === 0 ? { ...s, data_sessao: "2099-01-01" } : s,
+    );
+    expect(sessoesIguais(canonico, adulterado)).toBe(false);
+  });
+});
+
