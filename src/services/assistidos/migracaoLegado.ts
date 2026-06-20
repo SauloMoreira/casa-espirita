@@ -112,6 +112,7 @@ export async function migrarAssistidoLegado(
     dataBaseProjecao,
     sessoesPrevistasPorIndice = {},
     confirmacoes = {},
+    pularAgenda = false,
   } = params;
 
 
