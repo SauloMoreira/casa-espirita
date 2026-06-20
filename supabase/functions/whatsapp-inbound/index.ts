@@ -1905,7 +1905,12 @@ Deno.serve(async (req) => {
 
       // Decide handoff: anything the IA cannot auto-resolve, or that needs an
       // identified assistido but none was found, must escalate to a human.
-      if (intencao === "complexo") {
+      if (intencao === "complexo" && respostaSite) {
+        // Pergunta pública de conhecimento que o determinístico não resolveu, mas
+        // a base do site responde com fatos curados. Evita handoff desnecessário.
+        respostaFonte = "site_conhecimento";
+        resposta = respostaSite;
+      } else if (intencao === "complexo") {
         handoff = true; handoffOrigem = "ia";
         handoffMotivo = "Mensagem que requer atendimento humano";
       } else if (!AUTORESOLVIVEIS.includes(intencao)) {
