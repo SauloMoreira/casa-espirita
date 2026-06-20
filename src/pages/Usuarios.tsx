@@ -296,7 +296,8 @@ export default function Usuarios() {
     const s = search.toLowerCase();
     const name = u.profile?.nome_completo?.toLowerCase() || "";
     const cpf = u.profile?.cpf || "";
-    return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || u.user_id.includes(s);
+    const email = u.email?.toLowerCase() || "";
+    return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
   });
 
   return (
