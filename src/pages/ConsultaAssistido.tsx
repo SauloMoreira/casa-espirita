@@ -111,12 +111,23 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function ConsultaAssistido() {
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+  const { toast } = useToast();
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState<AssistidoResumoBusca[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [visao, setVisao] = useState<VisaoConsolidada | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+
+  const recarregar = async (id: string) => {
+    try {
+      setVisao(await carregarVisaoConsolidada(id));
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao recarregar assistido.");
+    }
+  };
 
   const handleBuscar = async (valor: string) => {
     setTermo(valor);
