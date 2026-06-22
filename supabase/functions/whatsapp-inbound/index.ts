@@ -134,8 +134,8 @@ const HUMANO_TERMOS = [
 // personal markers is answered from the assistido's REAL data, not the generic
 // house schedule.
 const KEYWORDS: Array<{ intent: Intencao; terms: string[] }> = [
-  { intent: "opt_out", terms: ["parar", "cancelar mensagens", "nao quero", "não quero", "sair", "descadastr", "remover"] },
-  { intent: "reativar", terms: ["voltar a receber", "reativar", "quero receber"] },
+  { intent: "opt_out", terms: ["parar", "pare", "cancelar mensagens", "cancelar", "nao quero", "não quero", "sair", "descadastr", "remover", "remova", "stop"] },
+  { intent: "reativar", terms: ["voltar a receber", "voltar", "reativar", "ativar", "quero receber", "receber", "quero voltar"] },
   { intent: "horario_entrevista", terms: [
     "entrevista", "tenho entrevista", "minha entrevista", "entrevista marcada", "entrevista fraterna",
   ] },
