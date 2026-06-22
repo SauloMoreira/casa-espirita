@@ -73,7 +73,23 @@ export interface TratamentoConsolidado {
   publico: boolean;
   liberado_desde: string | null;
   sugestoes_a_partir_de: string | null;
+  /** Novo modelo: este vínculo é gerido por plano previsto + agenda ativa. */
+  usa_plano: boolean;
+  /** Número da etapa ATIVA do plano (quando houver). */
+  etapa_ativa_numero: number | null;
+  /** Total de etapas já realizadas no plano (histórico de execução). */
+  etapas_realizadas: number;
 }
+
+/** Rótulo legível da origem da próxima sessão (para a UI). */
+export const ROTULO_ORIGEM_PROXIMA: Record<OrigemProxima, string> = {
+  ativa: "Etapa ativa",
+  prevista: "Etapa prevista",
+  agendada: "Agendada",
+  projetada: "Projetada",
+  sugestao: "Sugestão",
+  sem_proxima: "Sem próxima etapa",
+};
 
 export interface SessaoConsolidada {
   id: string;
