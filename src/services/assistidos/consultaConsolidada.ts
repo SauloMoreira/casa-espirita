@@ -140,7 +140,7 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
   const { data: assistido, error: errA } = await supabase
     .from("assistidos")
     .select(
-      "id, nome, celular, cpf, email, status, origem_cadastro, migrado_legado, data_migracao, observacao_migracao, foto_url",
+      "id, nome, celular, cpf, email, status, origem_cadastro, migrado_legado, data_migracao, observacao_migracao, foto_url, usa_agenda_plano",
     )
     .eq("id", assistidoId)
     .maybeSingle();
