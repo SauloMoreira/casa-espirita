@@ -519,7 +519,7 @@ export default function SessoesPublicas() {
                     placeholder="Nome ou celular..."
                     value={manualSearch}
                     autoFocus
-                    onChange={(e) => setManualSearch(e.target.value)}
+                    onChange={(e) => { setManualSearch(e.target.value); setAssistidoSelecionado(null); }}
                     onKeyDown={(e) => e.key === "Enter" && searchAssistido()}
                   />
                 </div>
