@@ -73,23 +73,28 @@ export default function TarefeiroDashboard() {
     const atIds = [...new Set(agendaSessoes.map((s) => s.assistido_tratamento_id))];
     const assistidoIds = [...new Set(agendaSessoes.map((s) => s.assistido_id))];
 
-    const [{ data: tratamentos }, { data: vinculos }, { data: assistidos }, { data: presencas }] = await Promise.all([
+    const [{ data: tratamentos }, { data: vinculos }, { data: assistidos }, { data: presencas }, { data: planoRows }] = await Promise.all([
       supabase.from("tipos_tratamento").select("id, nome, tarefeiro_id").in("id", tratIds),
       supabase.from("assistido_tratamentos")
-        .select("id, quantidade_total, quantidade_realizada, status")
+        .select("id, assistido_id, quantidade_total, quantidade_realizada, status")
         .in("id", atIds)
         .in("status", ["aguardando_inicio", "em_andamento", "liberado"]),
-      supabase.from("assistidos").select("id, nome").in("id", assistidoIds),
+      supabase.from("assistidos").select("id, nome, usa_agenda_plano").in("id", assistidoIds),
       supabase.from("presencas_tratamentos")
         .select("assistido_tratamento_id")
         .in("assistido_tratamento_id", atIds)
         .eq("data", today),
+      supabase.from("plano_tratamento_sessoes")
+        .select("assistido_tratamento_id")
+        .in("assistido_tratamento_id", atIds),
     ]);
 
     const tratMap = Object.fromEntries((tratamentos || []).map((t) => [t.id, t]));
     const vinculoMap = Object.fromEntries((vinculos || []).map((v) => [v.id, v]));
     const assistMap = Object.fromEntries((assistidos || []).map((a) => [a.id, a.nome]));
+    const gateMap = new Set((assistidos || []).filter((a) => a.usa_agenda_plano === true).map((a) => a.id));
     const presencaSet = new Set((presencas || []).map((p) => p.assistido_tratamento_id));
+    const planoSet = new Set((planoRows || []).map((p) => p.assistido_tratamento_id));
 
     const result: SessaoDoDia[] = agendaSessoes
       .filter((s) => {
@@ -110,6 +115,8 @@ export default function TarefeiroDashboard() {
           quantidade_total: vinculo?.quantidade_total || 0,
           quantidade_realizada: vinculo?.quantidade_realizada || 0,
           presenca_registrada: presencaSet.has(s.assistido_tratamento_id),
+          tem_plano: planoSet.has(s.assistido_tratamento_id),
+          usa_novo_modelo: gateMap.has(s.assistido_id),
         };
       })
       .sort((a, b) => a.tratamento_nome.localeCompare(b.tratamento_nome));
