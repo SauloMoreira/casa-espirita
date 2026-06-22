@@ -2,17 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 let lastRpc: { fn: string; args: Record<string, unknown> } | null = null;
 let rpcPayload: unknown;
+let nextData: unknown = null;
 const fromCalls: any[] = [];
 
 function chain() {
   const calls: any[] = [];
   const builder: any = {};
-  const methods = ["update", "insert", "select", "eq", "neq", "order", "limit"];
+  const methods = ["update", "insert", "select", "eq", "neq", "or", "order", "limit"];
   for (const m of methods) {
     builder[m] = (...args: unknown[]) => { calls.push({ m, args }); return builder; };
   }
   builder.maybeSingle = () => Promise.resolve({ data: null, error: null });
-  builder.then = (resolve: any) => resolve({ data: null, error: null });
+  builder.then = (resolve: any) => resolve({ data: nextData, error: null });
   builder._calls = calls;
   return builder;
 }
