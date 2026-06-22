@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
 import { CartaAgendamento } from "@/components/CartaAgendamento";
 import { carregarListaEspera, type ListaEsperaItem } from "@/services/coordenacao/listaEspera";
-import type { MotivoListaEspera } from "@/lib/agendaRules";
+import { isTratamentoHolistico, normalizarHorario, type MotivoListaEspera } from "@/lib/agendaRules";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
