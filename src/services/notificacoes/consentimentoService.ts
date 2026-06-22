@@ -9,6 +9,7 @@ import {
 export interface ConsentimentoPreferencia {
   assistido_id: string;
   whatsapp_ativo: boolean;
+  comunicacao_geral_ativa: boolean;
   consentimento_status: string | null;
   consentimento_at: string | null;
   consentimento_origem: string | null;
