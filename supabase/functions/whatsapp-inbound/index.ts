@@ -273,6 +273,22 @@ export const ENCAMINHAMENTO_HUMANO_MENSAGEM =
   "Sem problemas! Vou te encaminhar agora para um atendimento humano. Em breve " +
   "alguém da nossa equipe falará com você. 🙏";
 
+// IA em dúvida (primeira vez): em vez de encaminhar direto, oferece ajuda,
+// pede mais detalhes e dá as opções (humano ou encerrar) antes de escalar.
+export const ESCLARECIMENTO_DUVIDA_MENSAGEM =
+  "Quero te ajudar da melhor forma. 🌿 Posso esclarecer dúvidas sobre horários da " +
+  "casa, palestras, evangelhoterapia, tratamentos, agendamentos, eventos, campanhas " +
+  "e informações gerais. Pode me contar com mais detalhes o que você precisa? Se " +
+  "preferir, posso te encaminhar para um atendimento humano ou encerrar a conversa " +
+  "por aqui. 💙";
+
+// Mensagem inbound sem conteúdo legível (vazia ou mídia que a IA não lê).
+// Pede para descrever em texto antes de pensar em encaminhar.
+export const ESCLARECIMENTO_VAZIO_MENSAGEM =
+  "Sua mensagem chegou sem um conteúdo que eu consiga ler por aqui. 🌿 Pode me " +
+  "dizer em palavras como posso te ajudar? Se preferir, encaminho você para um " +
+  "atendimento humano ou encerro a conversa por aqui. 💙";
+
 // Controlled emoji palette by context — variety with good sense, never spammy.
 const EMOJI_PALETA: Record<string, string[]> = {
   saudacao: ["✨", "🌿", "🙏"],
