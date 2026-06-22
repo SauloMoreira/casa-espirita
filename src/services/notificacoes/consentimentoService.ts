@@ -34,7 +34,7 @@ export async function getConsentimento(assistidoId: string): Promise<Consentimen
   const { data, error } = await supabase
     .from("notificacoes_preferencias")
     .select(
-      "assistido_id, whatsapp_ativo, consentimento_status, consentimento_at, consentimento_origem, consentimento_versao, opt_out_at, opt_out_motivo",
+      "assistido_id, whatsapp_ativo, comunicacao_geral_ativa, consentimento_status, consentimento_at, consentimento_origem, consentimento_versao, opt_out_at, opt_out_motivo",
     )
     .eq("assistido_id", assistidoId)
     .maybeSingle();
