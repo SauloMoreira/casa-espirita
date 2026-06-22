@@ -15,9 +15,6 @@ import { ConversasTab } from "@/components/notificacoes/ConversasTab";
 import { FilaDetalheDrawer } from "@/components/notificacoes/FilaDetalheDrawer";
 import { FilaTab } from "@/components/notificacoes/FilaTab";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
   listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
   type FilaItem, type Conversa, type HandoffEnriquecido,
 } from "@/services/notificacoes/notificacoesService";
