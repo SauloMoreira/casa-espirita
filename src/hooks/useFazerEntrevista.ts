@@ -58,6 +58,7 @@ export function useFazerEntrevista() {
   const [observacoes, setObservacoes] = useState("");
   const [quantidades, setQuantidades] = useState<Record<string, string>>({});
   const [datasIniciais, setDatasIniciais] = useState<Record<string, string>>({});
+  const [horarios, setHorarios] = useState<Record<string, string>>({});
 
   const [novoAssistidoOpen, setNovoAssistidoOpen] = useState(false);
   const [assistidoForm, setAssistidoForm] = useState<EntrevistaAssistidoForm>(EMPTY_ASSISTIDO_FORM);
