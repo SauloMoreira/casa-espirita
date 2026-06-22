@@ -262,6 +262,13 @@ export default function CentralNotificacoes() {
         onOpenChange={setDrawerOpen}
         onChanged={load}
       />
+
+      <FilaDetalheDrawer
+        item={filaSelecionada}
+        open={filaDrawerOpen}
+        onOpenChange={setFilaDrawerOpen}
+      />
+
     </div>
   );
 }
