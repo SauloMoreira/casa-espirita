@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, Search } from "lucide-react";
 import { format, addDays } from "date-fns";
+import { isTratamentoHolistico } from "@/lib/agendaRules";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -14,9 +15,19 @@ interface AgendaItem {
   id: string;
   assistido_nome: string;
   tratamento_nome: string;
+  tratamento_tipo: string | null;
   data_sessao: string;
   horario: string | null;
   status: string;
+}
+
+/** Ordena por data ASC, horário ASC com NULLS LAST (apenas ordenação — não mascara pendência). */
+function ordenarPorDataHorario(a: AgendaItem, b: AgendaItem): number {
+  if (a.data_sessao !== b.data_sessao) return a.data_sessao < b.data_sessao ? -1 : 1;
+  if (!a.horario && !b.horario) return 0;
+  if (!a.horario) return 1;
+  if (!b.horario) return -1;
+  return a.horario.localeCompare(b.horario);
 }
 
 export default function CoordenadorAgenda() {
