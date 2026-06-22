@@ -10,6 +10,15 @@ export interface PreferenciaNotificacao {
   horario_fim_envio: string;
 }
 
+/** Conteúdo conhecido do payload oficial da fila (gerado pelo backend). */
+export interface FilaPayload {
+  nome?: string | null;
+  tratamento?: string | null;
+  data?: string | null;
+  horario?: string | null;
+  [key: string]: unknown;
+}
+
 export interface FilaItem {
   id: string;
   evento_origem: string;
@@ -24,6 +33,110 @@ export interface FilaItem {
   external_message_id: string | null;
   erro: string | null;
   created_at: string;
+  /** Payload oficial da fila — carrega nome/tratamento sem necessidade de join. */
+  payload_json?: FilaPayload | null;
+}
+
+/** Nome da pessoa resolvido a partir do payload oficial da fila (sem join). */
+export function filaItemNome(f: Pick<FilaItem, "payload_json">): string | null {
+  const nome = f.payload_json?.nome;
+  return typeof nome === "string" && nome.trim() ? nome.trim() : null;
+}
+
+/** Tratamento vinculado, quando aplicável, a partir do payload oficial. */
+export function filaItemTratamento(f: Pick<FilaItem, "payload_json">): string | null {
+  const t = f.payload_json?.tratamento;
+  return typeof t === "string" && t.trim() ? t.trim() : null;
+}
+
+/** Previsão oficial de envio = quando a mensagem está/estava programada para sair. */
+export function filaItemPrevisao(f: Pick<FilaItem, "scheduled_at">): string | null {
+  return f.scheduled_at || null;
+}
+
+export type FilaOrdenacao =
+  | "previsao_proxima"
+  | "previsao_recente"
+  | "enviado_recente"
+  | "nome"
+  | "tratamento";
+
+export interface FilaFiltros {
+  status?: string; // "todos" ou status específico
+  nome?: string;
+  telefone?: string;
+  tratamento?: string;
+  evento?: string; // evento_origem ou template_codigo
+  canal?: string;
+  previsaoDe?: string; // ISO ou yyyy-mm-dd
+  previsaoAte?: string;
+  envioDe?: string;
+  envioAte?: string;
+}
+
+function inicioDoDia(v: string): number {
+  const d = new Date(v.length <= 10 ? `${v}T00:00:00` : v);
+  return d.getTime();
+}
+function fimDoDia(v: string): number {
+  const d = new Date(v.length <= 10 ? `${v}T23:59:59.999` : v);
+  return d.getTime();
+}
+
+/** Filtragem pura e combinável da fila (sem lógica paralela de dados). */
+export function filtrarFila(fila: FilaItem[], filtros: FilaFiltros): FilaItem[] {
+  const nomeQ = filtros.nome?.trim().toLowerCase();
+  const telQ = filtros.telefone?.trim().toLowerCase();
+  const tratQ = filtros.tratamento?.trim().toLowerCase();
+  const eventoQ = filtros.evento?.trim().toLowerCase();
+  const canalQ = filtros.canal?.trim().toLowerCase();
+
+  return fila.filter((f) => {
+    if (filtros.status && filtros.status !== "todos" && f.status !== filtros.status) return false;
+    if (nomeQ) {
+      const nome = (filaItemNome(f) || "").toLowerCase();
+      if (!nome.includes(nomeQ)) return false;
+    }
+    if (telQ) {
+      if (!(f.telefone_normalizado || "").toLowerCase().includes(telQ)) return false;
+    }
+    if (tratQ) {
+      const t = (filaItemTratamento(f) || "").toLowerCase();
+      if (!t.includes(tratQ)) return false;
+    }
+    if (eventoQ) {
+      const ev = `${f.evento_origem || ""} ${f.template_codigo || ""}`.toLowerCase();
+      if (!ev.includes(eventoQ)) return false;
+    }
+    if (canalQ && canalQ !== "todos") {
+      if ((f.canal || "").toLowerCase() !== canalQ) return false;
+    }
+    if (filtros.previsaoDe && (!f.scheduled_at || new Date(f.scheduled_at).getTime() < inicioDoDia(filtros.previsaoDe))) return false;
+    if (filtros.previsaoAte && (!f.scheduled_at || new Date(f.scheduled_at).getTime() > fimDoDia(filtros.previsaoAte))) return false;
+    if (filtros.envioDe && (!f.sent_at || new Date(f.sent_at).getTime() < inicioDoDia(filtros.envioDe))) return false;
+    if (filtros.envioAte && (!f.sent_at || new Date(f.sent_at).getTime() > fimDoDia(filtros.envioAte))) return false;
+    return true;
+  });
+}
+
+/** Ordenação pura da fila por critério explícito de operação. */
+export function ordenarFila(fila: FilaItem[], criterio: FilaOrdenacao): FilaItem[] {
+  const arr = [...fila];
+  const ts = (v?: string | null) => (v ? new Date(v).getTime() : null);
+  switch (criterio) {
+    case "previsao_proxima":
+      return arr.sort((a, b) => (ts(a.scheduled_at) ?? Infinity) - (ts(b.scheduled_at) ?? Infinity));
+    case "previsao_recente":
+      return arr.sort((a, b) => (ts(b.scheduled_at) ?? -Infinity) - (ts(a.scheduled_at) ?? -Infinity));
+    case "enviado_recente":
+      return arr.sort((a, b) => (ts(b.sent_at) ?? -Infinity) - (ts(a.sent_at) ?? -Infinity));
+    case "nome":
+      return arr.sort((a, b) => (filaItemNome(a) || "~").localeCompare(filaItemNome(b) || "~", "pt-BR"));
+    case "tratamento":
+      return arr.sort((a, b) => (filaItemTratamento(a) || "~").localeCompare(filaItemTratamento(b) || "~", "pt-BR"));
+    default:
+      return arr;
+  }
 }
 
 export interface Conversa {
