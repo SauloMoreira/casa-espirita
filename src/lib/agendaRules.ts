@@ -588,6 +588,7 @@ export function construirPlanoEtapas(params: ConstruirPlanoParams): PlanoConstru
         quantidade_total_do_tratamento: total,
         status_etapa,
         data_prevista: i > realizadas ? sugestoes[i - realizadas - 1]?.data_sessao ?? null : null,
+        horario_previsto: i > realizadas ? normalizarHorario(tipo.horario) : null,
         data_base_utilizada: liberadoDesde,
         eh_publico_livre: true,
         bloqueado_por_etapa_anterior: false,
