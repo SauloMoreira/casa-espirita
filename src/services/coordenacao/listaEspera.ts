@@ -34,6 +34,7 @@ export interface ListaEsperaItem {
   quantidade_total: number;
   entrevista_data: string | null;
   status: string;
+  tratamento_tipo: string | null;
   dia_semana: number | null;
   horario: string | null;
   frequencia_valor: number | null;
