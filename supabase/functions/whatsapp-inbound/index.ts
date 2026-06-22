@@ -479,6 +479,74 @@ function resumo(texto: string, max = 160): string {
   return t.length > max ? t.slice(0, max - 1) + "…" : t;
 }
 
+/** Rótulo amigável (placeholder) para mensagens inbound não textuais. */
+function rotuloTipoMensagem(tipo: string): string {
+  switch (tipo) {
+    case "audio": return "🎤 Usuário enviou um áudio";
+    case "imagem": return "🖼️ Usuário enviou uma imagem";
+    case "video": return "🎬 Usuário enviou um vídeo";
+    case "documento": return "📎 Usuário enviou um documento";
+    case "localizacao": return "📍 Usuário enviou uma localização";
+    case "contato": return "👤 Usuário enviou um contato";
+    case "sticker": return "🌟 Usuário enviou uma figurinha";
+    default: return "💬 Usuário enviou uma mensagem";
+  }
+}
+
+/**
+ * Interpreta o payload do webhook (Z-API / Baileys) e retorna o conteúdo útil
+ * da mensagem inbound. Garante que mensagens não textuais (áudio, imagem,
+ * documento, localização, etc.) sejam identificadas pelo TIPO e nunca fiquem
+ * "sem pergunta" no histórico do atendimento.
+ *
+ * - `texto`: legenda/transcrição/texto puro quando existir (pode ser vazio).
+ * - `tipo`: 'texto' | 'audio' | 'imagem' | 'video' | 'documento' |
+ *           'localizacao' | 'contato' | 'sticker' | 'desconhecido'.
+ * - `conteudoExibicao`: texto a ser persistido/exibido (legenda quando houver,
+ *   caso contrário o rótulo placeholder do tipo). Nunca vazio.
+ */
+function interpretarConteudoInbound(
+  body: any, data: any,
+): { texto: string; tipo: string; conteudoExibicao: string } {
+  const b = body ?? {};
+  const d = data ?? {};
+  const m = d?.message ?? {};
+
+  const textoPuro: string =
+    b?.text?.message || d?.text?.message ||
+    m?.conversation || m?.extendedTextMessage?.text ||
+    (typeof b?.message === "string" ? b.message : "") ||
+    (typeof b?.text === "string" ? b.text : "") || "";
+
+  if (textoPuro && textoPuro.trim()) {
+    return { texto: textoPuro.trim(), tipo: "texto", conteudoExibicao: textoPuro.trim() };
+  }
+
+  // Detecta mídia / tipos especiais e extrai legenda (caption) quando houver.
+  type Det = { tipo: string; caption?: string };
+  const candidatos: Array<Det | null> = [
+    (b.image || m.imageMessage) ? { tipo: "imagem", caption: b.image?.caption ?? m.imageMessage?.caption } : null,
+    (b.audio || m.audioMessage) ? { tipo: "audio" } : null,
+    (b.video || m.videoMessage) ? { tipo: "video", caption: b.video?.caption ?? m.videoMessage?.caption } : null,
+    (b.document || m.documentMessage) ? { tipo: "documento", caption: b.document?.fileName ?? b.document?.caption ?? m.documentMessage?.fileName } : null,
+    (b.location || m.locationMessage) ? { tipo: "localizacao" } : null,
+    (b.contact || b.contacts || m.contactMessage) ? { tipo: "contato" } : null,
+    (b.sticker || m.stickerMessage) ? { tipo: "sticker" } : null,
+  ];
+  const achado = candidatos.find((c): c is Det => c !== null);
+  if (achado) {
+    const caption = (achado.caption || "").trim();
+    const rotulo = rotuloTipoMensagem(achado.tipo);
+    return {
+      texto: caption,
+      tipo: achado.tipo,
+      conteudoExibicao: caption ? `${rotulo}: ${caption}` : rotulo,
+    };
+  }
+
+  return { texto: "", tipo: "desconhecido", conteudoExibicao: rotuloTipoMensagem("desconhecido") };
+}
+
 function formatarHorario(h: string | null | undefined): string {
   if (!h) return "";
   const [hh, mm] = h.split(":");
