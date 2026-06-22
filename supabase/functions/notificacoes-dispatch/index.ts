@@ -138,6 +138,22 @@ Deno.serve(async (req) => {
       result.processados++;
       const agora = new Date();
 
+      // ── FONTE ÚNICA DE ELEGIBILIDADE ─────────────────────────────────────
+      // Antes de qualquer envio, confirma na regra oficial (no banco) que o
+      // item ainda corresponde à agenda válida atual do assistido. Itens de
+      // sessão substituída/cancelada/órfã/vencida são cancelados aqui, nunca
+      // enviados — mesmo que tenham escapado do saneamento da fila.
+      const { data: motivoInelegivel } = await admin.rpc("fn_fila_motivo_inelegivel", {
+        p_fila_id: item.id,
+      });
+      if (motivoInelegivel) {
+        await admin.from("notificacoes_fila")
+          .update({ status: "cancelado", erro: motivoInelegivel }).eq("id", item.id);
+        await logFila(admin, item.id, "saida", null, null, "cancelado", String(motivoInelegivel));
+        result.ignorados++;
+        continue;
+      }
+
       // Load preferences + template
       const { data: pref } = await admin
         .from("notificacoes_preferencias")

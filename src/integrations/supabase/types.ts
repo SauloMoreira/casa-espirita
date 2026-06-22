@@ -2781,7 +2781,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      fn_fila_motivo_inelegivel: {
+        Args: { p_fila_id: string }
+        Returns: string
+      }
       fn_normalize_phone: { Args: { p: string }; Returns: string }
+      fn_notif_ping: { Args: never; Returns: string }
+      fn_sanear_fila_notificacoes: {
+        Args: never
+        Returns: {
+          r_fila_id: string
+          r_motivo: string
+        }[]
+      }
       gerenciar_termo_voluntario: {
         Args: {
           p_action: string
