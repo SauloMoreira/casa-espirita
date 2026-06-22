@@ -31,10 +31,24 @@ export interface AssistidoCabecalho extends AssistidoResumoBusca {
   data_migracao: string | null;
   observacao_migracao: string | null;
   foto_url: string | null;
+  /** Novo modelo (plano previsto + agenda ativa) habilitado para este assistido. */
+  usa_agenda_plano: boolean;
 }
 
-/** Origem da informação de "próxima sessão" exibida na tela consolidada. */
-export type OrigemProxima = "agendada" | "projetada" | "sugestao" | "sem_proxima";
+/**
+ * Origem da informação de "próxima sessão" exibida na tela consolidada.
+ *  - ativa: etapa ATIVA do novo modelo (única sessão real "na vez");
+ *  - prevista: novo modelo, etapa prevista futura aguardando a vez;
+ *  - agendada: agenda persistida (modelo antigo);
+ *  - projetada: projeção oficial; sugestao: público livre; sem_proxima: nenhuma.
+ */
+export type OrigemProxima =
+  | "ativa"
+  | "prevista"
+  | "agendada"
+  | "projetada"
+  | "sugestao"
+  | "sem_proxima";
 
 export interface TratamentoConsolidado {
   vinculo_id: string;
@@ -59,7 +73,23 @@ export interface TratamentoConsolidado {
   publico: boolean;
   liberado_desde: string | null;
   sugestoes_a_partir_de: string | null;
+  /** Novo modelo: este vínculo é gerido por plano previsto + agenda ativa. */
+  usa_plano: boolean;
+  /** Número da etapa ATIVA do plano (quando houver). */
+  etapa_ativa_numero: number | null;
+  /** Total de etapas já realizadas no plano (histórico de execução). */
+  etapas_realizadas: number;
 }
+
+/** Rótulo legível da origem da próxima sessão (para a UI). */
+export const ROTULO_ORIGEM_PROXIMA: Record<OrigemProxima, string> = {
+  ativa: "Etapa ativa",
+  prevista: "Etapa prevista",
+  agendada: "Agendada",
+  projetada: "Projetada",
+  sugestao: "Sugestão",
+  sem_proxima: "Sem próxima etapa",
+};
 
 export interface SessaoConsolidada {
   id: string;
@@ -110,7 +140,7 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
   const { data: assistido, error: errA } = await supabase
     .from("assistidos")
     .select(
-      "id, nome, celular, cpf, email, status, origem_cadastro, migrado_legado, data_migracao, observacao_migracao, foto_url",
+      "id, nome, celular, cpf, email, status, origem_cadastro, migrado_legado, data_migracao, observacao_migracao, foto_url, usa_agenda_plano",
     )
     .eq("id", assistidoId)
     .maybeSingle();
@@ -144,6 +174,32 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
     .eq("assistido_id", assistidoId)
     .order("data_sessao");
   if (errS) throw new Error(errS.message);
+
+  // Novo modelo: plano previsto + agenda ativa (somente quando habilitado).
+  const usaAgendaPlano = (assistido as { usa_agenda_plano?: boolean }).usa_agenda_plano === true;
+  type PlanoRow = {
+    assistido_tratamento_id: string;
+    numero_etapa: number;
+    status_etapa: string;
+    data_prevista: string | null;
+  };
+  let planoRows: PlanoRow[] = [];
+  if (usaAgendaPlano) {
+    const { data: planos, error: errP } = await supabase
+      .from("plano_tratamento_sessoes")
+      .select("assistido_tratamento_id, numero_etapa, status_etapa, data_prevista")
+      .eq("assistido_id", assistidoId)
+      .order("numero_etapa");
+    if (errP) throw new Error(errP.message);
+    planoRows = (planos ?? []) as PlanoRow[];
+  }
+  const planoPorVinculo = new Map<string, PlanoRow[]>();
+  for (const p of planoRows) {
+    const arr = planoPorVinculo.get(p.assistido_tratamento_id) ?? [];
+    arr.push(p);
+    planoPorVinculo.set(p.assistido_tratamento_id, arr);
+  }
+
 
   type AgendaRow = {
     id: string;
@@ -267,6 +323,35 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
         proxima_data = proj.sessoes[0].data_sessao;
       }
 
+      // Novo modelo: o PLANO é autoritativo sobre a próxima etapa quando ativo.
+      const etapas = planoPorVinculo.get(v.id) ?? [];
+      const usaPlano = usaAgendaPlano && etapas.length > 0;
+      let etapa_ativa_numero: number | null = null;
+      let etapas_realizadas = 0;
+      if (usaPlano) {
+        etapas_realizadas = etapas.filter((e) => e.status_etapa === "realizada").length;
+        const ativa = etapas.find((e) => e.status_etapa === "ativa");
+        const liberadaPublica = etapas.find(
+          (e) => e.status_etapa === "liberada_para_comparecimento_publico",
+        );
+        const prevista = etapas
+          .filter((e) => e.status_etapa === "prevista")
+          .sort((a, b) => a.numero_etapa - b.numero_etapa)[0];
+        if (ativa) {
+          etapa_ativa_numero = ativa.numero_etapa;
+          proxima_origem = "ativa";
+          proxima_data = ativa.data_prevista ?? proxima_data;
+        } else if (publico && liberadaPublica) {
+          proxima_origem = "sugestao";
+        } else if (prevista) {
+          proxima_origem = "prevista";
+          proxima_data = prevista.data_prevista ?? null;
+        } else {
+          proxima_origem = "sem_proxima";
+          proxima_data = null;
+        }
+      }
+
       return {
         vinculo_id: v.id,
         tratamento_id: v.tratamento_id,
@@ -287,6 +372,9 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
         publico,
         liberado_desde,
         sugestoes_a_partir_de,
+        usa_plano: usaPlano,
+        etapa_ativa_numero,
+        etapas_realizadas,
       };
     })
     .sort((a, b) => (a.ordem_tratamento ?? 999) - (b.ordem_tratamento ?? 999));
