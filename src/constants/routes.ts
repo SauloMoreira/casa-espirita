@@ -24,6 +24,7 @@ export const ROUTES = {
   assistidos: "/assistidos",
   consultaAssistido: "/consulta-assistido",
   migrarAssistido: "/migrar-assistido",
+  homologacaoAgenda: "/homologacao-agenda",
   entrevistas: "/entrevistas",
   fazerEntrevista: "/fazer-entrevista",
   agenda: "/agenda",
