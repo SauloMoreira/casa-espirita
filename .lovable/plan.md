@@ -1,62 +1,99 @@
-# Migração / cadastro de assistidos já em tratamento (legado)
+# Reorganização do menu administrativo
 
-Entrada administrativa própria para cadastrar assistidos já em acompanhamento, preservando o estágio atual — sem entrevista normal e sem reconstruir histórico. Reaproveita `assistidos`, `assistido_tratamentos` e `agenda_tratamentos_assistido`, sem fluxo paralelo de tratamento.
+Atua **somente** em `src/components/AppSidebar.tsx` (estrutura do array `navGroups` e estado de colapso). Nenhuma rota, permissão, página, service ou regra de negócio é alterada. Todas as `url` e `roles` de cada item permanecem idênticas — só mudam agrupamento, ordem, label, ícone e comportamento de abertura.
 
-## 1. Marcação de legado (banco)
-Migração adicionando colunas (sem quebrar nada):
-- `assistidos`: `origem_cadastro text NOT NULL DEFAULT 'normal'` ('normal'|'legado'), `migrado_legado boolean NOT NULL DEFAULT false`, `data_migracao timestamptz`, `observacao_migracao text`.
-- `assistido_tratamentos`: `origem text NOT NULL DEFAULT 'normal'` ('normal'|'legado'), `observacao_migracao text`.
+## Nova árvore (admin)
 
-A RLS atual já restringe escrita a admin; as colunas herdam a proteção. Os `status` já são aceitos pelos CHECKs existentes.
+```text
+1. INÍCIO
+   - Painel Inicial        (/dashboard)            [era "Dashboard"]
+   - Notificações          (/notificacoes)
+   - Ajuda                 (/ajuda)                 [era "Central de Ajuda"]
 
-## 2. Estado atual dos tratamentos (sem passado fictício)
-Por tratamento o admin informa: tipo (`tipos_tratamento`), status atual, `quantidade_total`, `quantidade_realizada`, observação.
-- Registro em `assistido_tratamentos` com `entrevista_id = null`, `origem = 'legado'`.
-- `quantidade_realizada <= quantidade_total`; `quantidade_faltante` recalculado pelo trigger existente.
-- **Nenhuma** entrevista em `entrevistas_fraternas`, **nenhuma** presença/sessão passada.
+2. ATENDIMENTO
+   - Assistidos            (/assistidos)
+   - Visão do Assistido    (/consulta-assistido)    [era "Consulta do Assistido"]
+   - Agenda de Tratamentos (/agenda)                [era "Agenda"]
+   - Registro de Presenças (/presenca)              [era "Presença"]
+   - Agendar Entrevista    (/entrevistas)
+   - Realizar Entrevista   (/fazer-entrevista)
+   - Sessões Públicas      (/sessoes-publicas)
 
-## 3. Próxima sessão / próximo passo
-Opcional, por tratamento: data + horário.
-- Se informada → insere **uma única** linha em `agenda_tratamentos_assistido` com `status = 'agendado'`.
-- **Só permitida** quando o status do tratamento for compatível com continuidade: `aguardando_agendamento`, `liberado`, `em_andamento`. Bloqueada para `concluido`, `cancelado`, `suspenso` (salvo regra administrativa explícita e validada na interface).
-- **Não pode colidir incoerentemente** com sessão já futura do mesmo tratamento para aquele assistido, salvo confirmação administrativa explícita na UI.
-- Sem data/horário → o tratamento permanece no status lançado, aguardando o fluxo normal a partir dali.
+3. PESSOAS
+   - Usuários              (/usuarios)
+   - Voluntários           (/voluntarios)
+   - Funções de Voluntariado (/funcoes-voluntariado) [era "Funções Voluntariado"]
 
-## 4. Consistência
-- Status apenas da lista real: `aguardando_inicio, aguardando_agendamento, liberado, em_andamento, concluido, suspenso, cancelado`.
-- **Estado global do assistido**: só atualizar automaticamente se já existir regra consistente para isso. **Se não houver regra consolidada para atualização automática do estado global, persistir apenas a marcação de legado e os vínculos de tratamento, sem inferência extra** — sem automatismo "criativo".
-- **Duplicidade**: se já existir vínculo ativo do mesmo tratamento, impedir duplicidade incoerente ou exigir **confirmação explícita e visível** do admin na UI (não falha silenciosa de backend).
+4. ACESSO E SEGURANÇA  (fechado por padrão)
+   - Solicitações de Cadastro (/solicitacoes-cadastro)
+   - Permissões de Acesso  (/governanca-acessos)    [era "Governança de Acessos"]
+   - Segurança da Conta    (/seguranca)
 
-## 5. Tela admin — `src/pages/MigrarAssistido.tsx`
-Assistente em etapas, simples e rápido:
-1. **Dados do assistido** — reusa campos existentes (nome, celular, e-mail, nascimento, endereço, CPF); criar novo ou selecionar existente. Para assistido existente, a UI deixa claro o que será reaproveitado, o que pode ser atualizado e o que não será sobrescrito sem confirmação. **Alterações em dados cadastrais sensíveis exigem confirmação explícita antes de sobrescrever o valor atual.**
-2. **Legado** — `data_migracao` (default hoje), indicador "entrevista/triagem fora do sistema", `observacao_migracao`.
-3. **Tratamentos atuais** — lista dinâmica: tipo, status, total, realizadas, observação.
-4. **Próxima sessão** — por tratamento: data, horário (opcional).
-5. **Observações administrativas** — campo livre consolidado.
+5. INTELIGÊNCIA E MONITORAMENTO
+   - Central de IA         (/central-ia)
+   - Fila de Notificações  (/central-notificacoes)  [era "Central de Notificações"]
+   - Relatórios            (/relatorios)
+   - Programação Padrão    (/programacao-padrao)
+   - Exceções Operacionais (/excecoes-operacionais)
+   - Exceções do Sistema   (/excecoes)              [era "Exceções"]
+   - Auditoria             (/auditoria)
 
-## 6. Rota e navegação
-- `src/App.tsx`: rota `/migrar-assistido` com `ProtectedRoute allowedRoles={["admin"]}`.
-- `src/components/AppSidebar.tsx`: item "Migrar Assistido" no grupo **Atendimento**, role `admin`.
-- `src/constants/routes.ts`: constante `migrarAssistido`.
+6. INSTITUCIONAL
+   - Instituição           (/instituicao)
+   - Gestão Institucional  (/painel-institucional)  [era "Painel Institucional"]
+   - Ação Social           (/acao-social)
+   - Campanhas             (/campanhas)
+   - Eventos               (/eventos)
+   - Comunicação           (/comunicacao-institucional)
 
-## 7. Serviço — `src/services/assistidos/migracaoLegado.ts`
-`migrarAssistidoLegado(params)`: cria/atualiza o assistido (origem legado), grava data/observação de migração, cria vínculos em `assistido_tratamentos`, cria a próxima sessão quando informada e válida. Não toca em entrevistas nem gera histórico. Não altera estado global do assistido sem regra consolidada.
+7. CONFIGURAÇÕES E REGRAS  (fechado por padrão)
+   - Tipos de Tratamento   (/tratamentos)           [era "Tratamentos"]
+   - Regras Operacionais   (/regras)
+   - Configurações         (/configuracoes)
+   - Gestão de Cores       (/configuracoes/cores)
 
-## 8. Lógica pura e validações — `src/lib/migracaoLegado.ts` (+ `.test.ts`)
-Monta payloads e valida: `quantidade_realizada <= quantidade_total`, status na lista real, data/hora da próxima sessão válida, coerência de `dia_semana` quando aplicável, incompatibilidade status×próxima sessão, colisão com sessão futura existente, bloqueio de payload inconsistente e de duplicidade incoerente.
+8. FERRAMENTAS ADMINISTRATIVAS  (fechado por padrão)
+   - Migrar Assistido      (/migrar-assistido)
+   - Homologação da Nova Agenda (/homologacao-agenda) [era "Homologação da Agenda"]
+```
 
-## 9. Governança e relatórios
-Legado distinguível por `assistidos.migrado_legado`/`origem_cadastro` e `assistido_tratamentos.origem`. Triggers de auditoria existentes (`fn_audit_trigger`) registram inserções/atualizações e a marcação de legado, permitindo relatórios futuros separarem origem normal × legado.
+## Preservação dos perfis não-admin (sem regressão)
 
-## 10. Não-objetivos
-Não substitui a entrevista normal; não recria sessões/presenças passadas; não reexecuta entrevista; não cria fluxo paralelo nem status novos; não infere estado global sem regra consolidada.
+Os itens exclusivos de coordenador e assistido (hoje no grupo "Tratamentos") **continuam existindo com as mesmas `url` e `roles`**, agrupados por perfil para não poluir o menu admin (admin não tem essas roles, então nunca os vê):
 
-## 11. Testes
-- Unit (`migracaoLegado.test.ts`): payloads, validações, status, próxima sessão, duplicidade, múltiplos tratamentos, incompatibilidade status×agendamento, colisão com sessão futura.
-- Funcional: cadastro legado; marcação de origem; tratamento em andamento com status e contadores; próxima sessão na agenda; operável a partir do estágio atual; sem reinício de jornada; confirmação ao sobrescrever dados sensíveis de assistido existente.
-- Regra: migrado não gera entrevista; tratamento não volta ao início; sem histórico passado; permissões admin; sem duplicidade incoerente.
-- Técnico: build, typecheck e suíte existentes sem regressão.
+```text
+COORDENAÇÃO (coordenador_de_tratamento)
+   - Lista de Espera        (/lista-espera)
+   - Meus Tratamentos       (/coordenador-tratamentos)
+   - Agenda do Tratamento   (/coordenador-agenda)
 
-## 12. Critérios de aceite
-Entrada administrativa específica; assistido cadastrável como legado; tratamentos em andamento com status e contadores; próxima sessão válida registrada; sistema opera a partir do estágio atual; sem entrevista/histórico artificial; sem inferência de estado global sem regra; migração auditável e distinta; build/typecheck/testes ok.
+MEU ESPAÇO (assistido)
+   - Meus Tratamentos       (/meus-tratamentos)
+   - Minha Agenda           (/minha-agenda)
+   - Documentos             (/meus-documentos)
+```
+
+Itens com múltiplas roles (ex.: Dashboard, Notificações, Ajuda, Relatórios, Agendar Entrevista, Programação Padrão, Central de IA) mantêm exatamente o mesmo array `roles`, então entrevistador/tarefeiro/coordenador continuam vendo os mesmos links. A filtragem por `role` e o filtro de grupos vazios (`visibleGroups`) já existentes garantem que cada perfil só vê o que tem permissão.
+
+## Comportamento de colapso
+
+- Hoje todos os grupos começam fechados e abrem automaticamente quando contêm a rota ativa (efeito `useEffect` sobre `location.pathname`). Esse mecanismo é mantido.
+- Grupos sensíveis (Acesso e Segurança, Configurações e Regras, Ferramentas Administrativas) permanecem fechados por padrão — o comportamento atual já satisfaz isso; nenhum `defaultOpen` extra é adicionado.
+- Item ativo, highlight e auto-expansão continuam funcionando pois dependem de `item.url`, que não muda.
+
+## Ícones
+
+Ajustes pontuais para coerência de grupo, sem trocas aleatórias:
+- Grupos: Início `Home`, Atendimento `HandHeart`, Pessoas `Users`, Acesso e Segurança `ShieldCheck`, Inteligência e Monitoramento `Brain`, Institucional `Landmark`, Configurações e Regras `Settings`/`SlidersHorizontal`, Ferramentas Administrativas `Wrench`, Coordenação `Stethoscope`, Meu Espaço `User`.
+- Itens reaproveitam os ícones já importados (ex.: `Bell`, `LifeBuoy`, `UserSearch`, `BookOpen`, `Heart`, `QrCode`, `KeyRound`, `Brain`, `BarChart3`, `AlertTriangle`, `CalendarX`, `CalendarClock`, `Shield`, `Building2`, `Apple`, `Megaphone`, `CalendarDays`, `Send`, `Palette`, `History`, `FlaskConical`). Ícones novos necessários (`Home`, `Wrench`, `SlidersHorizontal`) serão adicionados ao import do `lucide-react`.
+
+## Validação (sem regressão)
+
+1. Conferir que toda `url` e `roles` na nova árvore batem 1:1 com a árvore atual (nenhum link novo, nenhum removido).
+2. Rodar a suíte de testes (`bunx vitest run`) — deve continuar verde.
+3. Smoke test no preview (Playwright) como admin: expandir/colapsar os 8 grupos, navegar em um item de cada grupo e confirmar highlight do item ativo + auto-expansão.
+4. Conferir versão colapsada (modo ícone) e mobile.
+
+## Relatório final
+
+Ao concluir, apresento: árvore final, lista de labels alterados, itens reagrupados, itens movidos para Ferramentas Administrativas e confirmação explícita de que rotas, permissões e funcionalidades permanecem intactas.
