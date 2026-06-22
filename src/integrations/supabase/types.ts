@@ -2864,6 +2864,10 @@ export type Database = {
         Args: { p_assistido_id: string; p_planos: Json }
         Returns: Json
       }
+      pts_homologacao_auditar: {
+        Args: { p_acao: string; p_assistido_id: string; p_resultado?: Json }
+        Returns: Json
+      }
       pts_persistir_plano: {
         Args: { p_etapas: Json; p_sessao_ativa?: Json; p_vinculo_id: string }
         Returns: Json
