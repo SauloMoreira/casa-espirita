@@ -149,9 +149,14 @@ export async function submitEntrevista(
     observacoes,
     quantidades,
     datasIniciais,
+    horarios,
     tratamentoMap,
     agendaEntrevistaId,
   } = params;
+
+  /** Horário efetivo do tratamento: override do entrevistador ou padrão sugerido do tipo. */
+  const horarioEfetivo = (tratamentoId: string): string | null =>
+    horarios[tratamentoId]?.trim() || tratamentoMap[tratamentoId]?.horario || null;
 
   const validDesignacoes = buildValidDesignacoes(quantidades, tratamentoMap);
 
