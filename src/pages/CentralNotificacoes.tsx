@@ -54,7 +54,7 @@ export default function CentralNotificacoes() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filaSelecionada, setFilaSelecionada] = useState<FilaItem | null>(null);
   const [filaDrawerOpen, setFilaDrawerOpen] = useState(false);
-  const [filaStatus, setFilaStatus] = useState("todos");
+  
 
   const load = useCallback(async () => {
     setLoading(true);
