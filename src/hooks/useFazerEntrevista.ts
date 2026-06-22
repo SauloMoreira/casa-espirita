@@ -309,6 +309,23 @@ export function useFazerEntrevista() {
       return;
     }
 
+    // Holístico exige horário da consulta (validação UI; backend revalida).
+    for (const tratId of Object.keys(quantidades)) {
+      const trat = tratamentoMap[tratId];
+      if (!trat) continue;
+      if (
+        isTratamentoHolistico(trat.tipo) &&
+        !validarHorarioHolistico({ holistico: true, horario: horarios[tratId] }).valido
+      ) {
+        toast({
+          title: "Horário obrigatório",
+          description: `Informe o horário da consulta para "${trat.nome}".`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const result = await submitEntrevista({
@@ -319,9 +336,11 @@ export function useFazerEntrevista() {
         observacoes,
         quantidades,
         datasIniciais,
+        horarios,
         tratamentoMap,
         agendaEntrevistaId,
       });
+
 
       toast({
         title: "Entrevista salva com sucesso!",
