@@ -56,7 +56,7 @@ function mkFila(p: Partial<FilaItem> = {}): FilaItem {
     external_message_id: p.external_message_id ?? null,
     erro: p.erro ?? null,
     created_at: p.created_at ?? "2026-06-20T10:00:00Z",
-    payload_json: p.payload_json ?? { nome: "Ana Rosa", tratamento: "Desobsessão" },
+    payload_json: "payload_json" in p ? p.payload_json : { nome: "Ana Rosa", tratamento: "Desobsessão" },
   };
 }
 
