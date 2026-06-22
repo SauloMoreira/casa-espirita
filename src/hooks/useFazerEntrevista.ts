@@ -163,6 +163,7 @@ export function useFazerEntrevista() {
     setSelectedAssistido(null);
     setQuantidades({});
     setDatasIniciais({});
+    setHorarios({});
     setObservacoes("");
     setTipoEntrevista("regular");
     setDataEntrevista(todayStr());
@@ -175,19 +176,38 @@ export function useFazerEntrevista() {
     setQuantidades((prev) => ({ ...prev, [tratId]: val }));
   }, []);
 
-  const toggleTratamento = useCallback((tratId: string) => {
-    setQuantidades((prev) => {
-      if (tratId in prev) {
-        const next = { ...prev };
-        delete next[tratId];
-        return next;
-      }
-      return { ...prev, [tratId]: "" };
-    });
+  const setHorario = useCallback((tratId: string, val: string) => {
+    setHorarios((prev) => ({ ...prev, [tratId]: val }));
   }, []);
+
+  const toggleTratamento = useCallback(
+    (tratId: string) => {
+      setQuantidades((prev) => {
+        if (tratId in prev) {
+          const next = { ...prev };
+          delete next[tratId];
+          return next;
+        }
+        return { ...prev, [tratId]: "" };
+      });
+      // Pré-preenche o horário do holístico com o padrão sugerido do tipo.
+      setHorarios((prev) => {
+        if (tratId in prev) return prev;
+        const padrao = tratamentoMap[tratId]?.horario;
+        if (!padrao) return prev;
+        return { ...prev, [tratId]: padrao.slice(0, 5) };
+      });
+    },
+    [tratamentoMap],
+  );
 
   const clearQtd = useCallback((tratId: string) => {
     setQuantidades((prev) => {
+      const next = { ...prev };
+      delete next[tratId];
+      return next;
+    });
+    setHorarios((prev) => {
       const next = { ...prev };
       delete next[tratId];
       return next;
@@ -197,6 +217,7 @@ export function useFazerEntrevista() {
   const setDataInicial = useCallback((tratId: string, val: string) => {
     setDatasIniciais((prev) => ({ ...prev, [tratId]: val }));
   }, []);
+
 
   const openNovoAssistido = useCallback(() => {
     setNovoAssistidoOpen(true);
