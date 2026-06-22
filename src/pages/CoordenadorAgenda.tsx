@@ -40,11 +40,13 @@ export default function CoordenadorAgenda() {
     const fetch = async () => {
       const { data: meusTrat } = await supabase
         .from("tipos_tratamento")
-        .select("id, nome")
+        .select("id, nome, tipo")
         .eq("coordenador_responsavel_id", user.id);
 
       if (!meusTrat || meusTrat.length === 0) { setItems([]); return; }
-      const tratMap = Object.fromEntries(meusTrat.map((t: any) => [t.id, t.nome]));
+      const tratMap = Object.fromEntries(
+        meusTrat.map((t: any) => [t.id, { nome: t.nome, tipo: t.tipo }]),
+      );
       const tratIds = meusTrat.map((t: any) => t.id);
 
       const today = format(new Date(), "yyyy-MM-dd");
@@ -56,7 +58,8 @@ export default function CoordenadorAgenda() {
         .in("tratamento_id", tratIds)
         .gte("data_sessao", today)
         .lte("data_sessao", limit30)
-        .order("data_sessao", { ascending: true });
+        .order("data_sessao", { ascending: true })
+        .order("horario", { ascending: true, nullsFirst: false });
 
       if (!agendas || agendas.length === 0) { setItems([]); return; }
 
@@ -64,14 +67,19 @@ export default function CoordenadorAgenda() {
       const { data: assistidos } = await supabase.from("assistidos").select("id, nome").in("id", assistidoIds);
       const assistMap = Object.fromEntries((assistidos || []).map((a: any) => [a.id, a.nome]));
 
-      setItems(agendas.map((a: any) => ({
-        id: a.id,
-        assistido_nome: assistMap[a.assistido_id] || "—",
-        tratamento_nome: tratMap[a.tratamento_id] || "—",
-        data_sessao: a.data_sessao,
-        horario: a.horario,
-        status: a.status,
-      })));
+      setItems(
+        agendas
+          .map((a: any) => ({
+            id: a.id,
+            assistido_nome: assistMap[a.assistido_id] || "—",
+            tratamento_nome: tratMap[a.tratamento_id]?.nome || "—",
+            tratamento_tipo: tratMap[a.tratamento_id]?.tipo ?? null,
+            data_sessao: a.data_sessao,
+            horario: a.horario,
+            status: a.status,
+          }))
+          .sort(ordenarPorDataHorario),
+      );
     };
     fetch();
   }, [user]);
@@ -79,6 +87,7 @@ export default function CoordenadorAgenda() {
   const filtered = items.filter((i) =>
     i.assistido_nome.toLowerCase().includes(search.toLowerCase())
   );
+
 
   return (
     <div className="space-y-6">
