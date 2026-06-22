@@ -200,6 +200,7 @@ export default function SessoesPublicas() {
       refreshCheckins(selectedSessao.id);
       setManualSearch("");
       setManualResults([]);
+      setAssistidoSelecionado(null);
     } catch (error: any) {
       const dup = (error?.message || "").includes("duplicate");
       toast({ title: dup ? "Presença já registrada" : "Erro", description: error?.message, variant: "destructive" });
