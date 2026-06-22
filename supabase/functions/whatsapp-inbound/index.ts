@@ -2023,8 +2023,40 @@ Deno.serve(async (req) => {
         respostaFonte = "site_conhecimento";
         resposta = respostaSite;
       } else if (intencao === "complexo") {
-        handoff = true; handoffOrigem = "ia";
-        handoffMotivo = "Mensagem que requer atendimento humano";
+        // Em dúvida, a IA NÃO encaminha direto. Primeiro oferece ajuda e pede
+        // detalhes (com opção de humano/encerrar). Só escala se a pessoa insistir
+        // com uma segunda mensagem que continua sem a IA conseguir resolver.
+        // O ciclo reinicia após cada handoff resolvido.
+        const semConteudoLegivel = !texto.trim();
+        const { data: ultimoHandoffFechadoCx } = await admin
+          .from("whatsapp_handoffs")
+          .select("closed_at")
+          .eq("conversa_id", conversaId)
+          .eq("status", "fechado")
+          .order("closed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        let queryDuvidas = admin
+          .from("notificacoes_log")
+          .select("id", { count: "exact", head: true })
+          .eq("direcao", "entrada")
+          .eq("payload_recebido->>telefone", telefone)
+          .eq("payload_recebido->>intencao", "complexo");
+        if (ultimoHandoffFechadoCx?.closed_at) {
+          queryDuvidas = queryDuvidas.gt("created_at", ultimoHandoffFechadoCx.closed_at);
+        }
+        const { count: duvidasAnteriores } = await queryDuvidas;
+        if ((duvidasAnteriores ?? 0) >= 1) {
+          // Segunda dúvida não resolvida -> encaminha para atendimento humano.
+          respostaFonte = "handoff_duvida_segunda";
+          resposta = ENCAMINHAMENTO_HUMANO_MENSAGEM;
+          handoff = true; handoffOrigem = "ia";
+          handoffMotivo = "Dúvida reiterada sem resolução automática";
+        } else {
+          // Primeira dúvida -> tenta esclarecer / oferece opções antes de escalar.
+          respostaFonte = semConteudoLegivel ? "esclarecimento_vazio" : "esclarecimento_duvida";
+          resposta = semConteudoLegivel ? ESCLARECIMENTO_VAZIO_MENSAGEM : ESCLARECIMENTO_DUVIDA_MENSAGEM;
+        }
       } else if (!AUTORESOLVIVEIS.includes(intencao)) {
         handoff = true; handoffOrigem = "regra";
         handoffMotivo = "Intenção sem resposta automática disponível";
