@@ -353,10 +353,40 @@ export async function registrarAusenciaPlano(
 
   const { data: tt } = await supabase
     .from("tipos_tratamento")
-    .select("id, dia_semana, horario, frequencia_valor, frequencia_unidade")
+    .select("id, tipo, dia_semana, horario, frequencia_valor, frequencia_unidade")
     .eq("id", vinc.tratamento_id)
     .maybeSingle();
-  const tipo = tt as ParametrosTipoAgenda | null;
+  const tipo = tt as (ParametrosTipoAgenda & { tipo?: string | null }) | null;
+
+  // Horário efetivo na remarcação: preserva override operacional por sessão.
+  // Precedência: agenda da sessão ativa → horario_previsto da etapa ativa →
+  // horário padrão do tipo (fallback final).
+  const { data: etapaAtivaRow } = await supabase
+    .from("plano_tratamento_sessoes")
+    .select("horario_previsto, agenda_sessao_id")
+    .eq("assistido_tratamento_id", vinculoId)
+    .eq("status_etapa", "ativa")
+    .order("numero_etapa")
+    .limit(1)
+    .maybeSingle();
+  const etapaAtiva = etapaAtivaRow as
+    | { horario_previsto: string | null; agenda_sessao_id: string | null }
+    | null;
+
+  let horarioSessaoAtual: string | null = null;
+  if (etapaAtiva?.agenda_sessao_id) {
+    const { data: agendaRow } = await supabase
+      .from("agenda_tratamentos_assistido")
+      .select("horario")
+      .eq("id", etapaAtiva.agenda_sessao_id)
+      .maybeSingle();
+    horarioSessaoAtual = (agendaRow as { horario: string | null } | null)?.horario ?? null;
+  }
+
+  const novoHorario =
+    normalizarHorario(horarioSessaoAtual) ??
+    normalizarHorario(etapaAtiva?.horario_previsto) ??
+    normalizarHorario(tipo?.horario);
 
   // Nova data = próxima data válida APÓS a falta, para a MESMA etapa.
   const aposFalta = new Date(data + "T12:00:00");
@@ -375,7 +405,7 @@ export async function registrarAusenciaPlano(
     p_data: data,
     p_registrado_por: registradoPor,
     p_nova_data: novaData ?? undefined,
-    p_nova_horario: normalizarHorario(tipo?.horario) ?? undefined,
+    p_nova_horario: novoHorario ?? undefined,
   } as never);
   if (error) throw new Error(error.message);
 
