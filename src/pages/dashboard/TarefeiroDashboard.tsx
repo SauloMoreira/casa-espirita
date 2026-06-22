@@ -126,20 +126,42 @@ export default function TarefeiroDashboard() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const registrarPresenca = async (atId: string, statusPresenca: "presente" | "ausente") => {
+  const registrarPresenca = async (item: SessaoDoDia, statusPresenca: "presente" | "ausente") => {
+    const atId = item.assistido_tratamento_id;
     setLoadingId(atId);
-    const { error } = await supabase.rpc("registrar_presenca", {
-      p_assistido_tratamento_id: atId,
-      p_data: today,
-      p_status_presenca: statusPresenca,
-      p_registrado_por: user!.id,
-    });
+    try {
+      const res = await registrarPresencaRoteada({
+        vinculoId: atId,
+        status: statusPresenca,
+        data: today,
+        registradoPor: user!.id,
+        temPlano: item.tem_plano,
+        usaNovoModelo: item.usa_novo_modelo,
+      });
 
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: statusPresenca === "presente" ? "Presença registrada" : "Ausência registrada" });
+      if (res.rota === "plano") {
+        toast({
+          title:
+            statusPresenca === "presente"
+              ? "Presença registrada"
+              : "Ausência registrada e sessão remarcada",
+        });
+      } else if (statusPresenca === "ausente") {
+        console.info(
+          "[tarefeiro] remarcação automática indisponível (legado)",
+          { vinculoId: atId, usaNovoModelo: res.usaNovoModelo, temPlano: res.temPlano },
+        );
+        toast({
+          title: "Ausência registrada",
+          description:
+            "Remarcação automática indisponível: vínculo ainda no modelo legado (requer conversão controlada).",
+        });
+      } else {
+        toast({ title: "Presença registrada" });
+      }
       fetchData();
+    } catch (e: any) {
+      toast({ title: "Erro", description: e?.message ?? "Falha ao registrar.", variant: "destructive" });
     }
     setLoadingId(null);
   };
