@@ -432,7 +432,30 @@ export default function CoordenadorListaEspera() {
                   <p className="text-xs text-destructive">A data deve ser {DIAS_SEMANA[selectedItem.dia_semana]}</p>
                 )}
               </div>
-              <Button onClick={handleAgendar} disabled={saving || !dataInicial} className="w-full">
+              {isTratamentoHolistico(selectedItem.tratamento_tipo) && (
+                <div className="space-y-2">
+                  <Label>Horário da consulta (obrigatório)</Label>
+                  <Input
+                    type="time"
+                    value={horario}
+                    onChange={(e) => setHorario(e.target.value)}
+                  />
+                  {!normalizarHorario(horario) && (
+                    <p className="text-xs text-destructive">
+                      Tratamentos holísticos exigem o horário da consulta.
+                    </p>
+                  )}
+                </div>
+              )}
+              <Button
+                onClick={handleAgendar}
+                disabled={
+                  saving ||
+                  !dataInicial ||
+                  (isTratamentoHolistico(selectedItem.tratamento_tipo) && !normalizarHorario(horario))
+                }
+                className="w-full"
+              >
                 {saving ? "Agendando..." : "Confirmar Agendamento"}
               </Button>
             </div>
