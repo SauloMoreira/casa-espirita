@@ -273,7 +273,7 @@ export async function submitEntrevista(
       const sessions = generateSessionDates(
         startDate,
         trat.dia_semana,
-        trat.horario,
+        horarioEfetivo(d.tratamento_id),
         trat.frequencia_valor || 1,
         trat.frequencia_unidade || "semanas",
         remaining
