@@ -161,6 +161,7 @@ export async function carregarListaEspera(
       quantidade_total: v.quantidade_total,
       entrevista_data: entDate,
       status: v.status,
+      tratamento_tipo: trat.tipo ?? null,
       dia_semana: trat.dia_semana ?? null,
       horario: trat.horario ?? null,
       frequencia_valor: trat.frequencia_valor ?? 1,
