@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
 import { ClipboardCheck, Heart, Calendar, Users } from "lucide-react";
+import { contarListaEspera } from "@/services/coordenacao/listaEspera";
 
 export default function CoordenadorDashboard() {
   const { user } = useAuth();
@@ -25,11 +26,8 @@ export default function CoordenadorDashboard() {
 
       const tratIds = meusTrat.map((t: any) => t.id);
 
-      const { count: espera } = await supabase
-        .from("assistido_tratamentos")
-        .select("id", { count: "exact", head: true })
-        .in("tratamento_id", tratIds)
-        .eq("status", "aguardando_agendamento");
+      // Lista de Espera usa a MESMA regra/serviço da página (sem divergência).
+      const espera = await contarListaEspera(user.id);
 
       const { count: andamento } = await supabase
         .from("assistido_tratamentos")
@@ -53,6 +51,7 @@ export default function CoordenadorDashboard() {
     };
     fetch();
   }, [user]);
+
 
   return (
     <div className="space-y-6">

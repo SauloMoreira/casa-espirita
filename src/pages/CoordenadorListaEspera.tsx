@@ -12,10 +12,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Search, Calendar, ClipboardCheck, Printer, AlertTriangle, ArrowUpDown, Flag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { addDays, addWeeks, addMonths, getDay, startOfDay, format, differenceInDays } from "date-fns";
+import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
 import { CartaAgendamento } from "@/components/CartaAgendamento";
+import { carregarListaEspera, type ListaEsperaItem } from "@/services/coordenacao/listaEspera";
+import type { MotivoListaEspera } from "@/lib/agendaRules";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+const MOTIVO_LABEL: Record<MotivoListaEspera, string> = {
+  AGUARDANDO_AGENDAMENTO: "Aguardando agendamento",
+  AGUARDANDO_INICIO_SEM_PROXIMA_SESSAO: "Aguardando início sem próxima sessão",
+  LEGADO_SEM_AGENDA: "Legado sem agenda gerada",
+  PLANO_SEM_ETAPA_ATIVA: "Plano sem etapa ativa",
+};
 
 const PRIORIDADE_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; order: number }> = {
   urgente: { label: "Urgente", variant: "destructive", order: 0 },
@@ -25,23 +34,8 @@ const PRIORIDADE_CONFIG: Record<string, { label: string; variant: "default" | "s
 
 type SortMode = "prioridade" | "cronologico" | "tempo_espera";
 
-interface WaitItem {
-  id: string;
-  assistido_id: string;
-  assistido_nome: string;
-  tratamento_id: string;
-  tratamento_nome: string;
-  quantidade_total: number;
-  entrevista_data: string | null;
-  status: string;
-  dia_semana: number | null;
-  horario: string | null;
-  frequencia_valor: number | null;
-  frequencia_unidade: string | null;
-  prioridade: string;
-  urgencia: string | null;
-  dias_espera: number;
-}
+type WaitItem = ListaEsperaItem;
+
 
 export default function CoordenadorListaEspera() {
   const { user } = useAuth();
@@ -66,66 +60,11 @@ export default function CoordenadorListaEspera() {
 
   const fetchData = async () => {
     if (!user) return;
-
-    const { data: meusTrat } = await supabase
-      .from("tipos_tratamento")
-      .select("id, nome, dia_semana, horario, frequencia_valor, frequencia_unidade")
-      .eq("coordenador_responsavel_id", user.id);
-
-    if (!meusTrat || meusTrat.length === 0) { setItems([]); return; }
-
-    const tratMap = Object.fromEntries(meusTrat.map((t: any) => [t.id, t]));
-    const tratIds = meusTrat.map((t: any) => t.id);
-    setTratNomes(meusTrat.map((t: any) => t.nome));
-
-    const { data: vinculos } = await supabase
-      .from("assistido_tratamentos")
-      .select("id, assistido_id, tratamento_id, quantidade_total, status, entrevista_id, prioridade, urgencia, created_at")
-      .in("tratamento_id", tratIds)
-      .eq("status", "aguardando_agendamento");
-
-    if (!vinculos || vinculos.length === 0) { setItems([]); return; }
-
-    const assistidoIds = [...new Set(vinculos.map((v: any) => v.assistido_id))];
-    const { data: assistidos } = await supabase
-      .from("assistidos")
-      .select("id, nome")
-      .in("id", assistidoIds);
-
-    const assistMap = Object.fromEntries((assistidos || []).map((a: any) => [a.id, a.nome]));
-
-    const entrevistaIds = vinculos.map((v: any) => v.entrevista_id).filter(Boolean);
-    const { data: entrevistas } = entrevistaIds.length > 0
-      ? await supabase.from("entrevistas_fraternas").select("id, data").in("id", entrevistaIds)
-      : { data: [] };
-
-    const entMap = Object.fromEntries((entrevistas || []).map((e: any) => [e.id, e.data]));
-    const today = new Date();
-
-    const result: WaitItem[] = vinculos.map((v: any) => {
-      const trat = tratMap[v.tratamento_id];
-      const entDate = v.entrevista_id ? entMap[v.entrevista_id] || null : null;
-      return {
-        id: v.id,
-        assistido_id: v.assistido_id,
-        assistido_nome: assistMap[v.assistido_id] || "—",
-        tratamento_id: v.tratamento_id,
-        tratamento_nome: trat?.nome || "—",
-        quantidade_total: v.quantidade_total,
-        entrevista_data: entDate,
-        status: v.status,
-        dia_semana: trat?.dia_semana ?? null,
-        horario: trat?.horario ?? null,
-        frequencia_valor: trat?.frequencia_valor ?? 1,
-        frequencia_unidade: trat?.frequencia_unidade ?? "semanas",
-        prioridade: v.prioridade || "normal",
-        urgencia: v.urgencia || null,
-        dias_espera: entDate ? differenceInDays(today, new Date(entDate)) : differenceInDays(today, new Date(v.created_at)),
-      };
-    });
-
-    setItems(result);
+    const { itens, tratamentoNomes } = await carregarListaEspera(user.id);
+    setTratNomes(tratamentoNomes);
+    setItems(itens);
   };
+
 
   useEffect(() => { fetchData(); }, [user]);
 
@@ -265,7 +204,7 @@ export default function CoordenadorListaEspera() {
           <ClipboardCheck className="h-6 w-6 text-primary" />
           Lista de Espera
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Assistidos aguardando agendamento nos seus tratamentos</p>
+        <p className="text-sm text-muted-foreground mt-1">Vínculos com pendência de agendamento nos seus tratamentos</p>
       </div>
 
       {/* Summary badges */}
@@ -367,7 +306,14 @@ export default function CoordenadorListaEspera() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{item.tratamento_nome}</TableCell>
+                        <TableCell>
+                          <div>
+                            <span>{item.tratamento_nome}</span>
+                            <Badge variant="outline" className="ml-2 text-[10px] align-middle">
+                              {MOTIVO_LABEL[item.motivo]}
+                            </Badge>
+                          </div>
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {item.entrevista_data ? format(new Date(item.entrevista_data), "dd/MM/yyyy") : "—"}
                         </TableCell>

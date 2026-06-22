@@ -161,6 +161,102 @@ export const MODO_SEQUENCIAL_BLOQUEANTE = "sequencial_bloqueante";
 export const MODO_LIVRE_CONCOMITANTE = "livre_concomitante";
 export const MODO_AGENDADO_POR_DATA_INICIAL = "agendado_por_data_inicial";
 
+// ===========================================================================
+// LISTA DE ESPERA DO COORDENADOR — regra de elegibilidade ÚNICA.
+//
+// Decide se um vínculo representa AÇÃO CONCRETA E ATUAL de coordenação para
+// colocar o assistido em agenda. Reaproveita os conceitos já existentes
+// (status, saldo, modo de agendamento, sessão futura válida, etapa ativa do
+// novo modelo, legado, público livre). NÃO consulta banco — recebe sinais já
+// resolvidos e devolve { elegivel, motivo }. Página e dashboard consomem esta
+// regra; nenhuma tela reimplementa a elegibilidade.
+// ===========================================================================
+
+/** Códigos estruturados do motivo de pendência na Lista de Espera. */
+export type MotivoListaEspera =
+  | "AGUARDANDO_AGENDAMENTO"
+  | "AGUARDANDO_INICIO_SEM_PROXIMA_SESSAO"
+  | "LEGADO_SEM_AGENDA"
+  | "PLANO_SEM_ETAPA_ATIVA";
+
+/** Estados terminais do vínculo: nunca entram na Lista de Espera. */
+const STATUS_FORA_LISTA_ESPERA = new Set(["concluido", "cancelado", "suspenso"]);
+
+export interface ElegibilidadeListaEsperaInput {
+  status: string;
+  quantidade_total: number;
+  quantidade_realizada: number;
+  modo_agendamento: string;
+  /**
+   * Existe sessão futura REALMENTE válida para operação (ativa/agendada e com
+   * data >= hoje). Sessões substituídas/canceladas/inválidas NÃO entram aqui.
+   */
+  temSessaoFuturaValida: boolean;
+  /** Existe etapa ativa válida no novo modelo (plano_tratamento_sessoes). */
+  temEtapaAtivaValida: boolean;
+  /** Vínculo de origem legado. */
+  legado: boolean;
+  trabalhoPublico?: boolean;
+  permiteEntradaSemAgendamento?: boolean;
+}
+
+export interface ElegibilidadeListaEspera {
+  elegivel: boolean;
+  motivo: MotivoListaEspera | null;
+}
+
+/**
+ * Regra oficial da Lista de Espera. Entram apenas vínculos com pendência
+ * operacional real do coordenador:
+ *  - aguardando_agendamento                                  -> AGUARDANDO_AGENDAMENTO
+ *  - aguardando_inicio, saldo > 0, sem sessão futura válida  -> AGUARDANDO_INICIO_SEM_PROXIMA_SESSAO
+ *  - legado elegível, saldo > 0, sem agenda ativa            -> LEGADO_SEM_AGENDA
+ *  - novo modelo com saldo, sem sessão futura nem etapa ativa -> PLANO_SEM_ETAPA_ATIVA
+ *
+ * Ficam fora: terminais, sem saldo, com sessão futura válida, com etapa ativa
+ * válida representando a próxima ação, e públicos/livres (apenas sugestão).
+ */
+export function elegibilidadeListaEspera(
+  input: ElegibilidadeListaEsperaInput,
+): ElegibilidadeListaEspera {
+  const naoElegivel: ElegibilidadeListaEspera = { elegivel: false, motivo: null };
+
+  // 1. Terminais nunca entram.
+  if (STATUS_FORA_LISTA_ESPERA.has(input.status)) return naoElegivel;
+
+  // 2. Sem saldo restante não há ação.
+  if (quantidadeRestante(input.quantidade_total, input.quantidade_realizada) <= 0) {
+    return naoElegivel;
+  }
+
+  // 3. Público/livre: gera apenas sugestão de comparecimento, sem agendamento real.
+  if (
+    isTratamentoPublicoLivre({
+      modo_agendamento: input.modo_agendamento,
+      trabalhoPublico: input.trabalhoPublico,
+      permiteEntradaSemAgendamento: input.permiteEntradaSemAgendamento,
+    })
+  ) {
+    return naoElegivel;
+  }
+
+  // 4. Já existe próxima ação representada (sessão futura válida OU etapa ativa).
+  if (input.temSessaoFuturaValida || input.temEtapaAtivaValida) return naoElegivel;
+
+  // 5. Há pendência real — determina o motivo estruturado.
+  if (input.status === "aguardando_agendamento") {
+    return { elegivel: true, motivo: "AGUARDANDO_AGENDAMENTO" };
+  }
+  if (input.status === "aguardando_inicio") {
+    return { elegivel: true, motivo: "AGUARDANDO_INICIO_SEM_PROXIMA_SESSAO" };
+  }
+  if (input.legado) {
+    return { elegivel: true, motivo: "LEGADO_SEM_AGENDA" };
+  }
+  return { elegivel: true, motivo: "PLANO_SEM_ETAPA_ATIVA" };
+}
+
+
 
 
 export interface TratamentoProjecaoInput {
