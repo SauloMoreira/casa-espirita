@@ -118,30 +118,50 @@ export default function Presenca() {
 
   useEffect(() => { fetchData(); }, [data]);
 
-  const registrarPresenca = async (atId: string, statusPresenca: "presente" | "ausente") => {
+  const registrarPresenca = async (item: TratamentoDoDia, statusPresenca: "presente" | "ausente") => {
+    const atId = item.assistido_tratamento_id;
     setLoadingId(atId);
     try {
-      const { error } = await withRetry(
+      const res = await withRetry(
         async () =>
-          supabase.rpc("registrar_presenca", {
-            p_assistido_tratamento_id: atId,
-            p_data: data,
-            p_status_presenca: statusPresenca,
-            p_registrado_por: user!.id,
+          registrarPresencaRoteada({
+            vinculoId: atId,
+            status: statusPresenca,
+            data,
+            registradoPor: user!.id,
+            temPlano: item.tem_plano,
+            usaNovoModelo: item.usa_novo_modelo,
           }),
         { retries: 3, baseDelayMs: 500, shouldRetry: (e) => isTransientError(e) },
       );
 
-      if (error) {
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (res.rota === "plano") {
+        toast({
+          title:
+            statusPresenca === "presente"
+              ? "Presença registrada"
+              : "Ausência registrada e sessão remarcada",
+        });
       } else {
-        toast({ title: statusPresenca === "presente" ? "Presença registrada" : "Ausência registrada" });
-        fetchData();
+        if (statusPresenca === "ausente") {
+          console.info(
+            "[presenca] remarcação automática indisponível (legado)",
+            { vinculoId: atId, usaNovoModelo: res.usaNovoModelo, temPlano: res.temPlano },
+          );
+          toast({
+            title: "Ausência registrada",
+            description:
+              "Remarcação automática indisponível: vínculo ainda no modelo legado (requer conversão controlada).",
+          });
+        } else {
+          toast({ title: "Presença registrada" });
+        }
       }
+      fetchData();
     } catch (e: any) {
       toast({
-        title: "Falha de conexão",
-        description: "Não foi possível registrar. Verifique a internet e tente novamente.",
+        title: "Falha ao registrar",
+        description: e?.message ?? "Não foi possível registrar. Verifique a internet e tente novamente.",
         variant: "destructive",
       });
     }
