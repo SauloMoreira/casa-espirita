@@ -62,6 +62,7 @@ const Campanhas = lazy(() => import("./pages/Campanhas"));
 const Eventos = lazy(() => import("./pages/Eventos"));
 const ComunicacaoInstitucional = lazy(() => import("./pages/ComunicacaoInstitucional"));
 const PainelInstitucional = lazy(() => import("./pages/PainelInstitucional"));
+const SegurancaPrivacidade = lazy(() => import("./pages/SegurancaPrivacidade"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ const App = () => (
                 <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
                 <Route path={ROUTES.mfaVerify} element={<MfaVerify />} />
                 <Route path={ROUTES.checkinPublico()} element={guard(<CheckinPublico />, "Check-in Público")} />
+                <Route path={ROUTES.segurancaPrivacidade} element={guard(<SegurancaPrivacidade />, "Segurança e Privacidade")} />
                 <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
 
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
