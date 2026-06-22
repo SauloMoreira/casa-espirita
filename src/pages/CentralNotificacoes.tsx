@@ -152,50 +152,9 @@ export default function CentralNotificacoes() {
 
 
         <TabsContent value="fila" className="mt-4">
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-              <CardTitle className="text-base">Fila e mensagens enviadas</CardTitle>
-              <Select value={filaStatus} onValueChange={setFilaStatus}>
-                <SelectTrigger className="w-[170px]" aria-label="Filtrar status"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os status</SelectItem>
-                  <SelectItem value="enviado">Enviadas</SelectItem>
-                  <SelectItem value="pendente">Pendentes</SelectItem>
-                  <SelectItem value="agendado">Agendadas</SelectItem>
-                  <SelectItem value="falha">Falhas</SelectItem>
-                  <SelectItem value="cancelado">Canceladas</SelectItem>
-                </SelectContent>
-              </Select>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const filtrada = filaStatus === "todos" ? fila : fila.filter((f) => f.status === filaStatus);
-                if (filtrada.length === 0) {
-                  return <p className="text-sm text-muted-foreground py-6 text-center">Nenhum item nesta visão.</p>;
-                }
-                return (
-                  <div className="space-y-2">
-                    {filtrada.map((f) => (
-                      <button
-                        key={f.id}
-                        onClick={() => { setFilaSelecionada(f); setFilaDrawerOpen(true); }}
-                        className="w-full text-left flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm hover:bg-muted/40 transition-colors"
-                      >
-                        <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[f.status] || ""}`}>{f.status}</span>
-                        <span className="font-medium">{f.evento_origem}</span>
-                        <span className="text-muted-foreground">{f.template_codigo}</span>
-                        <span className="text-muted-foreground">· {f.telefone_normalizado || "sem telefone"}</span>
-                        <span className="ml-auto text-xs text-muted-foreground">agendado: {dt(f.scheduled_at)}</span>
-                        {f.sent_at && <span className="text-xs text-muted-foreground">enviado: {dt(f.sent_at)}</span>}
-                        {f.erro && <span className="text-xs text-destructive">{f.erro}</span>}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
+          <FilaTab fila={fila} onSelect={(f) => { setFilaSelecionada(f); setFilaDrawerOpen(true); }} />
         </TabsContent>
+
 
 
         <TabsContent value="conversas" className="mt-4">
