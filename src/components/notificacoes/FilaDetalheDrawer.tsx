@@ -36,7 +36,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
-function InfoRow({ icon: Icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+function InfoRow({ icon: Icon, label, children }: { icon: any; label: string; children: ReactNode }) {
   return (
     <div className="flex items-start gap-2 text-sm">
       <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
