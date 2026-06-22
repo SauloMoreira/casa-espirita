@@ -14,8 +14,15 @@ function parseHoraMin(hora: string): number {
   return Number(h) * 60 + Number(m || 0);
 }
 
+function minutosLocais(date: Date, timeZone = TIMEZONE_OFICIAL): number {
+  const hhmm = date.toLocaleTimeString("en-GB", {
+    timeZone, hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  return parseHoraMin(hhmm);
+}
+
 function dentroJanela(date: Date, inicio: string, fim: string): boolean {
-  const minutos = date.getHours() * 60 + date.getMinutes();
+  const minutos = minutosLocais(date);
   return minutos >= parseHoraMin(inicio) && minutos < parseHoraMin(fim);
 }
 
