@@ -2860,6 +2860,31 @@ export type Database = {
         }
         Returns: Json
       }
+      pts_persistir_plano: {
+        Args: { p_etapas: Json; p_sessao_ativa?: Json; p_vinculo_id: string }
+        Returns: Json
+      }
+      pts_registrar_ausencia: {
+        Args: {
+          p_data: string
+          p_nova_data?: string
+          p_nova_horario?: string
+          p_registrado_por: string
+          p_vinculo_id: string
+        }
+        Returns: Json
+      }
+      pts_registrar_presenca: {
+        Args: {
+          p_data: string
+          p_proxima_data?: string
+          p_proxima_horario?: string
+          p_proxima_numero_etapa?: number
+          p_registrado_por: string
+          p_vinculo_id: string
+        }
+        Returns: Json
+      }
       registrar_auditoria_reconciliacao: {
         Args: { p_assistido_id: string; p_dados: Json }
         Returns: string
