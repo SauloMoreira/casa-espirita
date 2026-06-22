@@ -315,7 +315,7 @@ export async function registrarPresencaPlano(
   const { data: resp, error } = await supabase.rpc("pts_registrar_presenca", {
     p_vinculo_id: vinculoId,
     p_data: data,
-    p_registrado_por: vinc.assistido_id ? undefined : undefined,
+    p_registrado_por: registradoPor,
     p_proxima_numero_etapa: prox?.numero_etapa ?? undefined,
     p_proxima_data: prox?.data ?? undefined,
     p_proxima_horario: prox?.horario ?? undefined,
