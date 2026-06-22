@@ -1410,7 +1410,7 @@ Deno.serve(async (req) => {
       conversaId = convExist.id;
       await admin.from("whatsapp_conversas").update({
         ultimo_contato_em: new Date().toISOString(),
-        ultima_mensagem: resumo(texto),
+        ultima_mensagem: resumo(conteudoExibicaoInbound),
         assistido_id: assistido?.id ?? convExist.assistido_id,
         nome_contato: nomeContato ?? convExist.nome_contato,
         tipo_contato: tipoContato ?? convExist.tipo_contato,
@@ -1420,7 +1420,7 @@ Deno.serve(async (req) => {
       const { data: novaConv } = await admin.from("whatsapp_conversas").insert({
         telefone, assistido_id: assistido?.id ?? null, status_conversa: "ativa",
         nome_contato: nomeContato, tipo_contato: tipoContato,
-        ultima_mensagem: resumo(texto),
+        ultima_mensagem: resumo(conteudoExibicaoInbound),
       }).select("id").single();
       conversaId = novaConv!.id;
     }
