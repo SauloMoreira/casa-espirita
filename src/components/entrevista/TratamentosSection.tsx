@@ -117,7 +117,24 @@ function TratamentoCard({
             <p className="text-xs text-muted-foreground">
               Sem data → lista de espera do coordenador
             </p>
+      )}
+      {isHolistico && isActive && (
+        <div className="space-y-1">
+          <Label className="text-xs">Horário da consulta *</Label>
+          <Input
+            type="time"
+            value={horarioVal}
+            onChange={(e) => onSetHorario(t.id, e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            className="h-8 text-sm w-32"
+          />
+          {!horarioVal && (
+            <p className="text-xs text-destructive">
+              Tratamentos holísticos exigem o horário da consulta
+            </p>
           )}
+        </div>
+      )}
         </div>
       )}
     </div>
