@@ -132,7 +132,15 @@ export default function CoordenadorAgenda() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{format(d, "dd/MM/yyyy")}</TableCell>
                         <TableCell>{DIAS_SEMANA[d.getDay()]}</TableCell>
-                        <TableCell className="hidden md:table-cell">{item.horario || "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {item.horario ? (
+                            item.horario
+                          ) : isTratamentoHolistico(item.tratamento_tipo) ? (
+                            <Badge variant="destructive" className="text-xs">Horário pendente</Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
                         <TableCell>{item.assistido_nome}</TableCell>
                         <TableCell>{item.tratamento_nome}</TableCell>
                         <TableCell>
