@@ -323,6 +323,35 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
         proxima_data = proj.sessoes[0].data_sessao;
       }
 
+      // Novo modelo: o PLANO é autoritativo sobre a próxima etapa quando ativo.
+      const etapas = planoPorVinculo.get(v.id) ?? [];
+      const usaPlano = usaAgendaPlano && etapas.length > 0;
+      let etapa_ativa_numero: number | null = null;
+      let etapas_realizadas = 0;
+      if (usaPlano) {
+        etapas_realizadas = etapas.filter((e) => e.status_etapa === "realizada").length;
+        const ativa = etapas.find((e) => e.status_etapa === "ativa");
+        const liberadaPublica = etapas.find(
+          (e) => e.status_etapa === "liberada_para_comparecimento_publico",
+        );
+        const prevista = etapas
+          .filter((e) => e.status_etapa === "prevista")
+          .sort((a, b) => a.numero_etapa - b.numero_etapa)[0];
+        if (ativa) {
+          etapa_ativa_numero = ativa.numero_etapa;
+          proxima_origem = "ativa";
+          proxima_data = ativa.data_prevista ?? proxima_data;
+        } else if (publico && liberadaPublica) {
+          proxima_origem = "sugestao";
+        } else if (prevista) {
+          proxima_origem = "prevista";
+          proxima_data = prevista.data_prevista ?? null;
+        } else {
+          proxima_origem = "sem_proxima";
+          proxima_data = null;
+        }
+      }
+
       return {
         vinculo_id: v.id,
         tratamento_id: v.tratamento_id,
@@ -343,6 +372,9 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
         publico,
         liberado_desde,
         sugestoes_a_partir_de,
+        usa_plano: usaPlano,
+        etapa_ativa_numero,
+        etapas_realizadas,
       };
     })
     .sort((a, b) => (a.ordem_tratamento ?? 999) - (b.ordem_tratamento ?? 999));
