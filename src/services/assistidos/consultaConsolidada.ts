@@ -175,6 +175,32 @@ export async function carregarVisaoConsolidada(assistidoId: string): Promise<Vis
     .order("data_sessao");
   if (errS) throw new Error(errS.message);
 
+  // Novo modelo: plano previsto + agenda ativa (somente quando habilitado).
+  const usaAgendaPlano = (assistido as { usa_agenda_plano?: boolean }).usa_agenda_plano === true;
+  type PlanoRow = {
+    assistido_tratamento_id: string;
+    numero_etapa: number;
+    status_etapa: string;
+    data_prevista: string | null;
+  };
+  let planoRows: PlanoRow[] = [];
+  if (usaAgendaPlano) {
+    const { data: planos, error: errP } = await supabase
+      .from("plano_tratamento_sessoes")
+      .select("assistido_tratamento_id, numero_etapa, status_etapa, data_prevista")
+      .eq("assistido_id", assistidoId)
+      .order("numero_etapa");
+    if (errP) throw new Error(errP.message);
+    planoRows = (planos ?? []) as PlanoRow[];
+  }
+  const planoPorVinculo = new Map<string, PlanoRow[]>();
+  for (const p of planoRows) {
+    const arr = planoPorVinculo.get(p.assistido_tratamento_id) ?? [];
+    arr.push(p);
+    planoPorVinculo.set(p.assistido_tratamento_id, arr);
+  }
+
+
   type AgendaRow = {
     id: string;
     assistido_tratamento_id: string;
