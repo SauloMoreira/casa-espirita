@@ -297,6 +297,20 @@ export async function listHandoffsEnriquecidos(limit = 100): Promise<HandoffEnri
 }
 
 /** Histórico de mensagens (inbound/outbound) de uma conversa, por telefone. */
+/** Rótulo amigável (placeholder) para mensagens inbound não textuais. */
+export function rotuloTipoMensagemConversa(tipo: string): string {
+  switch (tipo) {
+    case "audio": return "🎤 Usuário enviou um áudio";
+    case "imagem": return "🖼️ Usuário enviou uma imagem";
+    case "video": return "🎬 Usuário enviou um vídeo";
+    case "documento": return "📎 Usuário enviou um documento";
+    case "localizacao": return "📍 Usuário enviou uma localização";
+    case "contato": return "👤 Usuário enviou um contato";
+    case "sticker": return "🌟 Usuário enviou uma figurinha";
+    default: return "💬 Usuário enviou uma mensagem";
+  }
+}
+
 export async function getConversaMensagens(telefone: string): Promise<MensagemConversa[]> {
   if (!telefone) return [];
   const { data, error } = await supabase
