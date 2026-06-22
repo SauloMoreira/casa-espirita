@@ -451,8 +451,11 @@ export default function CoordenadorListaEspera() {
                 onClick={handleAgendar}
                 disabled={
                   saving ||
-                  !dataInicial ||
-                  (isTratamentoHolistico(selectedItem.tratamento_tipo) && !normalizarHorario(horario))
+                  !podeConfirmarAgendamento({
+                    holistico: isTratamentoHolistico(selectedItem.tratamento_tipo),
+                    data: dataInicial,
+                    horario,
+                  })
                 }
                 className="w-full"
               >
