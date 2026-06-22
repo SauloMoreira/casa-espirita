@@ -179,8 +179,8 @@ Deno.serve(async (req) => {
         result.ignorados++;
         continue;
       }
-      // daily limit
-      const startDay = new Date(); startDay.setHours(0, 0, 0, 0);
+      // daily limit (start of day in the official timezone)
+      const startDay = new Date(`${localDateISO(agora)}T00:00:00-03:00`);
       const { count } = await admin
         .from("notificacoes_fila")
         .select("id", { count: "exact", head: true })
