@@ -7,6 +7,7 @@ import { classificarEvento } from "../_shared/comunicacaoCanal.ts";
 
 const LIMITE_DIARIO_PADRAO = 3;
 const MAX_RETRY = 4;
+const TIMEZONE_OFICIAL = "America/Sao_Paulo";
 
 function parseHoraMin(hora: string): number {
   const [h, m] = (hora || "0:0").split(":");
@@ -16,6 +17,46 @@ function parseHoraMin(hora: string): number {
 function dentroJanela(date: Date, inicio: string, fim: string): boolean {
   const minutos = date.getHours() * 60 + date.getMinutes();
   return minutos >= parseHoraMin(inicio) && minutos < parseHoraMin(fim);
+}
+
+// --- Temporal reference helpers (mirror of src/lib/notificacoes.ts) ---
+function localDateISO(instant: Date, timeZone = TIMEZONE_OFICIAL): string {
+  return instant.toLocaleDateString("en-CA", { timeZone });
+}
+
+function formatarDataBR(data: string): string {
+  const m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(data || ""));
+  if (!m) return String(data || "");
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+function diffDiasCalendario(sessaoData: string, agora: Date, timeZone = TIMEZONE_OFICIAL): number {
+  const hojeISO = localDateISO(agora, timeZone);
+  const sessaoISO = String(sessaoData || "").slice(0, 10);
+  const a = Date.parse(`${hojeISO}T00:00:00Z`);
+  const b = Date.parse(`${sessaoISO}T00:00:00Z`);
+  if (isNaN(a) || isNaN(b)) return NaN;
+  return Math.round((b - a) / 86_400_000);
+}
+
+function referenciaTemporalLembrete(sessaoData: string, agora: Date, timeZone = TIMEZONE_OFICIAL): string {
+  const dataFmt = formatarDataBR(sessaoData);
+  const diff = diffDiasCalendario(sessaoData, agora, timeZone);
+  if (diff === 0) return `hoje, ${dataFmt}`;
+  if (diff === 1) return `amanhã, ${dataFmt}`;
+  return `no dia ${dataFmt}`;
+}
+
+function sessaoInstante(sessaoData: string, horario: string, tzOffset = "-03:00"): Date {
+  const d = String(sessaoData || "").slice(0, 10);
+  const h = String(horario || "00:00").slice(0, 5);
+  return new Date(`${d}T${h}:00${tzOffset}`);
+}
+
+function lembreteVencido(sessaoData: string, horario: string, agora: Date): boolean {
+  const inst = sessaoInstante(sessaoData, horario);
+  if (isNaN(inst.getTime())) return false;
+  return agora.getTime() >= inst.getTime();
 }
 
 function renderTemplate(corpo: string, payload: Record<string, unknown>): string {
