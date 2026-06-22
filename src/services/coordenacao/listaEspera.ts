@@ -60,7 +60,7 @@ export async function carregarListaEspera(
   const { data: meusTrat } = await supabase
     .from("tipos_tratamento")
     .select(
-      "id, nome, dia_semana, horario, frequencia_valor, frequencia_unidade, modo_agendamento, trabalho_publico, permite_entrada_sem_agendamento",
+      "id, nome, tipo, dia_semana, horario, frequencia_valor, frequencia_unidade, modo_agendamento, trabalho_publico, permite_entrada_sem_agendamento",
     )
     .eq("coordenador_responsavel_id", userId);
 
