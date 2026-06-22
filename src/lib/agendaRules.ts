@@ -492,6 +492,8 @@ export interface PlanoEtapa {
   quantidade_total_do_tratamento: number;
   status_etapa: StatusEtapaPlano;
   data_prevista: string | null;
+  /** Horário previsto da etapa (padrão sugerido do tipo). Null no legado/não holístico. */
+  horario_previsto: string | null;
   data_base_utilizada: string | null;
   eh_publico_livre: boolean;
   bloqueado_por_etapa_anterior: boolean;
