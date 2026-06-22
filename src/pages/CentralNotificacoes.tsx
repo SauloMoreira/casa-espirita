@@ -19,13 +19,6 @@ import {
   type FilaItem, type Conversa, type HandoffEnriquecido,
 } from "@/services/notificacoes/notificacoesService";
 
-const STATUS_COLORS: Record<string, string> = {
-  pendente: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
-  agendado: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  enviado: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  falha: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-  cancelado: "bg-muted text-muted-foreground",
-};
 
 const HANDOFF_COLORS: Record<string, string> = {
   aberto: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
