@@ -16,6 +16,7 @@ import {
   getFilaItemDetalhe,
   type FilaItem, type FilaItemDetalhe,
 } from "@/services/notificacoes/notificacoesService";
+import { rotuloMotivo } from "@/lib/notificacaoElegibilidade";
 
 const STATUS_COLORS: Record<string, string> = {
   pendente: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
@@ -86,6 +87,18 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
 
         <ScrollArea className="flex-1 px-5">
           <div className="py-4 space-y-5">
+            {/* Banner de invalidação/cancelamento (transparência ao admin) */}
+            {item.status === "cancelado" && item.erro && (
+              <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                <div>
+                  <p className="font-medium text-destructive">Lembrete não enviado</p>
+                  <p className="text-muted-foreground">
+                    Motivo: {rotuloMotivo(item.erro)}
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Dados do envio */}
             <div className="space-y-2 rounded-xl border p-3">
               <InfoRow icon={Send} label="Evento">{item.evento_origem}</InfoRow>
@@ -96,8 +109,8 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
               <InfoRow icon={Hash} label="ID externo">{item.external_message_id || "—"}</InfoRow>
               <InfoRow icon={AlertTriangle} label="Tentativas">{item.retry_count}</InfoRow>
               {item.erro && (
-                <InfoRow icon={AlertTriangle} label="Erro">
-                  <span className="text-destructive">{item.erro}</span>
+                <InfoRow icon={AlertTriangle} label="Motivo">
+                  <span className="text-destructive">{rotuloMotivo(item.erro)}</span>
                 </InfoRow>
               )}
             </div>

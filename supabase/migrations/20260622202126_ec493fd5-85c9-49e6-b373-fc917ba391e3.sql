@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION public.fn_notif_ping() RETURNS text LANGUAGE sql STABLE AS $$ SELECT 'ok'::text $$;
