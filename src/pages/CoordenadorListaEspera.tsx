@@ -99,6 +99,7 @@ export default function CoordenadorListaEspera() {
   const openAgendar = (item: WaitItem) => {
     setSelectedItem(item);
     setDataInicial("");
+    setHorario(normalizarHorario(item.horario) || "");
     setAgendarOpen(true);
   };
 
