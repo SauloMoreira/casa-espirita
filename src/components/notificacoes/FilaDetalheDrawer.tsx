@@ -165,7 +165,7 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
                       {l.external_message_id && (
                         <p className="text-muted-foreground">ID externo: {l.external_message_id}</p>
                       )}
-                      {l.erro && <p className="text-destructive">Erro: {l.erro}</p>}
+                      {l.erro && <p className="text-destructive">Motivo: {rotuloMotivo(l.erro)}</p>}
                     </div>
                   ))}
                 </div>
