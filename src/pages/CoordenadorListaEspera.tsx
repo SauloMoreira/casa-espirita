@@ -12,10 +12,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Search, Calendar, ClipboardCheck, Printer, AlertTriangle, ArrowUpDown, Flag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { addDays, addWeeks, addMonths, getDay, startOfDay, format, differenceInDays } from "date-fns";
+import { addDays, addWeeks, addMonths, getDay, startOfDay, format } from "date-fns";
 import { CartaAgendamento } from "@/components/CartaAgendamento";
+import { carregarListaEspera, type ListaEsperaItem } from "@/services/coordenacao/listaEspera";
+import type { MotivoListaEspera } from "@/lib/agendaRules";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+const MOTIVO_LABEL: Record<MotivoListaEspera, string> = {
+  AGUARDANDO_AGENDAMENTO: "Aguardando agendamento",
+  AGUARDANDO_INICIO_SEM_PROXIMA_SESSAO: "Aguardando início sem próxima sessão",
+  LEGADO_SEM_AGENDA: "Legado sem agenda gerada",
+  PLANO_SEM_ETAPA_ATIVA: "Plano sem etapa ativa",
+};
 
 const PRIORIDADE_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; order: number }> = {
   urgente: { label: "Urgente", variant: "destructive", order: 0 },
@@ -25,23 +34,8 @@ const PRIORIDADE_CONFIG: Record<string, { label: string; variant: "default" | "s
 
 type SortMode = "prioridade" | "cronologico" | "tempo_espera";
 
-interface WaitItem {
-  id: string;
-  assistido_id: string;
-  assistido_nome: string;
-  tratamento_id: string;
-  tratamento_nome: string;
-  quantidade_total: number;
-  entrevista_data: string | null;
-  status: string;
-  dia_semana: number | null;
-  horario: string | null;
-  frequencia_valor: number | null;
-  frequencia_unidade: string | null;
-  prioridade: string;
-  urgencia: string | null;
-  dias_espera: number;
-}
+type WaitItem = ListaEsperaItem;
+
 
 export default function CoordenadorListaEspera() {
   const { user } = useAuth();
