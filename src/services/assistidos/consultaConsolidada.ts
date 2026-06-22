@@ -31,10 +31,24 @@ export interface AssistidoCabecalho extends AssistidoResumoBusca {
   data_migracao: string | null;
   observacao_migracao: string | null;
   foto_url: string | null;
+  /** Novo modelo (plano previsto + agenda ativa) habilitado para este assistido. */
+  usa_agenda_plano: boolean;
 }
 
-/** Origem da informação de "próxima sessão" exibida na tela consolidada. */
-export type OrigemProxima = "agendada" | "projetada" | "sugestao" | "sem_proxima";
+/**
+ * Origem da informação de "próxima sessão" exibida na tela consolidada.
+ *  - ativa: etapa ATIVA do novo modelo (única sessão real "na vez");
+ *  - prevista: novo modelo, etapa prevista futura aguardando a vez;
+ *  - agendada: agenda persistida (modelo antigo);
+ *  - projetada: projeção oficial; sugestao: público livre; sem_proxima: nenhuma.
+ */
+export type OrigemProxima =
+  | "ativa"
+  | "prevista"
+  | "agendada"
+  | "projetada"
+  | "sugestao"
+  | "sem_proxima";
 
 export interface TratamentoConsolidado {
   vinculo_id: string;
