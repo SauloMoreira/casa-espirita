@@ -524,13 +524,13 @@ export default function SessoesPublicas() {
                   />
                 </div>
               </div>
-              {manualResults.length > 0 && (
+              {manualResults.length > 0 && !assistidoSelecionado && (
                 <div className="border rounded-md divide-y max-h-52 overflow-y-auto">
                   {manualResults.map((r) => (
                     <button
                       key={r.id}
                       className="w-full text-left px-3 py-3 hover:bg-accent active:bg-accent text-sm flex justify-between items-center gap-2"
-                      onClick={() => registrarManual(r.id)}
+                      onClick={() => setAssistidoSelecionado({ id: r.id, nome: r.nome, celular: r.celular ?? null })}
                       disabled={loading}
                     >
                       <span className="flex items-center gap-2 min-w-0">
@@ -542,8 +542,41 @@ export default function SessoesPublicas() {
                   ))}
                 </div>
               )}
-              {manualSearch.trim() && manualResults.length === 0 && (
+              {manualSearch.trim() && manualResults.length === 0 && !assistidoSelecionado && (
                 <p className="text-xs text-muted-foreground px-1">Nenhum cadastro encontrado — use o cadastro rápido abaixo.</p>
+              )}
+
+              {/* Seleção preparatória: presença só é gravada após confirmação explícita */}
+              {assistidoSelecionado && (
+                <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 space-y-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">{assistidoSelecionado.nome}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {assistidoSelecionado.celular || "Sem celular"} · Aguardando confirmação
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11"
+                      onClick={() => setAssistidoSelecionado(null)}
+                      disabled={loading}
+                    >
+                      Cancelar seleção
+                    </Button>
+                    <Button
+                      className="flex-1 h-11 gap-2"
+                      onClick={() => registrarManual(assistidoSelecionado.id)}
+                      disabled={loading}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {loading ? "Confirmando..." : "Confirmar Presença"}
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
 
