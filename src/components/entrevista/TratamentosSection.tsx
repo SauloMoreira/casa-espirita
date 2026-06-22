@@ -50,6 +50,8 @@ function TratamentoCard({
   const needsStartDate = t.modo_agendamento === MODO_AGENDAMENTO.agendadoPorDataInicial;
   const startDateVal = datasIniciais[t.id] || "";
   const defaultQty = t.quantidade_padrao_sessoes;
+  const isHolistico = isTratamentoHolistico(t.tipo);
+  const horarioVal = horarios[t.id] || "";
 
   return (
     <div
