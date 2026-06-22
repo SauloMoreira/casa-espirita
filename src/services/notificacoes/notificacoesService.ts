@@ -66,6 +66,10 @@ export interface MensagemConversa {
   status: string | null;
   erro: string | null;
   created_at: string;
+  /** Tipo da mensagem inbound: texto, audio, imagem, video, documento, etc. */
+  tipo_mensagem?: string | null;
+  /** Indica que a mensagem é uma mídia/placeholder (não texto puro). */
+  midia?: boolean;
 }
 
 /** Preferência do assistido logado (cria default se não existir). */
