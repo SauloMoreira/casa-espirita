@@ -385,3 +385,234 @@ export async function registrarAusenciaPlano(
     remarcacoes_automaticas: r.remarcacoes_automaticas ?? 0,
   };
 }
+
+// ===========================================================================
+// HOMOLOGAÇÃO CONTROLADA (painel admin)
+// ---------------------------------------------------------------------------
+// Superfície administrativa segura para conduzir a homologação do novo modelo:
+// prévia obrigatória, conversão pela porta única, rollback controlado (com
+// trava de segurança), reprocessamento idempotente e auditoria. NÃO há lógica
+// de agenda paralela aqui: tudo reusa `construirPlanoConsolidado` (regra pura)
+// e as RPCs `pts_*` (gravação transacional). Conversão e rollback já auditam
+// no servidor; prévia e reprocessamento auditam via `pts_homologacao_auditar`.
+// ===========================================================================
+
+/** Estado do gate (global + por assistido) para exibição no painel. */
+export interface GateHomologacao {
+  global_ativo: boolean;
+  assistido_ativo: boolean;
+}
+
+export async function obterGateHomologacao(assistidoId: string): Promise<GateHomologacao> {
+  const { data: regra } = await supabase
+    .from("regras_operacionais")
+    .select("valor")
+    .eq("chave", "agenda_plano_ativo")
+    .maybeSingle();
+  const { data: a } = await supabase
+    .from("assistidos")
+    .select("usa_agenda_plano")
+    .eq("id", assistidoId)
+    .maybeSingle();
+  const valor = (regra as { valor?: string } | null)?.valor;
+  return {
+    global_ativo: valor === "true" || valor === "1",
+    assistido_ativo: (a as { usa_agenda_plano?: boolean } | null)?.usa_agenda_plano === true,
+  };
+}
+
+/** Item de prévia por tratamento (vínculo) — o que será gerado na conversão. */
+export interface PreviaConversaoItem {
+  vinculo_id: string;
+  tratamento_id: string;
+  tratamento_nome: string;
+  modo_agendamento: string;
+  ordem_tratamento: number | null;
+  quantidade_parametrizada: number | null;
+  quantidade_total: number;
+  quantidade_realizada: number;
+  etapas_previstas: number;
+  etapa_ativa_numero: number | null;
+  agenda_ativa_data: string | null;
+  agenda_ativa_horario: string | null;
+  publico_livre: boolean;
+  sugestoes_a_partir_de: string | null;
+  sessoes_a_substituir: number;
+}
+
+export interface PreviaConversao {
+  assistido_id: string;
+  itens: PreviaConversaoItem[];
+  total_planos: number;
+  total_etapas: number;
+  total_sessoes_ativas: number;
+  total_sessoes_a_substituir: number;
+}
+
+/**
+ * PRÉVIA OBRIGATÓRIA: calcula (sem gravar) exatamente o que a porta única
+ * `converterAssistidoParaPlano` produziria. Usa o MESMO motor de regra
+ * (`construirPlanoConsolidado`) e a MESMA data-base, garantindo prévia == efeito.
+ */
+export async function gerarPreviaConversao(assistidoId: string): Promise<PreviaConversao> {
+  const { vinc, tipoMap } = await carregarContexto(assistidoId);
+  if (vinc.length === 0) throw new Error("Assistido sem tratamentos ativos para converter.");
+
+  const statusPorEtapa = await carregarStatusPorEtapa(vinc.map((v) => v.id));
+  const baseStart = resolverDataBaseProjecao(null);
+  const planos = construirPlanoConsolidado(
+    montarInputs(vinc, tipoMap, statusPorEtapa),
+    baseStart,
+  );
+
+  const tipoIds = Array.from(new Set(vinc.map((v) => v.tratamento_id))).filter(Boolean);
+  const nomePorTipo = new Map<string, { nome: string; qtd: number | null }>();
+  if (tipoIds.length > 0) {
+    const { data: tt } = await supabase
+      .from("tipos_tratamento")
+      .select("id, nome, quantidade_padrao_sessoes")
+      .in("id", tipoIds);
+    for (const t of (tt ?? []) as { id: string; nome: string; quantidade_padrao_sessoes: number | null }[]) {
+      nomePorTipo.set(t.id, { nome: t.nome, qtd: t.quantidade_padrao_sessoes });
+    }
+  }
+
+  const hojeStr = baseStart.toISOString().slice(0, 10);
+  const substituirPorVinculo = new Map<string, number>();
+  {
+    const { data: ag } = await supabase
+      .from("agenda_tratamentos_assistido")
+      .select("assistido_tratamento_id, status, data_sessao")
+      .eq("assistido_id", assistidoId)
+      .eq("status", "agendado");
+    for (const a of (ag ?? []) as { assistido_tratamento_id: string; data_sessao: string }[]) {
+      if (a.data_sessao >= hojeStr) {
+        substituirPorVinculo.set(
+          a.assistido_tratamento_id,
+          (substituirPorVinculo.get(a.assistido_tratamento_id) ?? 0) + 1,
+        );
+      }
+    }
+  }
+
+  const planoPorRef = new Map(planos.map((p) => [p.ref, p]));
+  const itens: PreviaConversaoItem[] = vinc.map((v) => {
+    const tt = tipoMap.get(v.tratamento_id);
+    const meta = nomePorTipo.get(v.tratamento_id);
+    const p = planoPorRef.get(v.id);
+    const plano = p?.plano;
+    return {
+      vinculo_id: v.id,
+      tratamento_id: v.tratamento_id,
+      tratamento_nome: meta?.nome ?? "Tratamento",
+      modo_agendamento: modoDe(tt),
+      ordem_tratamento: tt?.ordem_tratamento ?? null,
+      quantidade_parametrizada: meta?.qtd ?? null,
+      quantidade_total: v.quantidade_total,
+      quantidade_realizada: v.quantidade_realizada,
+      etapas_previstas: plano?.etapas.length ?? 0,
+      etapa_ativa_numero: plano?.sessaoAtiva?.numero_etapa ?? null,
+      agenda_ativa_data: plano?.sessaoAtiva?.data ?? null,
+      agenda_ativa_horario: plano?.sessaoAtiva?.horario ?? null,
+      publico_livre: plano?.publicoLivre ?? false,
+      sugestoes_a_partir_de: plano?.sugestoesAPartirDe ?? null,
+      sessoes_a_substituir: substituirPorVinculo.get(v.id) ?? 0,
+    };
+  });
+
+  const resumo: PreviaConversao = {
+    assistido_id: assistidoId,
+    itens,
+    total_planos: itens.length,
+    total_etapas: itens.reduce((s, i) => s + i.etapas_previstas, 0),
+    total_sessoes_ativas: itens.filter((i) => i.agenda_ativa_data).length,
+    total_sessoes_a_substituir: itens.reduce((s, i) => s + i.sessoes_a_substituir, 0),
+  };
+
+  await supabase.rpc("pts_homologacao_auditar" as never, {
+    p_assistido_id: assistidoId,
+    p_acao: "PLANO_PREVIA_HOMOLOGACAO",
+    p_resultado: {
+      total_planos: resumo.total_planos,
+      total_etapas: resumo.total_etapas,
+      total_sessoes_ativas: resumo.total_sessoes_ativas,
+      total_sessoes_a_substituir: resumo.total_sessoes_a_substituir,
+    },
+  } as never);
+
+  return resumo;
+}
+
+/** Resultado da avaliação de segurança do rollback. */
+export interface RollbackSeguranca {
+  seguro: boolean;
+  motivo: string | null;
+  etapas_realizadas: number;
+  etapas_ausentes: number;
+  presencas_pos_conversao: number;
+}
+
+/**
+ * Avalia se o rollback limpo ainda é operacionalmente seguro. Deixa de ser
+ * seguro quando o assistido já avançou no novo modelo (qualquer etapa
+ * realizada/ausente/suspensa, ou presença registrada).
+ */
+export async function avaliarSegurancaRollback(assistidoId: string): Promise<RollbackSeguranca> {
+  const { data: etapas } = await supabase
+    .from("plano_tratamento_sessoes")
+    .select("status_etapa")
+    .eq("assistido_id", assistidoId);
+  const rows = (etapas ?? []) as { status_etapa: string }[];
+  const realizadas = rows.filter((e) => e.status_etapa === "realizada").length;
+  const ausentes = rows.filter((e) =>
+    e.status_etapa === "ausente" || e.status_etapa === "suspensa",
+  ).length;
+
+  const { data: vinc } = await supabase
+    .from("assistido_tratamentos")
+    .select("id")
+    .eq("assistido_id", assistidoId);
+  const vincIds = ((vinc ?? []) as { id: string }[]).map((v) => v.id);
+  let presencas = 0;
+  if (vincIds.length > 0) {
+    const { count } = await supabase
+      .from("presencas_tratamentos")
+      .select("id", { count: "exact", head: true })
+      .in("assistido_tratamento_id", vincIds);
+    presencas = count ?? 0;
+  }
+
+  const avancou = realizadas > 0 || ausentes > 0 || presencas > 0;
+  return {
+    seguro: !avancou,
+    motivo: avancou
+      ? "Assistido já avançou no novo modelo (há execução registrada). Rollback limpo não é mais apropriado — use reconciliação corretiva."
+      : null,
+    etapas_realizadas: realizadas,
+    etapas_ausentes: ausentes,
+    presencas_pos_conversao: presencas,
+  };
+}
+
+/**
+ * Rollback CONTROLADO: revalida a segurança antes de chamar a porta única
+ * `reverterPilotoPlano`. Se não for mais seguro, lança erro orientando
+ * reconciliação corretiva (defesa em profundidade junto da trava de UI).
+ */
+export async function rollbackControladoPlano(assistidoId: string): Promise<RollbackResult> {
+  const seg = await avaliarSegurancaRollback(assistidoId);
+  if (!seg.seguro) {
+    throw new Error(seg.motivo ?? "Rollback não é mais seguro para este assistido.");
+  }
+  return reverterPilotoPlano(assistidoId);
+}
+
+/** Reprocessamento idempotente pelo painel (reconcilia + audita). */
+export async function reprocessarAssistidoHomologacao(assistidoId: string): Promise<void> {
+  await reconciliarPlanoAssistido(assistidoId);
+  await supabase.rpc("pts_homologacao_auditar" as never, {
+    p_assistido_id: assistidoId,
+    p_acao: "PLANO_REPROCESSAMENTO_HOMOLOGACAO",
+    p_resultado: { reconciliado: true },
+  } as never);
+}
