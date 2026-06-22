@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ClipboardCheck, Calendar, Check, X, Heart, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { withRetry, isTransientError } from "@/lib/resilience";
+import { registrarPresencaRoteada } from "@/services/agendaPlano/orquestracao";
 
 /** Normaliza texto para busca (sem acentos, minúsculo). */
 const norm = (s: string) =>
