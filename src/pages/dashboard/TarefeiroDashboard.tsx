@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ClipboardCheck, Users, Heart, Clock, Check, X, ArrowRight, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { registrarPresencaRoteada } from "@/services/agendaPlano/orquestracao";
 
 interface SessaoDoDia {
   assistido_tratamento_id: string;
