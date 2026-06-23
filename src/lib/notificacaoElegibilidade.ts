@@ -46,12 +46,33 @@ export const MOTIVO_LABEL: Record<string, string> = {
   comunicacao_geral_desativada: "Comunicações gerais desativadas",
   sem_telefone: "Sem telefone cadastrado",
   template_indisponivel: "Modelo de mensagem indisponível",
+  // Invalidação de lembretes antigos por exceção operacional:
+  sessao_remarcada_por_excecao: "Lembrete invalidado (sessão remarcada por exceção)",
+  entrevista_remarcada_por_excecao: "Lembrete invalidado (entrevista remarcada por exceção)",
+  excecao_operacional: "Gerado por exceção operacional",
 };
 
 /** Tradução amigável de um código de motivo/erro; devolve o próprio código se desconhecido. */
 export function rotuloMotivo(codigo?: string | null): string | null {
   if (!codigo) return null;
   return MOTIVO_LABEL[codigo] ?? codigo;
+}
+
+/** Eventos da fila gerados pelo processamento de uma exceção operacional. */
+export const EVENTOS_EXCECAO = [
+  "sessao_cancelada_por_excecao",
+  "sessao_remarcada_por_excecao",
+  "entrevista_cancelada_por_excecao",
+  "entrevista_remarcada_por_excecao",
+  "publico_cancelado_por_excecao",
+  "publico_remarcado_por_excecao",
+] as const;
+
+export type EventoExcecao = (typeof EVENTOS_EXCECAO)[number];
+
+/** True quando o evento da fila foi gerado por uma exceção operacional. */
+export function ehEventoExcecao(evento?: string | null): boolean {
+  return !!evento && (EVENTOS_EXCECAO as readonly string[]).includes(evento);
 }
 
 export interface ElegibilidadeInput {

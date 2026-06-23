@@ -16,7 +16,13 @@ export type NotifEvento =
   | "sessao_criada"
   | "sessao_lembrete"
   | "remarcacao"
-  | "cancelamento";
+  | "cancelamento"
+  | "sessao_cancelada_por_excecao"
+  | "sessao_remarcada_por_excecao"
+  | "entrevista_cancelada_por_excecao"
+  | "entrevista_remarcada_por_excecao"
+  | "publico_cancelado_por_excecao"
+  | "publico_remarcado_por_excecao";
 
 export type NotifStatus = "pendente" | "agendado" | "enviado" | "falha" | "cancelado";
 
@@ -34,7 +40,8 @@ export function renderTemplate(
 
 function formatValue(key: string, raw: unknown): string {
   const value = String(raw);
-  if (key === "data") {
+  // Chaves de data renderizadas em pt-BR (DD/MM/AAAA, com hora quando presente).
+  if (key === "data" || key === "data_anterior" || key === "nova_data" || key === "data_impactada") {
     // Accept ISO datetime or date-only.
     const d = new Date(value);
     if (!isNaN(d.getTime()) && /\d{4}-\d{2}-\d{2}/.test(value)) {
@@ -50,6 +57,10 @@ function formatValue(key: string, raw: unknown): string {
   if (key === "horario") {
     // Trim seconds from a HH:MM:SS time.
     return value.slice(0, 5);
+  }
+  // Horário de remarcação: prefixa " às HH:MM" para encaixar em "{{nova_data}}{{novo_horario}}".
+  if (key === "novo_horario") {
+    return ` às ${value.slice(0, 5)}`;
   }
   return value;
 }

@@ -57,6 +57,7 @@ export async function listarExcecoes(f: ExcecaoFiltros): Promise<ExcecaoOperacio
 }
 
 export async function salvarExcecao(input: ExcecaoInput, id?: string): Promise<void> {
+  let excecaoId = id;
   if (id) {
     const { error } = await supabase
       .from("excecoes_operacionais")
@@ -64,10 +65,26 @@ export async function salvarExcecao(input: ExcecaoInput, id?: string): Promise<v
       .eq("id", id);
     if (error) throw error;
   } else {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("excecoes_operacionais")
-      .insert(input as never);
+      .insert(input as never)
+      .select("id")
+      .single();
     if (error) throw error;
+    excecaoId = (data as { id: string } | null)?.id;
+  }
+
+  // Caminho principal (imediato): aplica efeito na agenda e enfileira a
+  // comunicação oficial. A reconciliação no cron é apenas rede de segurança.
+  if (excecaoId) {
+    const { error: rpcError } = await supabase.rpc(
+      "fn_processar_excecao_notificacoes",
+      { p_excecao_id: excecaoId },
+    );
+    // Falha aqui não deve reverter a exceção já gravada: o cron reconcilia.
+    if (rpcError) {
+      console.error("Falha ao processar notificações da exceção", rpcError);
+    }
   }
 }
 

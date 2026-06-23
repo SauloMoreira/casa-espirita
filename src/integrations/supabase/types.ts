@@ -2781,12 +2781,32 @@ export type Database = {
         }
         Returns: undefined
       }
+      fn_excecao_alvos: {
+        Args: { p_excecao_id: string }
+        Returns: {
+          assistido_id: string
+          compromisso_id: string
+          data_impactada: string
+          dominio: string
+          horario_impactado: string
+          nome: string
+          sessao_ref: string
+          telefone: string
+          tratamento: string
+          usou_fallback_nome: boolean
+        }[]
+      }
       fn_fila_motivo_inelegivel: {
         Args: { p_fila_id: string }
         Returns: string
       }
       fn_normalize_phone: { Args: { p: string }; Returns: string }
       fn_notif_ping: { Args: never; Returns: string }
+      fn_processar_excecao_notificacoes: {
+        Args: { p_excecao_id: string }
+        Returns: Json
+      }
+      fn_reconciliar_excecoes_notificacoes: { Args: never; Returns: Json }
       fn_sanear_fila_notificacoes: {
         Args: never
         Returns: {
@@ -3010,6 +3030,12 @@ export type Database = {
         | "cancelamento"
         | "presenca_registrada"
         | "falta_registrada"
+        | "sessao_cancelada_por_excecao"
+        | "sessao_remarcada_por_excecao"
+        | "entrevista_cancelada_por_excecao"
+        | "entrevista_remarcada_por_excecao"
+        | "publico_cancelado_por_excecao"
+        | "publico_remarcado_por_excecao"
       notif_status: "pendente" | "agendado" | "enviado" | "falha" | "cancelado"
       status_etapa_plano:
         | "prevista"
@@ -3166,6 +3192,12 @@ export const Constants = {
         "cancelamento",
         "presenca_registrada",
         "falta_registrada",
+        "sessao_cancelada_por_excecao",
+        "sessao_remarcada_por_excecao",
+        "entrevista_cancelada_por_excecao",
+        "entrevista_remarcada_por_excecao",
+        "publico_cancelado_por_excecao",
+        "publico_remarcado_por_excecao",
       ],
       notif_status: ["pendente", "agendado", "enviado", "falha", "cancelado"],
       status_etapa_plano: [
