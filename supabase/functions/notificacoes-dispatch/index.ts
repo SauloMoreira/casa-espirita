@@ -72,7 +72,12 @@ function renderTemplate(corpo: string, payload: Record<string, unknown>): string
       const raw = payload[key];
       if (raw === undefined || raw === null || raw === "") return "";
       const value = String(raw);
-      if (key === "data" && /\d{4}-\d{2}-\d{2}/.test(value)) {
+      // Chaves de data renderizadas em pt-BR (DD/MM/AAAA, com hora quando presente).
+      // Mantém paridade com o renderTemplate canônico em src/lib/notificacoes.ts.
+      if (
+        (key === "data" || key === "data_anterior" || key === "nova_data" || key === "data_impactada") &&
+        /\d{4}-\d{2}-\d{2}/.test(value)
+      ) {
         const d = new Date(value);
         if (!isNaN(d.getTime())) {
           const hasTime = value.includes("T") && !value.endsWith("T00:00:00.000Z");
@@ -83,6 +88,8 @@ function renderTemplate(corpo: string, payload: Record<string, unknown>): string
         }
       }
       if (key === "horario") return value.slice(0, 5);
+      // Horário de remarcação: prefixa " às HH:MM" para encaixar em "{{nova_data}}{{novo_horario}}".
+      if (key === "novo_horario") return ` às ${value.slice(0, 5)}`;
       return value;
     })
     .replace(/\s{2,}/g, " ")
