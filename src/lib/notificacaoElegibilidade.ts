@@ -121,3 +121,101 @@ export function motivoInelegibilidadeLembrete(
 export function sessaoElegivelParaLembrete(input: ElegibilidadeInput): boolean {
   return motivoInelegibilidadeLembrete(input) === null;
 }
+
+// ============================================================================
+// Regra OFICIAL (espelho) de notificação por exceção operacional.
+// Contraparte em TS de `public.fn_excecao_alvos` / `fn_processar_excecao_notificacoes`.
+// ============================================================================
+
+export type DominioExcecao = "tratamento" | "entrevista" | "publico";
+export type TipoEventoExcecao = "cancelamento" | "remarcacao";
+
+/**
+ * Deriva o tipo de evento da exceção a partir do status e da presença de
+ * `nova_data`. Sem `nova_data` válida → trata como cancelamento (não finge
+ * remarcação).
+ */
+export function tipoEventoExcecao(
+  status: string | null | undefined,
+  novaData: string | null | undefined,
+): TipoEventoExcecao {
+  if (status === "remarcado" && !!novaData && novaData.trim() !== "") {
+    return "remarcacao";
+  }
+  return "cancelamento";
+}
+
+/** Mapeia (domínio, tipo) → enum de evento da fila. */
+export function eventoExcecao(
+  dominio: DominioExcecao,
+  tipo: TipoEventoExcecao,
+): EventoExcecao {
+  const sufixo = tipo === "remarcacao" ? "remarcad" : "cancelad";
+  switch (dominio) {
+    case "tratamento":
+      return (tipo === "remarcacao"
+        ? "sessao_remarcada_por_excecao"
+        : "sessao_cancelada_por_excecao");
+    case "entrevista":
+      return (tipo === "remarcacao"
+        ? "entrevista_remarcada_por_excecao"
+        : "entrevista_cancelada_por_excecao");
+    case "publico":
+      return (tipo === "remarcacao"
+        ? "publico_remarcado_por_excecao"
+        : "publico_cancelado_por_excecao");
+    default:
+      // exhaustiveness guard
+      void sufixo;
+      return "sessao_cancelada_por_excecao";
+  }
+}
+
+export interface AlvoExcecaoInput {
+  dominio: DominioExcecao;
+  /** O compromisso existe (sessão/entrevista/sessão pública)? */
+  existe: boolean;
+  /** Status atual do compromisso. */
+  status?: string | null;
+  /** Data do compromisso (YYYY-MM-DD ou ISO). */
+  dataCompromisso?: string | null;
+  /** Horário do compromisso. */
+  horario?: string | null;
+  /** Público: existe vínculo rastreável (assistido_id e/ou celular)? */
+  alvoRastreavel?: boolean;
+  /** Há telefone normalizado disponível? */
+  telefone?: string | null;
+  /** Instante de avaliação (default: agora). */
+  agora?: Date;
+}
+
+/**
+ * Decide se um compromisso é alvo elegível de notificação por exceção,
+ * espelhando a regra oficial do banco (`fn_excecao_alvos`).
+ */
+export function alvoExcecaoElegivel(input: AlvoExcecaoInput): boolean {
+  if (!input.existe) return false;
+  const status = input.status ?? "";
+  const agora = input.agora ?? new Date();
+
+  if (input.dominio === "tratamento") {
+    if (status !== AGENDA_STATUS_ELEGIVEL) return false; // agendado apenas
+    if (input.dataCompromisso && lembreteVencido(input.dataCompromisso, input.horario ?? "", agora)) {
+      return false; // vencida
+    }
+    return true;
+  }
+
+  if (input.dominio === "entrevista") {
+    if (["cancelada", "remarcada", "concluida", "realizada"].includes(status)) return false;
+    if (input.dataCompromisso && lembreteVencido(input.dataCompromisso, input.horario ?? "", agora)) {
+      return false;
+    }
+    return true;
+  }
+
+  // publico: sem disparo cego — exige alvo rastreável.
+  if (status === "cancelado") return false;
+  if (!input.alvoRastreavel) return false;
+  return true;
+}
