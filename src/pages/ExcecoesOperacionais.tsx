@@ -27,8 +27,10 @@ import {
 } from "@/constants/programacao";
 import {
   listarExcecoes, salvarExcecao, alternarAtivoExcecao, excluirExcecao,
-  type ExcecaoOperacional, type ExcecaoInput,
+  obterRolloutAtivo, definirRolloutAtivo, obterRolloutMonitor,
+  type ExcecaoOperacional, type ExcecaoInput, type RolloutMonitor,
 } from "@/services/programacao/excecoesService";
+import { ShieldCheck, ShieldAlert } from "lucide-react";
 
 const emptyForm: ExcecaoInput = {
   tipo: "publico", atividade: "", data_excecao: "", status: "cancelado",
