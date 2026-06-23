@@ -62,6 +62,39 @@ export default function ExcecoesOperacionais() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const [rolloutAtivo, setRolloutAtivo] = useState<boolean | null>(null);
+  const [rolloutBusy, setRolloutBusy] = useState(false);
+  const [monitor, setMonitor] = useState<RolloutMonitor | null>(null);
+
+  const loadRollout = async () => {
+    try {
+      const [ativo, mon] = await Promise.all([obterRolloutAtivo(), obterRolloutMonitor(14)]);
+      setRolloutAtivo(ativo);
+      setMonitor(mon);
+    } catch (e: any) {
+      toast.error("Erro ao carregar status do rollout", { description: e.message });
+    }
+  };
+
+  useEffect(() => { loadRollout(); }, []);
+
+  const handleRolloutToggle = async (ativo: boolean) => {
+    setRolloutBusy(true);
+    try {
+      await definirRolloutAtivo(ativo);
+      setRolloutAtivo(ativo);
+      toast.success(
+        ativo
+          ? "Notificação automática por exceção LIBERADA."
+          : "Notificação automática por exceção CONTIDA (pausada).",
+      );
+    } catch (e: any) {
+      toast.error("Erro ao alterar liberação", { description: e.message });
+    } finally {
+      setRolloutBusy(false);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     try {
