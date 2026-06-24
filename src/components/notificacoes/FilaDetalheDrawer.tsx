@@ -67,8 +67,11 @@ export function FilaDetalheDrawer({ item, open, onOpenChange, onChanged }: Props
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [observacao, setObservacao] = useState("");
   const [encerrando, setEncerrando] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
 
   const isAdmin = roles.includes("admin") || roles.includes("administrador_master");
+  const ehManual = !!item && ehMensagemManual(item.evento_origem);
+  const podeEnviarManual = !!item && isAdmin && !!item.assistido_id && !!item.telefone_normalizado;
   const podeEncerrar =
     !!item && isAdmin && podeEncerrarPorErroCadastro({ status: item.status, erro: item.erro });
 
