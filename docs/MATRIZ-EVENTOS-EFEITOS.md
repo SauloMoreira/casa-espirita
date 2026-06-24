@@ -149,12 +149,11 @@ Legenda de status de aderência:
 
 ### Parcialmente aderente (🟡)
 - **EVT-09** — mensagem manual sujeita a janela e limite diário; pode ficar `ignorado`/atrasada sem sinal claro na UI.
-- **EVT-03/04** — notificação de presença/falta imediata; falta confirmar a classificação geral×operacional e a cobertura de auditoria da tabela de presença.
 
 ### Lacunas encontradas (🔴/🟡 — comportamento desejado a decidir)
 - **L-01** ✅ *(concluído)* — Confirmação imediata de **entrevista** agora sob flag governada `entrevista_confirmacao_agendamento_ativa` (default `true`), lida por `fn_confirmacao_entrevista_ativa()` em `fn_notif_entrevista()`. Simétrica a `tratamento_confirmacao_agendamento_ativa`.
 - **L-02** ✅ *(concluído — ver [BACKLOG-GOVERNANCA.md](./BACKLOG-GOVERNANCA.md))* — Mensagem manual/automática sem feedback explícito quando segurada por janela/limite. *Entregue:* `fn_fila_diagnostico_pendentes` + diagnóstico visível na Central. Resta apenas decisão de negócio sobre isenção de limite para envio manual.
-- **L-03** — Confirmar se `presenca_registrada`/`falta_registrada` são `geral` (sujeitas a `comunicacao_geral_ativa`) e se `presencas_tratamentos` tem trigger de auditoria. *Desejado:* governar volume dessas mensagens (podem ser ruído).
+- **L-03** ✅ *(concluído)* — Classificação geral×operacional de presença consolidada na fonte única `fn_presenca_classificacao` (backend) + `src/lib/presencaClassificacao.ts` (frontend). `justificado` formalizado como **somente histórico**. Auditoria confirmada via `trg_audit_presencas`. `presenca_registrada`/`falta_registrada` mantidos como **operacional** (decisão explícita).
 - **L-04** — `fn_sanear_fila_notificacoes` cobre só sessões. *Desejado:* estender saneamento proativo a entrevistas (hoje só barradas no dispatch).
 
 Nenhuma das lacunas representa envio indevido conhecido — todas são oportunidades de governança/observabilidade, não defeitos de segurança.
