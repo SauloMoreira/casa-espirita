@@ -42,6 +42,7 @@ const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const GestaoCores = lazy(() => import("./pages/GestaoCores"));
 const Auditoria = lazy(() => import("./pages/Auditoria"));
 const RegrasOperacionais = lazy(() => import("./pages/RegrasOperacionais"));
+const GovernancaParametros = lazy(() => import("./pages/GovernancaParametros"));
 const Excecoes = lazy(() => import("./pages/Excecoes"));
 const ExcecoesOperacionais = lazy(() => import("./pages/ExcecoesOperacionais"));
 const ProgramacaoPadrao = lazy(() => import("./pages/ProgramacaoPadrao"));
@@ -128,6 +129,7 @@ const App = () => (
                   <Route path={ROUTES.gestaoCores} element={<ProtectedRoute allowedRoles={["admin"]}><GestaoCores /></ProtectedRoute>} />
                   <Route path={ROUTES.auditoria} element={<ProtectedRoute allowedRoles={["admin"]}><Auditoria /></ProtectedRoute>} />
                   <Route path={ROUTES.regras} element={<ProtectedRoute allowedRoles={["admin"]}><RegrasOperacionais /></ProtectedRoute>} />
+                  <Route path={ROUTES.governancaParametros} element={<ProtectedRoute allowedRoles={["admin", "administrador_master"]}><GovernancaParametros /></ProtectedRoute>} />
                   <Route path={ROUTES.excecoes} element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
                   <Route path={ROUTES.excecoesOperacionais} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<ExcecoesOperacionais />, "Exceções Operacionais")}</ProtectedRoute>} />
                   <Route path={ROUTES.programacaoPadrao} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<ProgramacaoPadrao />, "Programação Padrão")}</ProtectedRoute>} />
