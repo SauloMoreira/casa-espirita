@@ -1,0 +1,36 @@
+# Achados de Validação Manual
+
+> Documento **vivo** e oficial. Canal único para registrar bugs e melhorias
+> encontrados em **testes manuais** da operação real, evitando que se percam em
+> conversa solta. Todo achado relevante deve ser: **classificado → registrado →
+> priorizado → encaminhado** (para `docs/BACKLOG-GOVERNANCA.md` e/ou correção).
+
+## Como registrar um achado
+
+1. Adicione uma linha na tabela abaixo com um ID sequencial `AVM-NNN`.
+2. Classifique: `Bug` | `Melhoria` | `Dúvida/risco`.
+3. Defina severidade: `Crítica` | `Alta` | `Média` | `Baixa`.
+4. Aponte a invariante relacionada (se houver) — `INV-*`.
+5. Defina o encaminhamento: corrigir agora, virar item de backlog (`L-NN`) ou
+   observar.
+6. Quando um bug for corrigido, garanta que ele vire **teste de regressão
+   permanente** em `src/test/governanca/regressao-bugs-historicos.test.ts` e marque
+   o status como ✅.
+
+## Classificação rápida (guia)
+
+- **Bug crítico** → corrigir agora + regressão obrigatória.
+- **Bug não crítico** → backlog priorizado + regressão quando corrigido.
+- **Melhoria** → backlog (`L-NN`), priorizada conforme impacto operacional.
+- **Dúvida/risco** → investigar; vira invariante nova se confirmar regra estrutural.
+
+## Registro
+
+| ID | Data | Classe | Severidade | Descrição | INV relacionada | Encaminhamento | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| _(aguardando entrada)_ | | | | Reservar aqui os bugs/melhorias encontrados nos testes manuais recentes. | | | |
+
+> **Observação:** esta seção foi criada como o mecanismo oficial pedido na frente de
+> "Testes de Invariantes e Contratos". Cole aqui os achados dos testes manuais que
+> você realizou; cada um será classificado, priorizado e encaminhado a partir desta
+> tabela. Bugs confirmados como importantes devem virar regressão permanente.
