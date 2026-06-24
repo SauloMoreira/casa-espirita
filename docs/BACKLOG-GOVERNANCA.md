@@ -128,3 +128,39 @@ Ordem de execução acordada: **L-02 (✅) → L-01 (✅) → L-03 (✅) → L-0
   exigir RPC `SECURITY DEFINER` com checagem de papel, registro do override em
   auditoria e justificativa obrigatória — nunca bypass silencioso.
 - **Invariantes a observar:** INV-GOV-001/002/003, INV-FILA-003.
+
+---
+
+## L-06 — Camada de testes de invariantes & contratos
+- **Prioridade:** Alta
+- **Status:** ✅ Concluído
+- **Objetivo:** Transformar a governança (INV-*, contratos críticos) em proteção
+  automatizada executável a cada mudança.
+- **Impacto:** Regressões estruturais passam a ser detectadas pela suíte; quando um
+  teste falha, fica explícita a invariante/contrato violado.
+- **Entregue:**
+  - Suíte dedicada em `src/test/governanca/` (10 arquivos, 74 testes) organizada por
+    blocos de governança (agenda/tratamento, fila, temporal, exceção, ação manual,
+    presença, contratos de backend, parâmetros, Central, regressão histórica).
+  - Cada teste aponta a invariante (`INV-*`) ou o contrato protegido.
+  - Mapa de cobertura em `docs/MAPA-COBERTURA-INVARIANTES.md` (protegida/parcial/pendente).
+  - Bugs históricos viraram regressão permanente: horário fantasma, cadeia futura,
+    confirmação antecipada indevida, justificado como falta, entrevista inválida na
+    fila, lembrete duplicado por remarcação.
+- **Sem alteração de schema.** Suíte total: 901 testes verdes.
+- **Pendências (próxima sequência):** itens ⬜ do mapa dependem de execução real no
+  banco (triggers, RLS, auditoria, idempotência de RPC) → ver L-07.
+- **Invariantes observadas:** todas as testáveis em lógica pura/espelho.
+
+---
+
+## L-07 — Testes de integração de banco/edge para invariantes não unit-testáveis
+- **Prioridade:** Média
+- **Status:** 📋 Backlog
+- **Objetivo:** Cobrir as invariantes marcadas ⬜ no mapa de cobertura, cujo efeito
+  só é observável em execução real (triggers, RLS, auditoria, idempotência).
+- **Escopo sugerido:** INV-ARQ-003/004, INV-SEG-001/002/003, INV-PRES-003,
+  INV-GOV-002/003, contrato de `fn_confirmacao_entrevista_ativa` (efeito no trigger).
+- **Próximo passo recomendado:** testes de integração contra o banco/edge functions
+  exercitando as `fn_*` reais e verificando trilha de auditoria e idempotência.
+- **Invariantes a observar:** as listadas como ⬜ em `docs/MAPA-COBERTURA-INVARIANTES.md`.
