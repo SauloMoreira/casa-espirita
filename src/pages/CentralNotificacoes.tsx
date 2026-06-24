@@ -123,6 +123,11 @@ export default function CentralNotificacoes() {
           <Button variant="outline" size="sm" onClick={load} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Atualizar
           </Button>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setManualOpen(true)}>
+              <MessagesSquare className="h-4 w-4 mr-1" /> Mensagem manual
+            </Button>
+          )}
           <Button size="sm" onClick={handleProcessar} disabled={processing}>
             <Send className="h-4 w-4 mr-1" /> {processing ? "Processando..." : "Processar fila"}
           </Button>
