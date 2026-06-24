@@ -58,10 +58,18 @@ function InfoRow({ icon: Icon, label, children }: { icon: any; label: string; ch
   );
 }
 
-export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
+export function FilaDetalheDrawer({ item, open, onOpenChange, onChanged }: Props) {
   const { toast } = useToast();
+  const { roles } = useAuth();
   const [detalhe, setDetalhe] = useState<FilaItemDetalhe | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [observacao, setObservacao] = useState("");
+  const [encerrando, setEncerrando] = useState(false);
+
+  const isAdmin = roles.includes("admin") || roles.includes("administrador_master");
+  const podeEncerrar =
+    !!item && isAdmin && podeEncerrarPorErroCadastro({ status: item.status, erro: item.erro });
 
   const carregar = useCallback(async () => {
     if (!item) return;
@@ -75,9 +83,34 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
     }
   }, [item, toast]);
 
-  useEffect(() => { if (open) carregar(); }, [open, carregar]);
+  useEffect(() => { if (open) { carregar(); setObservacao(""); } }, [open, carregar]);
+
+  const handleEncerrar = useCallback(async () => {
+    if (!item) return;
+    setEncerrando(true);
+    try {
+      await encerrarItemFilaErroCadastro(item.id, observacao);
+      toast({
+        title: "Item encerrado",
+        description: "Apenas esta notificação foi encerrada. O assistido não foi bloqueado.",
+      });
+      setConfirmOpen(false);
+      onOpenChange(false);
+      onChanged?.();
+    } catch (e: any) {
+      const msg = e?.message?.includes("permissao_negada")
+        ? "Você não tem permissão para esta ação."
+        : e?.message?.includes("motivo_nao_elegivel")
+        ? "Este item não é elegível (não é um erro de cadastro)."
+        : e?.message ?? "Erro ao encerrar item.";
+      toast({ title: "Não foi possível encerrar", description: msg, variant: "destructive" });
+    } finally {
+      setEncerrando(false);
+    }
+  }, [item, observacao, toast, onOpenChange, onChanged]);
 
   if (!item) return null;
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
