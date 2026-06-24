@@ -266,6 +266,38 @@ export function FilaDetalheDrawer({ item, open, onOpenChange, onChanged }: Props
           </div>
         </ScrollArea>
       </SheetContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={(v) => !encerrando && setConfirmOpen(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar item com erro de cadastro</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação encerrará apenas esta notificação atual da fila. Ela não bloqueará
+              futuras mensagens do assistido. Se o cadastro for corrigido, novas notificações
+              poderão ser geradas normalmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Observação (opcional)</label>
+            <Textarea
+              value={observacao}
+              onChange={(ev) => setObservacao(ev.target.value)}
+              placeholder="Ex.: telefone ausente no cadastro; orientado a corrigir."
+              className="min-h-[72px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={encerrando}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(ev) => { ev.preventDefault(); handleEncerrar(); }}
+              disabled={encerrando}
+            >
+              {encerrando ? "Encerrando..." : "Encerrar item"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
+
