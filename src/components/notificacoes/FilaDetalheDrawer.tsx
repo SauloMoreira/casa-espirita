@@ -324,6 +324,19 @@ export function FilaDetalheDrawer({ item, open, onOpenChange, onChanged }: Props
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {podeEnviarManual && (
+        <MensagemManualDialog
+          open={manualOpen}
+          onOpenChange={setManualOpen}
+          destinatarioInicial={{
+            id: item.assistido_id!,
+            nome: detalhe?.assistido_nome || "Destinatário",
+            telefone: item.telefone_normalizado,
+          }}
+          onEnviado={() => { setManualOpen(false); onChanged?.(); }}
+        />
+      )}
     </Sheet>
   );
 }
