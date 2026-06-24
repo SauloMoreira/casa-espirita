@@ -73,6 +73,46 @@ export function rotuloMotivo(codigo?: string | null): string | null {
   return MOTIVO_LABEL[codigo] ?? codigo;
 }
 
+// ============================================================================
+// Encerramento manual de item da fila por ERRO DE CADASTRO.
+//
+// Semântica: o problema é do ITEM atual, não da pessoa. Encerrar um item NUNCA
+// bloqueia o assistido, não altera opt-out/consentimento nem impede mensagens
+// futuras. Contraparte da RPC `public.fn_encerrar_item_fila_erro_cadastro`.
+// ============================================================================
+
+/** Motivos (campo `erro` da fila) que caracterizam um erro de cadastro encerrável. */
+export const MOTIVOS_ERRO_CADASTRO = [
+  "sem_telefone",
+  "telefone_invalido",
+  "dados_obrigatorios_ausentes",
+  "nome_ausente",
+] as const;
+
+export type MotivoErroCadastro = (typeof MOTIVOS_ERRO_CADASTRO)[number];
+
+/** Status nos quais um item ainda está "ativo" na fila (passível de encerramento). */
+const STATUS_ATIVOS_FILA = ["pendente", "agendado", "falha"] as const;
+
+export interface ItemEncerravelInput {
+  /** Status atual do item na fila. */
+  status: string;
+  /** Motivo técnico atual (campo `erro`). */
+  erro?: string | null;
+}
+
+/**
+ * Um item só pode ser encerrado pela ação "Encerrar item com erro de cadastro"
+ * quando: (1) ainda está ativo na fila (não enviado nem cancelado) e (2) seu
+ * motivo atual é realmente um erro de cadastro. Espelha a validação da RPC.
+ */
+export function podeEncerrarPorErroCadastro(item: ItemEncerravelInput): boolean {
+  if (!(STATUS_ATIVOS_FILA as readonly string[]).includes(item.status)) return false;
+  if (!item.erro) return false;
+  return (MOTIVOS_ERRO_CADASTRO as readonly string[]).includes(item.erro);
+}
+
+
 /** Eventos da fila gerados pelo processamento de uma exceção operacional. */
 export const EVENTOS_EXCECAO = [
   "sessao_cancelada_por_excecao",
