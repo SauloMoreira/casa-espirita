@@ -2770,6 +2770,7 @@ export type Database = {
           total_pendentes: number
         }[]
       }
+      fn_eh_proxima_sessao: { Args: { p_agenda_id: string }; Returns: boolean }
       fn_enqueue_notificacao: {
         Args: {
           p_assistido_id: string
@@ -2809,6 +2810,14 @@ export type Database = {
       fn_processar_excecao_notificacoes: {
         Args: { p_excecao_id: string }
         Returns: Json
+      }
+      fn_promover_proxima_sessao: {
+        Args: { p_vinculo: string }
+        Returns: undefined
+      }
+      fn_proxima_sessao_vinculo: {
+        Args: { p_vinculo: string }
+        Returns: string
       }
       fn_reconciliar_excecoes_notificacoes: { Args: never; Returns: Json }
       fn_sanear_fila_notificacoes: {
