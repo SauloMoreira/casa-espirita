@@ -17,6 +17,7 @@ import { FilaTab } from "@/components/notificacoes/FilaTab";
 import { MensagemManualDialog } from "@/components/notificacoes/MensagemManualDialog";
 import {
   listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
+  listFilaDiagnostico, aplicarDiagnosticoFila,
   type FilaItem, type Conversa, type HandoffEnriquecido,
 } from "@/services/notificacoes/notificacoesService";
 
