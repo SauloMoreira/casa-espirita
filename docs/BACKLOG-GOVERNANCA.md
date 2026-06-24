@@ -82,3 +82,21 @@ Ordem de execução acordada: **L-02 (feito) → L-01 → L-03 → L-04**.
   `entrevista_lembrete`/`entrevista_criada` usando `fn_fila_motivo_inelegivel`
   (já cobre entrevistas) e cancelar com log, como já faz para sessões.
 - **Invariantes a observar:** INV-FILA-001/002/006, INV-GOV-002.
+
+---
+
+## L-05 — Override manual auditado para limite diário
+- **Prioridade:** Baixa/Média
+- **Status:** 📋 Backlog (só se houver necessidade operacional recorrente real)
+- **Objetivo:** Permitir que um operador autorizado ultrapasse, de forma auditada,
+  o limite diário de mensagens em casos pontuais — sem remover o limite padrão.
+- **Contexto:** Decisão de L-02 manteve a mensagem manual respeitando o limite
+  diário por padrão (segurança, previsibilidade, consistência com o pipeline e
+  proteção contra excesso). Este item formaliza a exceção controlada caso surja
+  demanda operacional concreta.
+- **Impacto:** Flexibilidade operacional sem abrir mão de governança; cada override
+  fica rastreável (quem, quando, motivo).
+- **Próximo passo recomendado:** só iniciar mediante necessidade real; ao iniciar,
+  exigir RPC `SECURITY DEFINER` com checagem de papel, registro do override em
+  auditoria e justificativa obrigatória — nunca bypass silencioso.
+- **Invariantes a observar:** INV-GOV-001/002/003, INV-FILA-003.
