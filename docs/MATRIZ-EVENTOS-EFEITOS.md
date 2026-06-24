@@ -101,7 +101,7 @@ Legenda de status de aderência:
 - **Efeito no dispatch:** envia o **texto cru** (sem template); passa por opt-out, janela e limite diário como qualquer item.
 - **Efeito na auditoria:** `notificacoes_log` + `audit_logs` (`enfileirar_mensagem_manual`).
 - **Invariantes:** INV-MANUAL-001, INV-MANUAL-002, INV-ARQ-001, INV-ARQ-003, INV-ARQ-004, INV-SEG-001, INV-SEG-002.
-- **Status:** 🟡 — ver L-02 (mensagem manual está sujeita ao limite diário/janela; pode atrasar sem feedback claro ao operador).
+- **Status:** ✅ — L-02 implementado: a Central agora exibe o diagnóstico de pendência (aguardando janela / aguardando limite diário / pendente normal / bloqueado) via `fn_fila_diagnostico_pendentes`. Pendência aberta apenas a decisão de negócio sobre isenção do limite diário para manual (ver backlog).
 
 ### EVT-10 — Encerramento de item por erro de cadastro
 - **Gatilho real:** `fn_encerrar_item_fila_erro_cadastro(fila_id, motivo, obs)` (RPC).
