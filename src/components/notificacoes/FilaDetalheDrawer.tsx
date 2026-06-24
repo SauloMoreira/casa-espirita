@@ -135,6 +135,29 @@ export function FilaDetalheDrawer({ item, open, onOpenChange, onChanged }: Props
 
         <ScrollArea className="flex-1 px-5">
           <div className="py-4 space-y-5">
+            {/* Banner: mensagem manual (ação humana auditada) */}
+            {ehManual && (
+              <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+                <MessagesSquare className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                <div className="space-y-0.5">
+                  <p className="font-medium text-primary">Mensagem manual</p>
+                  <p className="text-muted-foreground">
+                    Enviada manualmente pela Central de Notificações — comunicação pontual e auditada.
+                  </p>
+                  {typeof item.payload_json?.observacao === "string" && item.payload_json.observacao && (
+                    <p className="text-muted-foreground">Observação: {item.payload_json.observacao as string}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Ação: enviar mensagem manual para este destinatário (admin) */}
+            {podeEnviarManual && (
+              <Button variant="outline" size="sm" className="w-full" onClick={() => setManualOpen(true)}>
+                <MessagesSquare className="h-4 w-4 mr-1" /> Enviar mensagem manual
+              </Button>
+            )}
+
             {/* Banner de invalidação/cancelamento (transparência ao admin) */}
             {item.status === "cancelado" && item.erro && (
               <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
