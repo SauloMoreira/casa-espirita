@@ -37,7 +37,7 @@ function dt(value?: string | null) {
 }
 
 export default function CentralNotificacoes() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { toast } = useToast();
   const [fila, setFila] = useState<FilaItem[]>([]);
   const [conversas, setConversas] = useState<Conversa[]>([]);
@@ -48,6 +48,10 @@ export default function CentralNotificacoes() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filaSelecionada, setFilaSelecionada] = useState<FilaItem | null>(null);
   const [filaDrawerOpen, setFilaDrawerOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+
+  const isAdmin = roles.includes("admin") || roles.includes("administrador_master");
+
   
 
   const load = useCallback(async () => {
