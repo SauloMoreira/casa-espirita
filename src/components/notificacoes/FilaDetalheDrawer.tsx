@@ -3,20 +3,28 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  Phone, MessageSquare, CheckCircle2, AlertTriangle, Hash, Clock, Send,
+  Phone, MessageSquare, CheckCircle2, AlertTriangle, Hash, Clock, Send, UserX, ShieldCheck,
 } from "lucide-react";
 import {
-  getFilaItemDetalhe,
+  getFilaItemDetalhe, encerrarItemFilaErroCadastro,
   type FilaItem, type FilaItemDetalhe,
 } from "@/services/notificacoes/notificacoesService";
-import { rotuloMotivo } from "@/lib/notificacaoElegibilidade";
+import { rotuloMotivo, podeEncerrarPorErroCadastro } from "@/lib/notificacaoElegibilidade";
+
 
 const STATUS_COLORS: Record<string, string> = {
   pendente: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
@@ -35,7 +43,10 @@ interface Props {
   item: FilaItem | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Chamado após uma ação que altera o item (ex.: encerramento manual). */
+  onChanged?: () => void;
 }
+
 
 function InfoRow({ icon: Icon, label, children }: { icon: any; label: string; children: ReactNode }) {
   return (
@@ -47,10 +58,18 @@ function InfoRow({ icon: Icon, label, children }: { icon: any; label: string; ch
   );
 }
 
-export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
+export function FilaDetalheDrawer({ item, open, onOpenChange, onChanged }: Props) {
   const { toast } = useToast();
+  const { roles } = useAuth();
   const [detalhe, setDetalhe] = useState<FilaItemDetalhe | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [observacao, setObservacao] = useState("");
+  const [encerrando, setEncerrando] = useState(false);
+
+  const isAdmin = roles.includes("admin") || roles.includes("administrador_master");
+  const podeEncerrar =
+    !!item && isAdmin && podeEncerrarPorErroCadastro({ status: item.status, erro: item.erro });
 
   const carregar = useCallback(async () => {
     if (!item) return;
@@ -64,9 +83,34 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
     }
   }, [item, toast]);
 
-  useEffect(() => { if (open) carregar(); }, [open, carregar]);
+  useEffect(() => { if (open) { carregar(); setObservacao(""); } }, [open, carregar]);
+
+  const handleEncerrar = useCallback(async () => {
+    if (!item) return;
+    setEncerrando(true);
+    try {
+      await encerrarItemFilaErroCadastro(item.id, observacao);
+      toast({
+        title: "Item encerrado",
+        description: "Apenas esta notificação foi encerrada. O assistido não foi bloqueado.",
+      });
+      setConfirmOpen(false);
+      onOpenChange(false);
+      onChanged?.();
+    } catch (e: any) {
+      const msg = e?.message?.includes("permissao_negada")
+        ? "Você não tem permissão para esta ação."
+        : e?.message?.includes("motivo_nao_elegivel")
+        ? "Este item não é elegível (não é um erro de cadastro)."
+        : e?.message ?? "Erro ao encerrar item.";
+      toast({ title: "Não foi possível encerrar", description: msg, variant: "destructive" });
+    } finally {
+      setEncerrando(false);
+    }
+  }, [item, observacao, toast, onOpenChange, onChanged]);
 
   if (!item) return null;
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -99,6 +143,54 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
                 </div>
               </div>
             )}
+
+            {/* Detalhe de encerramento manual por erro de cadastro (auditoria visível) */}
+            {item.erro === "erro_cadastro" && item.payload_json?.encerramento && (() => {
+              const e = item.payload_json!.encerramento as Record<string, any>;
+              return (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-300/40 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm">
+                  <ShieldCheck className="h-4 w-4 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="font-medium text-amber-700 dark:text-amber-300">
+                      Item encerrado manualmente (erro de cadastro)
+                    </p>
+                    <p className="text-muted-foreground">
+                      O assistido <strong>não foi bloqueado</strong>. Futuras mensagens continuam possíveis.
+                    </p>
+                    {e.motivo_anterior && (
+                      <p className="text-muted-foreground">Motivo original: {rotuloMotivo(e.motivo_anterior)}</p>
+                    )}
+                    <p className="text-muted-foreground">Origem: central de notificações (ação manual)</p>
+                    {e.encerrado_em && <p className="text-muted-foreground">Quando: {dt(e.encerrado_em)}</p>}
+                    {e.observacao && <p className="text-muted-foreground">Observação: {e.observacao}</p>}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Ação: Encerrar item com erro de cadastro (somente admin e itens elegíveis) */}
+            {podeEncerrar && (
+              <div className="rounded-xl border border-amber-300/40 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2">
+                <div className="flex items-start gap-2 text-sm">
+                  <UserX className="h-4 w-4 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div>
+                    <p className="font-medium">Erro de cadastro nesta notificação</p>
+                    <p className="text-muted-foreground">
+                      Motivo: {rotuloMotivo(item.erro)}. Você pode encerrar apenas esta ocorrência sem bloquear o assistido.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <UserX className="h-4 w-4 mr-1" /> Encerrar item com erro de cadastro
+                </Button>
+              </div>
+            )}
+
             {/* Dados do envio */}
             <div className="space-y-2 rounded-xl border p-3">
               <InfoRow icon={Send} label="Evento">{item.evento_origem}</InfoRow>
@@ -174,6 +266,38 @@ export function FilaDetalheDrawer({ item, open, onOpenChange }: Props) {
           </div>
         </ScrollArea>
       </SheetContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={(v) => !encerrando && setConfirmOpen(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar item com erro de cadastro</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação encerrará apenas esta notificação atual da fila. Ela não bloqueará
+              futuras mensagens do assistido. Se o cadastro for corrigido, novas notificações
+              poderão ser geradas normalmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Observação (opcional)</label>
+            <Textarea
+              value={observacao}
+              onChange={(ev) => setObservacao(ev.target.value)}
+              placeholder="Ex.: telefone ausente no cadastro; orientado a corrigir."
+              className="min-h-[72px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={encerrando}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(ev) => { ev.preventDefault(); handleEncerrar(); }}
+              disabled={encerrando}
+            >
+              {encerrando ? "Encerrando..." : "Encerrar item"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
+

@@ -4,6 +4,8 @@ import {
   sessaoElegivelParaLembrete,
   rotuloMotivo,
   MOTIVO_LABEL,
+  podeEncerrarPorErroCadastro,
+  MOTIVOS_ERRO_CADASTRO,
 } from "@/lib/notificacaoElegibilidade";
 
 // Avaliação fixa: "agora" = 2026-06-22 12:00 (horário de São Paulo).
@@ -171,5 +173,32 @@ describe("rotuloMotivo", () => {
     expect(rotuloMotivo("motivo_inexistente_x")).toBe("motivo_inexistente_x");
     expect(rotuloMotivo(null)).toBeNull();
     expect(rotuloMotivo(undefined)).toBeNull();
+  });
+});
+
+describe("podeEncerrarPorErroCadastro", () => {
+  it("permite encerrar item com erro de cadastro ainda ativo na fila", () => {
+    for (const erro of MOTIVOS_ERRO_CADASTRO) {
+      expect(podeEncerrarPorErroCadastro({ status: "falha", erro })).toBe(true);
+      expect(podeEncerrarPorErroCadastro({ status: "pendente", erro })).toBe(true);
+      expect(podeEncerrarPorErroCadastro({ status: "agendado", erro })).toBe(true);
+    }
+  });
+
+  it("bloqueia item sem erro de cadastro (ex.: regra de agenda ou opt-out)", () => {
+    expect(podeEncerrarPorErroCadastro({ status: "falha", erro: "template_indisponivel" })).toBe(false);
+    expect(podeEncerrarPorErroCadastro({ status: "cancelado", erro: "sessao_substituida" })).toBe(false);
+    expect(podeEncerrarPorErroCadastro({ status: "cancelado", erro: "opt_out" })).toBe(false);
+    expect(podeEncerrarPorErroCadastro({ status: "agendado", erro: "sessao_futura_nao_proxima" })).toBe(false);
+  });
+
+  it("bloqueia item já enviado ou já cancelado", () => {
+    expect(podeEncerrarPorErroCadastro({ status: "enviado", erro: "sem_telefone" })).toBe(false);
+    expect(podeEncerrarPorErroCadastro({ status: "cancelado", erro: "sem_telefone" })).toBe(false);
+  });
+
+  it("bloqueia item sem motivo definido", () => {
+    expect(podeEncerrarPorErroCadastro({ status: "falha", erro: null })).toBe(false);
+    expect(podeEncerrarPorErroCadastro({ status: "pendente", erro: undefined })).toBe(false);
   });
 });

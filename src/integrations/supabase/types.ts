@@ -2771,6 +2771,10 @@ export type Database = {
         }[]
       }
       fn_eh_proxima_sessao: { Args: { p_agenda_id: string }; Returns: boolean }
+      fn_encerrar_item_fila_erro_cadastro: {
+        Args: { p_fila_id: string; p_motivo?: string; p_observacao?: string }
+        Returns: Json
+      }
       fn_enqueue_notificacao: {
         Args: {
           p_assistido_id: string
