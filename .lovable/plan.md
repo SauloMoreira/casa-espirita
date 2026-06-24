@@ -1,59 +1,48 @@
-# Horário obrigatório para tratamentos holísticos (data + hora)
+# L-01 — Governança da confirmação imediata de entrevista
 
-## Princípio
-A regra de **dia/frequência/ocorrência permanece intacta**. Esta entrega apenas acrescenta o **horário** como fator operacional para tratamentos holísticos (`tipos_tratamento.tipo = 'holistico'`). Modelo: horário padrão no tipo + horário efetivo por sessão (pode variar por ocorrência). Edição real só em entrevista/agendamento, lista/agenda do coordenador e remarcação; demais telas apenas exibem. **Inegociável:** sem motor paralelo, sem hardcode, sem regressão, sem exigir horário em não holísticos, sem alterar a lógica já homologada de dias.
+## Estado atual (já aplicado na migração anterior)
 
-## 1. Schema (migração compatível e não destrutiva)
-- **Plano previsto:** adicionar `plano_tratamento_sessoes.horario_previsto TIME NULL` (horário previsto da etapa; opcional para compatibilidade com legado e não holísticos).
-- **Agenda ativa:** manter `agenda_tratamentos_assistido.horario` como horário efetivo da sessão real (já existe).
-- **Tipo:** reutilizar `tipos_tratamento.horario` (já existe) como **padrão sugerido do tipo** — não como horário final da sessão. Campo pode existir para todos os tipos, mas só é operacionalmente obrigatório para `tipo = 'holistico'`. **Não criar `horario_padrao`.**
-- **RPCs `pts_*`:** atualizar para receber/gravar `horario_previsto` na etapa do plano e `horario` na sessão ativa, e revalidar no backend a obrigatoriedade do horário em holísticos.
-- **Compatibilidade:** sem backfill, sem horário inventado; registros antigos podem permanecer nulos.
+A camada de backend desta lacuna **já foi implementada e está no banco**:
 
-## 2. Semântica dos horários
-- `tipos_tratamento.horario` = padrão sugerido.
-- `plano_tratamento_sessoes.horario_previsto` = horário previsto da etapa.
-- `agenda_tratamentos_assistido.horario` = horário efetivo da sessão real.
-- Normalmente previsto == efetivo; a distinção é preservada para remarcação, saneamento, auditoria e comparação plano↔agenda. Quando o horário efetivo for ajustado, o fluxo oficial mantém o `horario_previsto` consistente, evitando divergência não intencional.
+- **Flag oficial** `entrevista_confirmacao_agendamento_ativa` em `regras_operacionais`
+  - tipo `booleano`, **valor padrão `true`** (preserva o comportamento atual da casa, agora explícito e governado)
+  - `governavel = true`, `sensivel = true`, `confirmacao_reforcada = true`
+  - nome amigável e texto de impacto preenchidos
+- **Helper** `fn_confirmacao_entrevista_ativa()` — `SECURITY DEFINER`, `SET search_path = public`, default `true` quando ausente
+- **Trigger** `fn_notif_entrevista()` reescrita: a confirmação imediata `entrevista_criada` só é enfileirada se a flag estiver ligada; o **lembrete de 24h continua sempre** sendo gerado; remarcação/cancelamento inalterados; date-only preservado (sem horário fantasma, sem deslocamento UTC)
+- Aparece **automaticamente** no painel de Governança de Parâmetros (lista via `fn_listar_parametros_operacionais` que filtra `governavel = true`), ao lado de `tratamento_confirmacao_agendamento_ativa`, `tratamento_lembrete_antecedencia_horas` e `excecao_notificacao_ativa`
+- Alteração já é **auditada** por `fn_atualizar_parametro_operacional` (quem, quando, valor anterior/novo, origem `painel_governanca`, observação)
 
-## 3. Detecção única do holístico
-- Helper único `isTratamentoHolistico(tipo)` em `src/lib/agendaRules.ts`, baseado em `tipo === 'holistico'`. Todos os pontos usam este helper — sem classificação paralela.
+> Como o painel é data-driven, **não há mudança de frontend necessária** — a flag já surge com nome, descrição, valor atual, valor padrão, impacto e metadados de última alteração.
 
-## 4. Motor e orquestração (mínimo necessário)
-- `agendaRules.ts`: incluir `horario_previsto` em `PlanoEtapa`; propagar o padrão do tipo ao montar etapas; adicionar validador puro `validarHorarioHolistico({ holistico, horario })`. Dias/frequência/ocorrência inalterados.
-- `orquestracao.ts`: incluir `horario_previsto` da etapa e `horario` efetivo da sessão nos payloads; manter o espelhamento plano↔agenda ativa.
+## O que falta para considerar L-01 concluído
 
-## 5. Obrigatoriedade (dois níveis: serviço/UI + backend/RPC)
-- **Holístico:** nova sessão → exige horário; remarcação → mantém ou exige; edição → permite alterar. Se `tipos_tratamento.horario` existir, usar como sugestão; gravação final exige horário efetivo válido.
-- **Não holístico:** comportamento atual, horário não exigido.
-- **Registros antigos:** não quebram produção; permanecem nulos até saneamento, mas sinalizados.
+### 1. Testes (TS / vitest)
+- **Regressão temporal (guarda do bug já corrigido):** adicionar/garantir teste em `src/lib/notificacoes.test.ts` confirmando que o payload de entrevista date-only renderiza **sem inventar horário** e **sem deslocar o dia por UTC** (confirmação e lembrete).
+- **Pré-validação da flag:** caso de `validarValor` booleano já cobre o tipo; adicionar asserção explícita do par chave/semântica em `parametrosOperacionais.test.ts` se fizer sentido (rótulo/format).
+- Observação honesta: a decisão de enfileirar é **no trigger do banco** (fonte de verdade) e não em TS; a cobertura unitária TS protege a renderização/validação. A verificação funcional do liga/desliga é feita na etapa de validação manual via RPC (abaixo).
 
-## 6. Pontos de edição e exibição
+### 2. Documentação viva
+- `docs/MATRIZ-EVENTOS-EFEITOS.md`: atualizar **EVT-08** para refletir confirmação governada (status ✅, citar `fn_confirmacao_entrevista_ativa` e a flag), mover **L-01** de lacuna para concluído na seção de lacunas/recomendações.
+- `docs/BACKLOG-GOVERNANCA.md`: marcar **L-01 = ✅ Concluído** com entrega, default adotado (true) e invariantes preservadas; manter ordem L-03 → L-04.
+- Registrar o **item futuro** solicitado: "Override manual auditado para limite diário" (prioridade baixa/média, status backlog, só se houver necessidade operacional recorrente real), como decorrência da decisão de L-02 (mensagem manual continua respeitando o limite diário por padrão).
 
-Edição real:
-- **Entrevista/agendamento** (`fazerEntrevista`, `TratamentosSection`, `FazerEntrevista`): ao adicionar holístico, campo de horário obrigatório, pré-preenchido com `tipos_tratamento.horario` quando houver, editável; bloquear confirmação sem horário.
-- **Lista/agenda do coordenador** (`CoordenadorTratamentos`, `CoordenadorAgenda`, `CoordenadorListaEspera`): indicador de horário; definir/corrigir horário das sessões holísticas; badge **"Horário pendente"** quando faltar.
-- **Remarcação:** preservar regra do dia; manter o horário anterior como sugestão; permitir ajuste; não confirmar holístico sem horário.
+### 3. Memória do projeto
+- Atualizar `mem://funcionalidades/backlog-governanca-matriz` e o índice para refletir L-01 concluído e o novo item de backlog do override manual.
 
-Apenas exibição (data + hora): `Agenda.tsx`, `Presenca.tsx`, `consultaConsolidada.ts`, `MinhaAgenda`, `MeusTratamentos`, `AssistidoDashboard`, `CartaAgendamento`, notificações/WhatsApp. Quando houver **divergência real** entre plano e sessão, exibir claramente **Horário previsto** vs **Horário agendado**; sem divergência, não duplicar a informação.
+### 4. Validação / não regressão
+- Rodar a suíte completa (`vitest run`) e confirmar verde.
+- Validação funcional da flag via RPC autenticada (`fn_atualizar_parametro_operacional`) em ambiente de teste: ligar → confirmar que `entrevista_criada` é enfileirada no INSERT; desligar → confirmar que **só** o `entrevista_lembrete` (24h) é gerado; e que cancelamento/remarcação seguem corretos. Reverter ao default `true` ao final.
+- Conferir que tratamento, Central, dispatch e mensagens manuais permanecem intactos.
 
-## 7. Registros antigos sem horário
-- UI: badge **"Horário pendente"** + ação explícita para definir; nunca tratar como sessão completa.
-- Notificações: holístico sem horário → não montar mensagem com hora vazia; fallback seguro ou omitir o trecho. Nenhum preenchimento automático.
+## Detalhes técnicos / invariantes
+- Backend é fonte única de verdade (INV-ARQ-001); sem lógica de decisão no frontend (INV-ARQ-003/004).
+- Governança/auditoria: INV-GOV-001/002/003.
+- Semântica temporal: INV-TEMPO-001/002/003 (date-only sem horário fantasma, sem shift UTC).
+- Fila: INV-FILA-006 (lembrete real preservado).
 
-## 8. Ordenação e apresentação
-- `data ASC, horario ASC, NULLS LAST`.
-- `NULLS LAST` é só ordenação e **não mascara pendência**: holístico sem horário aparece ao fim **e** fica visualmente destacado como pendente/incompleto.
-
-## 9. Notificações / WhatsApp
-- Incluir data + hora em confirmação, ausência, remarcação e próxima sessão (`notificacoesService`, `whatsappOrquestrador`, templates), com fallback seguro quando o horário estiver ausente.
-
-## 10. Testes
-Unitários: `isTratamentoHolistico`; `validarHorarioHolistico`; holístico exige horário e não holístico não; remarcação mantém/solicita; normalização/exibição data+hora; ordenação `NULLS LAST`.
-Integração: agenda exibe; coordenador exibe e edita; presença exibe; consolidada exibe; notificações incluem horário quando houver; registros antigos não quebram; backend rejeita criação/edição de holístico sem horário.
-Compatibilidade/legado: holístico de assistido já convertido permanece consistente entre previsto/efetivo.
-Fallback: holístico com horário → notificação envia data+hora; holístico sem horário → template não quebra e não envia hora vazia.
-Não regressão: suíte completa verde; agenda não holística intacta; regra de dias intacta; fluxos homologados intactos.
-
-## Relatório final (ao concluir)
-Onde o horário entrou no schema; confirmação de reutilização de `tipos_tratamento.horario`; como o holístico é identificado; telas/serviços impactados; criação/edição/remarcação; tratamento dos registros antigos; testes executados; confirmação explícita de ausência de regressão.
+## Critérios de aceite
+- Flag oficial existe, governada, auditável e visível no painel — ✅ (backend aplicado).
+- Comportamento previsível e explícito a partir da flag — validado funcionalmente.
+- Date-only não regride — coberto por teste + validação.
+- Docs e memória atualizados; suíte completa verde, sem regressão.

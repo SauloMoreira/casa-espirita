@@ -34,8 +34,8 @@ Ordem de execução acordada: **L-02 (feito) → L-01 → L-03 → L-04**.
 ---
 
 ## L-01 — Flag governada para confirmação imediata de entrevista
-- **Prioridade:** Média (próximo da fila)
-- **Status:** 🗓️ Planejado
+- **Prioridade:** Média
+- **Status:** ✅ Concluído
 - **Objetivo:** Submeter a confirmação imediata `entrevista_criada` (disparada no
   INSERT) à mesma governança das sessões, via parâmetro
   `entrevista_confirmacao_agendamento_ativa`, análogo a
@@ -43,10 +43,16 @@ Ordem de execução acordada: **L-02 (feito) → L-01 → L-03 → L-04**.
 - **Impacto:** Alinha EVT-08 a EVT-01; evita comunicação antecipada não desejada
   e dá contenção/controle sobre confirmações de entrevista sem mexer no lembrete
   de 24h.
-- **Próximo passo recomendado:** criar o parâmetro em `regras_operacionais`
-  (governável, booleano, default a decidir), ler a flag em `fn_notif_entrevista`
-  e cobrir com teste a supressão da confirmação quando desligada.
-- **Invariantes a observar:** INV-GOV-001/002/003, INV-TEMPO-001..003, INV-FILA-006.
+- **Entrega:** parâmetro criado em `regras_operacionais` (booleano, governável,
+  sensível, `confirmacao_reforcada`, **default `true`** para preservar o
+  comportamento atual da casa de forma explícita); helper
+  `fn_confirmacao_entrevista_ativa()` (`SECURITY DEFINER`, `SET search_path = public`);
+  `fn_notif_entrevista()` só enfileira `entrevista_criada` quando a flag está
+  ligada — o lembrete de 24h permanece sempre. Flag aparece automaticamente no
+  painel de Governança de Parâmetros e toda alteração é auditada por
+  `fn_atualizar_parametro_operacional`. Date-only preservado (sem horário fantasma,
+  sem shift UTC), coberto por testes em `src/lib/notificacoes.test.ts`.
+- **Invariantes observadas:** INV-GOV-001/002/003, INV-TEMPO-001..003, INV-FILA-006.
 
 ---
 
@@ -76,3 +82,21 @@ Ordem de execução acordada: **L-02 (feito) → L-01 → L-03 → L-04**.
   `entrevista_lembrete`/`entrevista_criada` usando `fn_fila_motivo_inelegivel`
   (já cobre entrevistas) e cancelar com log, como já faz para sessões.
 - **Invariantes a observar:** INV-FILA-001/002/006, INV-GOV-002.
+
+---
+
+## L-05 — Override manual auditado para limite diário
+- **Prioridade:** Baixa/Média
+- **Status:** 📋 Backlog (só se houver necessidade operacional recorrente real)
+- **Objetivo:** Permitir que um operador autorizado ultrapasse, de forma auditada,
+  o limite diário de mensagens em casos pontuais — sem remover o limite padrão.
+- **Contexto:** Decisão de L-02 manteve a mensagem manual respeitando o limite
+  diário por padrão (segurança, previsibilidade, consistência com o pipeline e
+  proteção contra excesso). Este item formaliza a exceção controlada caso surja
+  demanda operacional concreta.
+- **Impacto:** Flexibilidade operacional sem abrir mão de governança; cada override
+  fica rastreável (quem, quando, motivo).
+- **Próximo passo recomendado:** só iniciar mediante necessidade real; ao iniciar,
+  exigir RPC `SECURITY DEFINER` com checagem de papel, registro do override em
+  auditoria e justificativa obrigatória — nunca bypass silencioso.
+- **Invariantes a observar:** INV-GOV-001/002/003, INV-FILA-003.
