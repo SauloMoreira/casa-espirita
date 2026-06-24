@@ -294,3 +294,139 @@ describe("rotuloDiagnosticoPendencia (L-02)", () => {
     expect(r?.label).toBeTruthy();
   });
 });
+
+describe("motivoInelegibilidadeEntrevista (L-04 — saneamento de entrevista)", () => {
+  it("entrevista válida e futura é elegível (null)", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_lembrete",
+        existeEntrevista: true,
+        entrevistaStatus: "agendada",
+        entrevistaData: FUTURO,
+        mesmaVersao: true,
+        agora: AGORA,
+      }),
+    ).toBeNull();
+    expect(
+      entrevistaElegivelParaFila({
+        evento: "entrevista_lembrete",
+        existeEntrevista: true,
+        entrevistaStatus: "agendada",
+        entrevistaData: FUTURO,
+        agora: AGORA,
+      }),
+    ).toBe(true);
+  });
+
+  it("entrevista inexistente é marcada como inelegível", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_lembrete",
+        existeEntrevista: false,
+        agora: AGORA,
+      }),
+    ).toBe("entrevista_inexistente");
+  });
+
+  it("entrevista cancelada é marcada como inelegível", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_criada",
+        existeEntrevista: true,
+        entrevistaStatus: "cancelada",
+        entrevistaData: FUTURO,
+        agora: AGORA,
+      }),
+    ).toBe("entrevista_cancelada");
+  });
+
+  it("entrevista remarcada invalida o lembrete antigo (versão superada)", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_lembrete",
+        existeEntrevista: true,
+        entrevistaStatus: "agendada",
+        entrevistaData: FUTURO,
+        mesmaVersao: false,
+        agora: AGORA,
+      }),
+    ).toBe("entrevista_remarcada");
+  });
+
+  it("entrevista vencida não permanece elegível", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_lembrete",
+        existeEntrevista: true,
+        entrevistaStatus: "agendada",
+        entrevistaData: "2026-06-20", // 2 dias antes de AGORA
+        mesmaVersao: true,
+        agora: AGORA,
+      }),
+    ).toBe("entrevista_vencida");
+  });
+
+  it("entrevista do dia (date-only) NÃO está vencida — sem horário fantasma", () => {
+    // AGORA = 2026-06-22 12:00 SP. Entrevista no MESMO dia continua elegível
+    // porque a comparação é de calendário (date-only), não inventa 21:00/UTC.
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_lembrete",
+        existeEntrevista: true,
+        entrevistaStatus: "agendada",
+        entrevistaData: "2026-06-22",
+        mesmaVersao: true,
+        agora: AGORA,
+      }),
+    ).toBeNull();
+  });
+
+  it("ordem de precedência: inexistente vence status/versão", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_lembrete",
+        existeEntrevista: false,
+        entrevistaStatus: "cancelada",
+        mesmaVersao: false,
+        agora: AGORA,
+      }),
+    ).toBe("entrevista_inexistente");
+  });
+
+  it("evento que não é de entrevista não é avaliado aqui (null)", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "sessao_lembrete",
+        existeEntrevista: false,
+        agora: AGORA,
+      }),
+    ).toBeNull();
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "mensagem_manual",
+        existeEntrevista: false,
+        agora: AGORA,
+      }),
+    ).toBeNull();
+  });
+
+  it("entrevista_criada não é invalidada por mesmaVersao=false (só lembrete carrega versão)", () => {
+    expect(
+      motivoInelegibilidadeEntrevista({
+        evento: "entrevista_criada",
+        existeEntrevista: true,
+        entrevistaStatus: "agendada",
+        entrevistaData: FUTURO,
+        mesmaVersao: false,
+        agora: AGORA,
+      }),
+    ).toBeNull();
+  });
+
+  it("rótulos de entrevista existem para a Central", () => {
+    expect(rotuloMotivo("entrevista_inexistente")).toBe(MOTIVO_LABEL.entrevista_inexistente);
+    expect(rotuloMotivo("entrevista_cancelada")).toBe(MOTIVO_LABEL.entrevista_cancelada);
+    expect(rotuloMotivo("entrevista_remarcada")).toBe(MOTIVO_LABEL.entrevista_remarcada);
+    expect(rotuloMotivo("entrevista_vencida")).toBe(MOTIVO_LABEL.entrevista_vencida);
+  });
+});
