@@ -15,7 +15,7 @@
  * Side-effect free e provider-agnóstico.
  */
 
-import { lembreteVencido } from "@/lib/notificacoes";
+import { lembreteVencido, diffDiasCalendario } from "@/lib/notificacoes";
 
 /** Status operacionais possíveis de uma sessão na agenda (fonte da verdade). */
 export const AGENDA_STATUS_ELEGIVEL = "agendado" as const;
