@@ -126,9 +126,11 @@ Legenda de status de aderência:
 
 ### EVT-12 — Saneamento da fila (rotina de consistência)
 - **Gatilho real:** `fn_sanear_fila_notificacoes()` (RPC/cron).
-- **Efeito na fila:** cancela itens `sessao_lembrete`/`sessao_criada` pendentes/agendados que ficaram inelegíveis (`fn_fila_motivo_inelegivel`), com log.
-- **Invariantes:** INV-FILA-001, INV-FILA-002, INV-FILA-006, INV-GOV-002.
-- **Status:** ✅ — 🟡 cobre apenas sessões; entrevistas dependem da trava do dispatch (ver L-04).
+- **Efeito na fila:** cancela itens `pendente`/`agendado` que ficaram inelegíveis, **delegando a decisão à fonte única** `fn_fila_motivo_inelegivel`. Cobre sessões (`sessao_lembrete`/`sessao_criada`) **e entrevistas** (`entrevista_lembrete`/`entrevista_criada`), com log em `notificacoes_log`. Motivos de entrevista próprios do domínio: `entrevista_inexistente`, `entrevista_cancelada`, `entrevista_remarcada`, `entrevista_vencida`.
+- **Relação com o dispatch:** saneamento limpa a fila herdada/inválida proativamente; o dispatch continua como **barreira final** (revalida no envio). As duas camadas trabalham juntas.
+- **Temporal:** entrevista é **date-only** — o vencimento é comparação de calendário no fuso oficial, sem inventar horário nem deslocar o dia por UTC.
+- **Invariantes:** INV-FILA-001, INV-FILA-002, INV-FILA-006, INV-GOV-002, INV-TEMPO-001/002/003.
+- **Status:** ✅ — L-04 resolvido: saneamento simétrico para sessões e entrevistas via fonte única.
 
 ---
 
@@ -154,7 +156,7 @@ Legenda de status de aderência:
 - **L-01** ✅ *(concluído)* — Confirmação imediata de **entrevista** agora sob flag governada `entrevista_confirmacao_agendamento_ativa` (default `true`), lida por `fn_confirmacao_entrevista_ativa()` em `fn_notif_entrevista()`. Simétrica a `tratamento_confirmacao_agendamento_ativa`.
 - **L-02** ✅ *(concluído — ver [BACKLOG-GOVERNANCA.md](./BACKLOG-GOVERNANCA.md))* — Mensagem manual/automática sem feedback explícito quando segurada por janela/limite. *Entregue:* `fn_fila_diagnostico_pendentes` + diagnóstico visível na Central. Resta apenas decisão de negócio sobre isenção de limite para envio manual.
 - **L-03** ✅ *(concluído)* — Classificação geral×operacional de presença consolidada na fonte única `fn_presenca_classificacao` (backend) + `src/lib/presencaClassificacao.ts` (frontend). `justificado` formalizado como **somente histórico**. Auditoria confirmada via `trg_audit_presencas`. `presenca_registrada`/`falta_registrada` mantidos como **operacional** (decisão explícita).
-- **L-04** — `fn_sanear_fila_notificacoes` cobre só sessões. *Desejado:* estender saneamento proativo a entrevistas (hoje só barradas no dispatch).
+- **L-04** ✅ *(concluído)* — `fn_sanear_fila_notificacoes` agora cobre sessões **e** entrevistas, delegando a inelegibilidade à fonte única `fn_fila_motivo_inelegivel` (motivos próprios: `entrevista_inexistente/cancelada/remarcada/vencida`). Histórico preservado (só cancela `pendente`/`agendado`, com log); dispatch segue como barreira final; date-only intacto.
 
 Nenhuma das lacunas representa envio indevido conhecido — todas são oportunidades de governança/observabilidade, não defeitos de segurança.
 
@@ -163,12 +165,12 @@ Nenhuma das lacunas representa envio indevido conhecido — todas são oportunid
 ## 3. Recomendações práticas (priorizadas)
 
 > As lacunas estão formalizadas como backlog rastreável em
-> [BACKLOG-GOVERNANCA.md](./BACKLOG-GOVERNANCA.md). Ordem acordada: L-02 (✅) → L-01 (✅) → L-03 → L-04.
+> [BACKLOG-GOVERNANCA.md](./BACKLOG-GOVERNANCA.md). Ordem acordada: L-02 (✅) → L-01 (✅) → L-03 (✅) → L-04 (✅).
 
 1. **(Alta)** L-02 — ✅ Concluído: Central expõe o motivo de itens não enviados (janela/limite/bloqueio). Resta decidir política de isenção de limite para manual.
 2. **(Média)** L-01 — ✅ Concluído: flag governada `entrevista_confirmacao_agendamento_ativa` alinha EVT-08 a EVT-01.
 3. **(Média)** L-03 — ✅ Concluído: fonte única `fn_presenca_classificacao` separa classificação geral×operacional; auditoria confirmada.
-4. **(Baixa)** L-04 — Estender o saneamento da fila a entrevistas para consistência simétrica com sessões.
+4. **(Baixa)** L-04 — ✅ Concluído: saneamento da fila estendido a entrevistas via fonte única `fn_fila_motivo_inelegivel`, simétrico às sessões, com dispatch como barreira final e date-only intacto.
 
 ---
 
