@@ -65,7 +65,54 @@ export const MOTIVO_LABEL: Record<string, string> = {
   sessao_remarcada_por_excecao: "Lembrete invalidado (sessão remarcada por exceção)",
   entrevista_remarcada_por_excecao: "Lembrete invalidado (entrevista remarcada por exceção)",
   excecao_operacional: "Gerado por exceção operacional",
+  // Mensagem manual controlada (ação humana administrativa):
+  mensagem_vazia: "Mensagem vazia",
+  mensagem_muito_longa: "Mensagem acima do limite permitido",
+  destinatario_invalido: "Destinatário inválido",
+  permissao_negada: "Sem permissão para esta ação",
 };
+
+// ============================================================================
+// Mensagem MANUAL controlada (ação humana administrativa).
+//
+// Texto livre, mas governado: obrigatório, não vazio e com limite coerente.
+// Esta é a contraparte em TS da validação da RPC oficial
+// `public.fn_enfileirar_mensagem_manual`. Mantém a decisão "este texto pode
+// ser enfileirado?" centralizada e testável. Side-effect free.
+// ============================================================================
+
+/** Evento de origem da fila que identifica uma mensagem manual. */
+export const EVENTO_MENSAGEM_MANUAL = "mensagem_manual" as const;
+
+/** Limite coerente de tamanho do texto livre da mensagem manual. */
+export const MENSAGEM_MANUAL_MAX = 1000;
+
+/** True quando o item da fila é uma mensagem manual (ação humana). */
+export function ehMensagemManual(evento?: string | null): boolean {
+  return evento === EVENTO_MENSAGEM_MANUAL;
+}
+
+export type MotivoMensagemInvalida = "mensagem_vazia" | "mensagem_muito_longa";
+
+export interface ValidacaoMensagemManual {
+  ok: boolean;
+  /** Texto já normalizado (trim + colapso de espaços em branco repetidos). */
+  texto: string;
+  erro?: MotivoMensagemInvalida;
+}
+
+/**
+ * Normaliza e valida o conteúdo de uma mensagem manual antes do envio.
+ * Espelha a regra do backend: trim, não vazio e até `MENSAGEM_MANUAL_MAX`.
+ */
+export function validarMensagemManual(texto: string | null | undefined): ValidacaoMensagemManual {
+  const normalizado = (texto ?? "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  if (normalizado === "") return { ok: false, texto: normalizado, erro: "mensagem_vazia" };
+  if (normalizado.length > MENSAGEM_MANUAL_MAX) {
+    return { ok: false, texto: normalizado, erro: "mensagem_muito_longa" };
+  }
+  return { ok: true, texto: normalizado };
+}
 
 /** Tradução amigável de um código de motivo/erro; devolve o próprio código se desconhecido. */
 export function rotuloMotivo(codigo?: string | null): string | null {
