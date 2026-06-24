@@ -55,7 +55,12 @@ export const MOTIVO_LABEL: Record<string, string> = {
   opt_out: "Assistido optou por não receber",
   comunicacao_geral_desativada: "Comunicações gerais desativadas",
   sem_telefone: "Sem telefone cadastrado",
+  telefone_invalido: "Telefone inválido",
+  dados_obrigatorios_ausentes: "Dados obrigatórios ausentes",
+  nome_ausente: "Nome ausente",
   template_indisponivel: "Modelo de mensagem indisponível",
+  // Encerramento manual de item inviável por erro de cadastro (ação humana):
+  erro_cadastro: "Encerrado manualmente — erro de cadastro",
   // Invalidação de lembretes antigos por exceção operacional:
   sessao_remarcada_por_excecao: "Lembrete invalidado (sessão remarcada por exceção)",
   entrevista_remarcada_por_excecao: "Lembrete invalidado (entrevista remarcada por exceção)",
