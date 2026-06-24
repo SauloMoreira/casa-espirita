@@ -23,7 +23,7 @@ import {
   getFilaItemDetalhe, encerrarItemFilaErroCadastro,
   type FilaItem, type FilaItemDetalhe,
 } from "@/services/notificacoes/notificacoesService";
-import { rotuloMotivo, podeEncerrarPorErroCadastro, ehMensagemManual } from "@/lib/notificacaoElegibilidade";
+import { rotuloMotivo, podeEncerrarPorErroCadastro, ehMensagemManual, rotuloDiagnosticoPendencia } from "@/lib/notificacaoElegibilidade";
 import { MensagemManualDialog } from "@/components/notificacoes/MensagemManualDialog";
 
 
