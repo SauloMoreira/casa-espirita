@@ -35,6 +35,12 @@ export interface FilaItem {
   created_at: string;
   /** Payload oficial da fila — carrega nome/tratamento sem necessidade de join. */
   payload_json?: FilaPayload | null;
+  /**
+   * Diagnóstico de pendência (L-02) — por que um item pendente/agendado ainda
+   * NÃO foi enviado. Preenchido pelo merge com `fn_fila_diagnostico_pendentes`
+   * na Central. `undefined`/`null` = item não pendente (enviado/cancelado/falha).
+   */
+  diagnostico?: string | null;
 }
 
 /** Nome da pessoa resolvido a partir do payload oficial da fila (sem join). */
