@@ -58,8 +58,10 @@ export default function CentralNotificacoes() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [f, c, h] = await Promise.all([listFila(), listConversas(), listHandoffsEnriquecidos()]);
-      setFila(f); setConversas(c); setHandoffs(h);
+      const [f, c, h, diag] = await Promise.all([
+        listFila(), listConversas(), listHandoffsEnriquecidos(), listFilaDiagnostico(),
+      ]);
+      setFila(aplicarDiagnosticoFila(f, diag)); setConversas(c); setHandoffs(h);
       setSelecionado((prev) => (prev ? h.find((x) => x.id === prev.id) ?? prev : prev));
     } catch (e: any) {
       toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
