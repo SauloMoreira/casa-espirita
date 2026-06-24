@@ -64,6 +64,7 @@ export const ROUTES = {
   programacaoPadrao: "/programacao-padrao",
   auditoria: "/auditoria",
   regras: "/regras",
+  governancaParametros: "/governanca-parametros",
   configuracoes: "/configuracoes",
   gestaoCores: "/configuracoes/cores",
   instituicao: "/instituicao",

@@ -168,6 +168,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "Tipos de Tratamento", url: "/tratamentos", icon: Heart, roles: ["admin"] },
       { title: "Regras Operacionais", url: "/regras", icon: Cog, roles: ["admin"] },
+      { title: "Governança de Parâmetros", url: "/governanca-parametros", icon: SlidersHorizontal, roles: ["admin", "administrador_master"] },
       { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
       { title: "Gestão de Cores", url: "/configuracoes/cores", icon: Palette, roles: ["admin"] },
     ],
