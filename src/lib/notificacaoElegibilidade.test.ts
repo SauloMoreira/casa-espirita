@@ -119,6 +119,47 @@ describe("motivoInelegibilidadeLembrete", () => {
       }),
     ).toBe("sessao_substituida");
   });
+
+  it("sessão futura prevista (não é a próxima do vínculo) não gera lembrete", () => {
+    expect(
+      motivoInelegibilidadeLembrete({
+        evento: "sessao_lembrete",
+        existeAgenda: true,
+        agendaStatus: "agendado",
+        sessaoData: FUTURO,
+        horario: HORA,
+        ehProxima: false,
+        agora: AGORA,
+      }),
+    ).toBe("sessao_futura_nao_proxima");
+  });
+
+  it("a próxima sessão real do vínculo permanece elegível", () => {
+    expect(
+      motivoInelegibilidadeLembrete({
+        evento: "sessao_lembrete",
+        existeAgenda: true,
+        agendaStatus: "agendado",
+        sessaoData: FUTURO,
+        horario: HORA,
+        ehProxima: true,
+        agora: AGORA,
+      }),
+    ).toBeNull();
+  });
+
+  it("ehProxima ausente não bloqueia (compatibilidade)", () => {
+    expect(
+      sessaoElegivelParaLembrete({
+        evento: "sessao_lembrete",
+        existeAgenda: true,
+        agendaStatus: "agendado",
+        sessaoData: FUTURO,
+        horario: HORA,
+        agora: AGORA,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("rotuloMotivo", () => {

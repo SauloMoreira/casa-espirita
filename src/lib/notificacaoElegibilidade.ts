@@ -31,7 +31,12 @@ export type MotivoInelegivel =
   | "sessao_substituida"
   | "sessao_cancelada"
   | "sessao_nao_agendada"
-  | "lembrete_vencido";
+  | "lembrete_vencido"
+  | "sessao_futura_nao_proxima"
+  | "entrevista_inexistente"
+  | "entrevista_cancelada"
+  | "entrevista_remarcada"
+  | "entrevista_vencida";
 
 /** Rótulos amigáveis (pt-BR) para exibir ao administrador na Central. */
 export const MOTIVO_LABEL: Record<string, string> = {
@@ -41,6 +46,11 @@ export const MOTIVO_LABEL: Record<string, string> = {
   sessao_cancelada: "Sessão cancelada",
   sessao_nao_agendada: "Sessão não é mais a agenda ativa",
   lembrete_vencido: "Lembrete vencido (sessão já passou)",
+  sessao_futura_nao_proxima: "Sessão futura prevista (não é a próxima real do vínculo)",
+  entrevista_inexistente: "Entrevista não encontrada",
+  entrevista_cancelada: "Entrevista cancelada",
+  entrevista_remarcada: "Lembrete superado (entrevista remarcada)",
+  entrevista_vencida: "Entrevista vencida (já passou)",
   // Motivos pré-existentes de outras travas do dispatch:
   opt_out: "Assistido optou por não receber",
   comunicacao_geral_desativada: "Comunicações gerais desativadas",
@@ -86,6 +96,12 @@ export interface ElegibilidadeInput {
   sessaoData?: string | null;
   /** Horário da sessão (HH:MM[:SS]). */
   horario?: string | null;
+  /**
+   * Esta sessão é a PRÓXIMA sessão real agendada do vínculo?
+   * Quando `false`, o item é cadeia futura prevista e não deve gerar lembrete.
+   * `undefined` = não avaliado (mantém compatibilidade / não bloqueia).
+   */
+  ehProxima?: boolean;
   /** Instante de avaliação (default: agora). */
   agora?: Date;
 }
@@ -113,6 +129,9 @@ export function motivoInelegibilidadeLembrete(
   if (input.sessaoData && lembreteVencido(input.sessaoData, input.horario ?? "", agora)) {
     return "lembrete_vencido";
   }
+
+  // Só a PRÓXIMA sessão real do vínculo é elegível; cadeia futura prevista não.
+  if (input.ehProxima === false) return "sessao_futura_nao_proxima";
 
   return null;
 }
