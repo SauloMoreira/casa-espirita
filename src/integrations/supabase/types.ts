@@ -2265,32 +2265,62 @@ export type Database = {
         Row: {
           ativo: boolean
           chave: string
+          confirmacao_reforcada: boolean
           created_at: string
           descricao: string | null
+          governavel: boolean
           id: string
+          impacto: string | null
+          nome_amigavel: string | null
+          opcoes: Json | null
+          sensivel: boolean
+          tipo: string
           updated_at: string
           updated_by: string | null
           valor: string
+          valor_max: number | null
+          valor_min: number | null
+          valor_padrao: string | null
         }
         Insert: {
           ativo?: boolean
           chave: string
+          confirmacao_reforcada?: boolean
           created_at?: string
           descricao?: string | null
+          governavel?: boolean
           id?: string
+          impacto?: string | null
+          nome_amigavel?: string | null
+          opcoes?: Json | null
+          sensivel?: boolean
+          tipo?: string
           updated_at?: string
           updated_by?: string | null
           valor: string
+          valor_max?: number | null
+          valor_min?: number | null
+          valor_padrao?: string | null
         }
         Update: {
           ativo?: boolean
           chave?: string
+          confirmacao_reforcada?: boolean
           created_at?: string
           descricao?: string | null
+          governavel?: boolean
           id?: string
+          impacto?: string | null
+          nome_amigavel?: string | null
+          opcoes?: Json | null
+          sensivel?: boolean
+          tipo?: string
           updated_at?: string
           updated_by?: string | null
           valor?: string
+          valor_max?: number | null
+          valor_min?: number | null
+          valor_padrao?: string | null
         }
         Relationships: []
       }
@@ -2770,6 +2800,10 @@ export type Database = {
           total_pendentes: number
         }[]
       }
+      fn_atualizar_parametro_operacional: {
+        Args: { p_chave: string; p_observacao?: string; p_valor: string }
+        Returns: Json
+      }
       fn_confirmacao_agendamento_ativa: { Args: never; Returns: boolean }
       fn_eh_proxima_sessao: { Args: { p_agenda_id: string }; Returns: boolean }
       fn_encerrar_item_fila_erro_cadastro: {
@@ -2815,6 +2849,28 @@ export type Database = {
         Returns: string
       }
       fn_lembrete_antecedencia_horas: { Args: never; Returns: number }
+      fn_listar_parametros_operacionais: {
+        Args: never
+        Returns: {
+          alterado_por_nome: string
+          ativo: boolean
+          chave: string
+          confirmacao_reforcada: boolean
+          descricao: string
+          id: string
+          impacto: string
+          nome_amigavel: string
+          opcoes: Json
+          sensivel: boolean
+          tipo: string
+          updated_at: string
+          updated_by: string
+          valor: string
+          valor_max: number
+          valor_min: number
+          valor_padrao: string
+        }[]
+      }
       fn_monitor_excecao_notificacoes: {
         Args: { p_desde?: string }
         Returns: Json
