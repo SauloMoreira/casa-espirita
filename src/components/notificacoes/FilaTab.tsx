@@ -7,13 +7,20 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, Stethoscope, CalendarClock, CheckCircle2, Filter, X, AlertTriangle, CalendarPlus, MessagesSquare } from "lucide-react";
+import { Phone, Stethoscope, CalendarClock, CheckCircle2, Filter, X, AlertTriangle, CalendarPlus, MessagesSquare, Clock, Hourglass, Ban } from "lucide-react";
 import {
   filtrarFila, ordenarFila, filaItemNome, filaItemTratamento,
   type FilaItem, type FilaFiltros, type FilaOrdenacao,
 } from "@/services/notificacoes/notificacoesService";
-import { ehEventoExcecao, ehMensagemManual } from "@/lib/notificacaoElegibilidade";
+import { ehEventoExcecao, ehMensagemManual, rotuloDiagnosticoPendencia, type DiagnosticoTom } from "@/lib/notificacaoElegibilidade";
 import { formatarDataBR } from "@/lib/notificacoes";
+
+const DIAG_TOM: Record<DiagnosticoTom, { classe: string; Icone: typeof Clock }> = {
+  neutro: { classe: "bg-muted text-muted-foreground", Icone: Clock },
+  espera: { classe: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300", Icone: Hourglass },
+  atencao: { classe: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300", Icone: AlertTriangle },
+  bloqueio: { classe: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300", Icone: Ban },
+};
 
 const STATUS_COLORS: Record<string, string> = {
   pendente: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
