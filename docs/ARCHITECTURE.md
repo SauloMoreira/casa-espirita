@@ -74,3 +74,9 @@ As regras estruturais invioláveis (INV-*) que toda mudança deve preservar est�
 catalogadas em [`docs/INVARIANTES.md`](./INVARIANTES.md). Confronte qualquer plano,
 entrega ou teste com esse catálogo: *"Esta implementação preserva as invariantes do
 sistema?"* — se a resposta for "não", a entrega não está pronta.
+
+A [Matriz de Eventos e Efeitos Colaterais](./MATRIZ-EVENTOS-EFEITOS.md) complementa o
+catálogo: mapeia, por evento (sessão, lembrete, presença, ausência, cancelamento,
+remarcação, exceção, entrevista, mensagem manual, encerramento de item, alteração de
+parâmetro), os efeitos em agenda, fila, dispatch, Central e auditoria — e as invariantes
+que cada um precisa respeitar.
