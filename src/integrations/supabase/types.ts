@@ -3053,6 +3053,7 @@ export type Database = {
         | "entrevista_remarcada_por_excecao"
         | "publico_cancelado_por_excecao"
         | "publico_remarcado_por_excecao"
+        | "mensagem_manual"
       notif_status: "pendente" | "agendado" | "enviado" | "falha" | "cancelado"
       status_etapa_plano:
         | "prevista"
@@ -3215,6 +3216,7 @@ export const Constants = {
         "entrevista_remarcada_por_excecao",
         "publico_cancelado_por_excecao",
         "publico_remarcado_por_excecao",
+        "mensagem_manual",
       ],
       notif_status: ["pendente", "agendado", "enviado", "falha", "cancelado"],
       status_etapa_plano: [
