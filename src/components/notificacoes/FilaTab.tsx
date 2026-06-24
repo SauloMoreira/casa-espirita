@@ -179,6 +179,7 @@ export function FilaTab({ fila, onSelect }: FilaTabProps) {
               const p = (f.payload_json ?? {}) as Record<string, unknown>;
               const dataImpactada = typeof p.data_impactada === "string" ? p.data_impactada : null;
               const novaData = typeof p.nova_data === "string" ? p.nova_data : null;
+              const diag = rotuloDiagnosticoPendencia(f.diagnostico);
               return (
                 <button
                   key={f.id}
