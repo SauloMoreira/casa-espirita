@@ -9,6 +9,7 @@ import {
   validarMensagemManual,
   ehMensagemManual,
   MENSAGEM_MANUAL_MAX,
+  rotuloDiagnosticoPendencia,
 } from "@/lib/notificacaoElegibilidade";
 
 // Avaliação fixa: "agora" = 2026-06-22 12:00 (horário de São Paulo).
