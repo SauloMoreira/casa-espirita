@@ -204,6 +204,18 @@ export function FilaTab({ fila, onSelect }: FilaTabProps) {
                         <MessagesSquare className="h-3 w-3" /> Manual
                       </span>
                     )}
+                    {diag && (() => {
+                      const tom = DIAG_TOM[diag.tom];
+                      const Icone = tom.Icone;
+                      return (
+                        <span
+                          title={diag.descricao}
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${tom.classe}`}
+                        >
+                          <Icone className="h-3 w-3" /> {diag.label}
+                        </span>
+                      );
+                    })()}
                     <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <CalendarClock className="h-3 w-3" /> Previsão: {dt(f.scheduled_at)}
                     </span>
