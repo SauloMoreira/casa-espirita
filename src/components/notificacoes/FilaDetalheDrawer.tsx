@@ -3,20 +3,28 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  Phone, MessageSquare, CheckCircle2, AlertTriangle, Hash, Clock, Send,
+  Phone, MessageSquare, CheckCircle2, AlertTriangle, Hash, Clock, Send, UserX, ShieldCheck,
 } from "lucide-react";
 import {
-  getFilaItemDetalhe,
+  getFilaItemDetalhe, encerrarItemFilaErroCadastro,
   type FilaItem, type FilaItemDetalhe,
 } from "@/services/notificacoes/notificacoesService";
-import { rotuloMotivo } from "@/lib/notificacaoElegibilidade";
+import { rotuloMotivo, podeEncerrarPorErroCadastro } from "@/lib/notificacaoElegibilidade";
+
 
 const STATUS_COLORS: Record<string, string> = {
   pendente: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
