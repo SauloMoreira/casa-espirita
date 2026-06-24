@@ -191,6 +191,11 @@ export function FilaTab({ fila, onSelect }: FilaTabProps) {
                         <AlertTriangle className="h-3 w-3" /> Gerado por exceção operacional
                       </span>
                     )}
+                    {ehManual && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px]">
+                        <MessagesSquare className="h-3 w-3" /> Manual
+                      </span>
+                    )}
                     <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
                       <CalendarClock className="h-3 w-3" /> Previsão: {dt(f.scheduled_at)}
                     </span>
