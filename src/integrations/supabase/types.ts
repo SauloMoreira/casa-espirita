@@ -2770,6 +2770,7 @@ export type Database = {
           total_pendentes: number
         }[]
       }
+      fn_confirmacao_agendamento_ativa: { Args: never; Returns: boolean }
       fn_eh_proxima_sessao: { Args: { p_agenda_id: string }; Returns: boolean }
       fn_encerrar_item_fila_erro_cadastro: {
         Args: { p_fila_id: string; p_motivo?: string; p_observacao?: string }
@@ -2813,6 +2814,7 @@ export type Database = {
         Args: { p_fila_id: string }
         Returns: string
       }
+      fn_lembrete_antecedencia_horas: { Args: never; Returns: number }
       fn_monitor_excecao_notificacoes: {
         Args: { p_desde?: string }
         Returns: Json
