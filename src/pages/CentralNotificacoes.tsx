@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
+import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3, MessagesSquare } from "lucide-react";
 import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
 import { AlertaCentralCard } from "@/components/notificacoes/AlertaCentralCard";
 import { AtendimentoDrawer } from "@/components/notificacoes/AtendimentoDrawer";
 import { ConversasTab } from "@/components/notificacoes/ConversasTab";
 import { FilaDetalheDrawer } from "@/components/notificacoes/FilaDetalheDrawer";
 import { FilaTab } from "@/components/notificacoes/FilaTab";
+import { MensagemManualDialog } from "@/components/notificacoes/MensagemManualDialog";
 import {
   listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
   type FilaItem, type Conversa, type HandoffEnriquecido,
