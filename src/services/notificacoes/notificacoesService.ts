@@ -289,6 +289,32 @@ export async function listFila(limit = 100): Promise<FilaItem[]> {
   return (data as FilaItem[]) ?? [];
 }
 
+/**
+ * Diagnóstico de pendência (L-02): para cada item pendente/agendado, por que
+ * ainda não saiu (janela, limite diário, opt-out, inelegibilidade, etc.).
+ * Fonte única de verdade no backend: RPC `fn_fila_diagnostico_pendentes`,
+ * que espelha a ordem de decisão do dispatch. Retorna um mapa id → motivo.
+ */
+export async function listFilaDiagnostico(): Promise<Map<string, string>> {
+  const { data, error } = await supabase.rpc("fn_fila_diagnostico_pendentes");
+  if (error) throw error;
+  const mapa = new Map<string, string>();
+  for (const row of (data ?? []) as Array<{ id: string; motivo: string }>) {
+    if (row?.id) mapa.set(String(row.id), String(row.motivo));
+  }
+  return mapa;
+}
+
+/** Aplica o diagnóstico de pendência aos itens da fila (merge puro, sem I/O). */
+export function aplicarDiagnosticoFila(
+  fila: FilaItem[],
+  diagnostico: Map<string, string>,
+): FilaItem[] {
+  return fila.map((f) => ({ ...f, diagnostico: diagnostico.get(f.id) ?? null }));
+}
+
+
+
 /** Resultado estruturado do encerramento manual de um item por erro de cadastro. */
 export interface EncerramentoErroCadastroResult {
   ok: boolean;
