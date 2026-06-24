@@ -156,7 +156,7 @@ Legenda de status de aderência:
 - **L-01** ✅ *(concluído)* — Confirmação imediata de **entrevista** agora sob flag governada `entrevista_confirmacao_agendamento_ativa` (default `true`), lida por `fn_confirmacao_entrevista_ativa()` em `fn_notif_entrevista()`. Simétrica a `tratamento_confirmacao_agendamento_ativa`.
 - **L-02** ✅ *(concluído — ver [BACKLOG-GOVERNANCA.md](./BACKLOG-GOVERNANCA.md))* — Mensagem manual/automática sem feedback explícito quando segurada por janela/limite. *Entregue:* `fn_fila_diagnostico_pendentes` + diagnóstico visível na Central. Resta apenas decisão de negócio sobre isenção de limite para envio manual.
 - **L-03** ✅ *(concluído)* — Classificação geral×operacional de presença consolidada na fonte única `fn_presenca_classificacao` (backend) + `src/lib/presencaClassificacao.ts` (frontend). `justificado` formalizado como **somente histórico**. Auditoria confirmada via `trg_audit_presencas`. `presenca_registrada`/`falta_registrada` mantidos como **operacional** (decisão explícita).
-- **L-04** — `fn_sanear_fila_notificacoes` cobre só sessões. *Desejado:* estender saneamento proativo a entrevistas (hoje só barradas no dispatch).
+- **L-04** ✅ *(concluído)* — `fn_sanear_fila_notificacoes` agora cobre sessões **e** entrevistas, delegando a inelegibilidade à fonte única `fn_fila_motivo_inelegivel` (motivos próprios: `entrevista_inexistente/cancelada/remarcada/vencida`). Histórico preservado (só cancela `pendente`/`agendado`, com log); dispatch segue como barreira final; date-only intacto.
 
 Nenhuma das lacunas representa envio indevido conhecido — todas são oportunidades de governança/observabilidade, não defeitos de segurança.
 
