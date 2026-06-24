@@ -126,9 +126,11 @@ Legenda de status de aderência:
 
 ### EVT-12 — Saneamento da fila (rotina de consistência)
 - **Gatilho real:** `fn_sanear_fila_notificacoes()` (RPC/cron).
-- **Efeito na fila:** cancela itens `sessao_lembrete`/`sessao_criada` pendentes/agendados que ficaram inelegíveis (`fn_fila_motivo_inelegivel`), com log.
-- **Invariantes:** INV-FILA-001, INV-FILA-002, INV-FILA-006, INV-GOV-002.
-- **Status:** ✅ — 🟡 cobre apenas sessões; entrevistas dependem da trava do dispatch (ver L-04).
+- **Efeito na fila:** cancela itens `pendente`/`agendado` que ficaram inelegíveis, **delegando a decisão à fonte única** `fn_fila_motivo_inelegivel`. Cobre sessões (`sessao_lembrete`/`sessao_criada`) **e entrevistas** (`entrevista_lembrete`/`entrevista_criada`), com log em `notificacoes_log`. Motivos de entrevista próprios do domínio: `entrevista_inexistente`, `entrevista_cancelada`, `entrevista_remarcada`, `entrevista_vencida`.
+- **Relação com o dispatch:** saneamento limpa a fila herdada/inválida proativamente; o dispatch continua como **barreira final** (revalida no envio). As duas camadas trabalham juntas.
+- **Temporal:** entrevista é **date-only** — o vencimento é comparação de calendário no fuso oficial, sem inventar horário nem deslocar o dia por UTC.
+- **Invariantes:** INV-FILA-001, INV-FILA-002, INV-FILA-006, INV-GOV-002, INV-TEMPO-001/002/003.
+- **Status:** ✅ — L-04 resolvido: saneamento simétrico para sessões e entrevistas via fonte única.
 
 ---
 
