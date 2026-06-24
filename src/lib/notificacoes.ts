@@ -40,18 +40,31 @@ export function renderTemplate(
 
 function formatValue(key: string, raw: unknown): string {
   const value = String(raw);
-  // Chaves de data renderizadas em pt-BR (DD/MM/AAAA, com hora quando presente).
+  // Chaves de data renderizadas em pt-BR (DD/MM/AAAA, com hora apenas quando há
+  // hora real do compromisso). Datas "puras" (ex.: entrevistas, armazenadas como
+  // timestamptz à meia-noite UTC) NUNCA podem virar "21:00" por vazamento de fuso:
+  // são renderizadas a partir dos componentes Y-M-D capturados, sem new Date()
+  // e sem conversão de timezone, evitando qualquer deslocamento de dia/hora.
   if (key === "data" || key === "data_anterior" || key === "nova_data" || key === "data_impactada") {
-    // Accept ISO datetime or date-only.
-    const d = new Date(value);
-    if (!isNaN(d.getTime()) && /\d{4}-\d{2}-\d{2}/.test(value)) {
-      const hasTime = value.includes("T") && !value.endsWith("T00:00:00.000Z");
-      return d.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        ...(hasTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-      });
+    const m = /(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(value);
+    if (m) {
+      const [, ano, mes, dia, hh, mi] = m;
+      const temHoraReal = hh !== undefined && !(hh === "00" && mi === "00");
+      if (!temHoraReal) {
+        // Data pura → somente DD/MM/AAAA, sem hora e sem conversão de fuso.
+        return `${dia}/${mes}/${ano}`;
+      }
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: TIMEZONE_OFICIAL,
+        });
+      }
     }
   }
   if (key === "horario") {
