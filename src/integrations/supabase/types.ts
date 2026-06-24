@@ -2775,6 +2775,14 @@ export type Database = {
         Args: { p_fila_id: string; p_motivo?: string; p_observacao?: string }
         Returns: Json
       }
+      fn_enfileirar_mensagem_manual: {
+        Args: {
+          p_assistido_id: string
+          p_mensagem: string
+          p_observacao?: string
+        }
+        Returns: Json
+      }
       fn_enqueue_notificacao: {
         Args: {
           p_assistido_id: string
@@ -3053,6 +3061,7 @@ export type Database = {
         | "entrevista_remarcada_por_excecao"
         | "publico_cancelado_por_excecao"
         | "publico_remarcado_por_excecao"
+        | "mensagem_manual"
       notif_status: "pendente" | "agendado" | "enviado" | "falha" | "cancelado"
       status_etapa_plano:
         | "prevista"
@@ -3215,6 +3224,7 @@ export const Constants = {
         "entrevista_remarcada_por_excecao",
         "publico_cancelado_por_excecao",
         "publico_remarcado_por_excecao",
+        "mensagem_manual",
       ],
       notif_status: ["pendente", "agendado", "enviado", "falha", "cancelado"],
       status_etapa_plano: [

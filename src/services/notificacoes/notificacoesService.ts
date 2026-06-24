@@ -316,6 +316,77 @@ export async function encerrarItemFilaErroCadastro(
   return data as unknown as EncerramentoErroCadastroResult;
 }
 
+// ============================================================================
+// Mensagem MANUAL controlada (ação humana administrativa).
+//
+// A UI NUNCA fala com o provider. Ela chama a RPC oficial
+// `fn_enfileirar_mensagem_manual` (SECURITY DEFINER), que valida permissão,
+// destinatário, telefone e consentimento, cria o item na fila oficial e grava
+// trilha + auditoria. O dispatch oficial faz o envio real.
+// ============================================================================
+
+/** Destinatário elegível para mensagem manual (resolvido a partir de cadastro). */
+export interface DestinatarioManual {
+  id: string;
+  nome: string;
+  telefone: string | null;
+}
+
+/**
+ * Busca assistidos por nome para escolher um destinatário válido e auditável.
+ * Não permite envio "solto": a mensagem manual sempre parte de um cadastro.
+ */
+export async function buscarDestinatariosManual(termo: string): Promise<DestinatarioManual[]> {
+  const q = termo.trim();
+  if (q.length < 2) return [];
+  const { data, error } = await supabase
+    .from("assistidos")
+    .select("id, nome, celular, telefone")
+    .ilike("nome", `%${q}%`)
+    .order("nome", { ascending: true })
+    .limit(20);
+  if (error) throw error;
+  return (data ?? []).map((a: any) => ({
+    id: a.id,
+    nome: a.nome,
+    telefone: a.celular || a.telefone || null,
+  }));
+}
+
+/** Resultado estruturado do enfileiramento de uma mensagem manual. */
+export interface MensagemManualResult {
+  ok: boolean;
+  fila_id: string;
+  assistido_id: string;
+  assistido_nome: string | null;
+  telefone: string;
+  status: string;
+  origem_manual: string;
+  enviado_por: string | null;
+}
+
+/**
+ * Enfileira uma mensagem manual controlada para um destinatário específico.
+ *
+ * Toda a regra de negócio (permissão, destinatário, telefone, consentimento e
+ * conteúdo) é validada no backend. O frontend só coleta os dados e exibe o
+ * retorno estruturado. Esta ação NÃO altera opt-out/consentimento nem bloqueia
+ * o destinatário — é uma comunicação pontual auditada.
+ */
+export async function enfileirarMensagemManual(params: {
+  assistidoId: string;
+  mensagem: string;
+  observacao?: string;
+}): Promise<MensagemManualResult> {
+  const { data, error } = await supabase.rpc("fn_enfileirar_mensagem_manual", {
+    p_assistido_id: params.assistidoId,
+    p_mensagem: params.mensagem,
+    p_observacao: params.observacao?.trim() ? params.observacao.trim() : null,
+  });
+  if (error) throw error;
+  return data as unknown as MensagemManualResult;
+}
+
 
 
 /** Uma entrada da trilha de log (notificacoes_log) de um item da fila. */

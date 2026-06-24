@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3 } from "lucide-react";
+import { Send, RefreshCw, MessageSquare, ListChecks, Headphones, BarChart3, MessagesSquare } from "lucide-react";
 import { PainelWhatsapp } from "@/components/notificacoes/PainelWhatsapp";
 import { AlertaCentralCard } from "@/components/notificacoes/AlertaCentralCard";
 import { AtendimentoDrawer } from "@/components/notificacoes/AtendimentoDrawer";
 import { ConversasTab } from "@/components/notificacoes/ConversasTab";
 import { FilaDetalheDrawer } from "@/components/notificacoes/FilaDetalheDrawer";
 import { FilaTab } from "@/components/notificacoes/FilaTab";
+import { MensagemManualDialog } from "@/components/notificacoes/MensagemManualDialog";
 import {
   listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
   type FilaItem, type Conversa, type HandoffEnriquecido,
@@ -36,7 +37,7 @@ function dt(value?: string | null) {
 }
 
 export default function CentralNotificacoes() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { toast } = useToast();
   const [fila, setFila] = useState<FilaItem[]>([]);
   const [conversas, setConversas] = useState<Conversa[]>([]);
@@ -47,6 +48,10 @@ export default function CentralNotificacoes() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filaSelecionada, setFilaSelecionada] = useState<FilaItem | null>(null);
   const [filaDrawerOpen, setFilaDrawerOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+
+  const isAdmin = roles.includes("admin") || roles.includes("administrador_master");
+
   
 
   const load = useCallback(async () => {
@@ -118,6 +123,11 @@ export default function CentralNotificacoes() {
           <Button variant="outline" size="sm" onClick={load} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Atualizar
           </Button>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setManualOpen(true)}>
+              <MessagesSquare className="h-4 w-4 mr-1" /> Mensagem manual
+            </Button>
+          )}
           <Button size="sm" onClick={handleProcessar} disabled={processing}>
             <Send className="h-4 w-4 mr-1" /> {processing ? "Processando..." : "Processar fila"}
           </Button>
@@ -220,7 +230,11 @@ export default function CentralNotificacoes() {
         onChanged={load}
       />
 
-
+      <MensagemManualDialog
+        open={manualOpen}
+        onOpenChange={setManualOpen}
+        onEnviado={load}
+      />
     </div>
   );
 }

@@ -7,12 +7,12 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, Stethoscope, CalendarClock, CheckCircle2, Filter, X, AlertTriangle, CalendarPlus } from "lucide-react";
+import { Phone, Stethoscope, CalendarClock, CheckCircle2, Filter, X, AlertTriangle, CalendarPlus, MessagesSquare } from "lucide-react";
 import {
   filtrarFila, ordenarFila, filaItemNome, filaItemTratamento,
   type FilaItem, type FilaFiltros, type FilaOrdenacao,
 } from "@/services/notificacoes/notificacoesService";
-import { ehEventoExcecao } from "@/lib/notificacaoElegibilidade";
+import { ehEventoExcecao, ehMensagemManual } from "@/lib/notificacaoElegibilidade";
 import { formatarDataBR } from "@/lib/notificacoes";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -168,6 +168,7 @@ export function FilaTab({ fila, onSelect }: FilaTabProps) {
               const nome = filaItemNome(f);
               const tratamento = filaItemTratamento(f);
               const porExcecao = ehEventoExcecao(f.evento_origem);
+              const ehManual = ehMensagemManual(f.evento_origem);
               const p = (f.payload_json ?? {}) as Record<string, unknown>;
               const dataImpactada = typeof p.data_impactada === "string" ? p.data_impactada : null;
               const novaData = typeof p.nova_data === "string" ? p.nova_data : null;
@@ -188,6 +189,11 @@ export function FilaTab({ fila, onSelect }: FilaTabProps) {
                     {porExcecao && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 px-2 py-0.5 text-[10px]">
                         <AlertTriangle className="h-3 w-3" /> Gerado por exceção operacional
+                      </span>
+                    )}
+                    {ehManual && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px]">
+                        <MessagesSquare className="h-3 w-3" /> Manual
                       </span>
                     )}
                     <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">

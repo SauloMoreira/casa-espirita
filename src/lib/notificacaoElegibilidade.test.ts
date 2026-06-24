@@ -6,6 +6,9 @@ import {
   MOTIVO_LABEL,
   podeEncerrarPorErroCadastro,
   MOTIVOS_ERRO_CADASTRO,
+  validarMensagemManual,
+  ehMensagemManual,
+  MENSAGEM_MANUAL_MAX,
 } from "@/lib/notificacaoElegibilidade";
 
 // Avaliação fixa: "agora" = 2026-06-22 12:00 (horário de São Paulo).
@@ -200,5 +203,50 @@ describe("podeEncerrarPorErroCadastro", () => {
   it("bloqueia item sem motivo definido", () => {
     expect(podeEncerrarPorErroCadastro({ status: "falha", erro: null })).toBe(false);
     expect(podeEncerrarPorErroCadastro({ status: "pendente", erro: undefined })).toBe(false);
+  });
+});
+
+describe("validarMensagemManual", () => {
+  it("aceita texto válido e normaliza espaços", () => {
+    const r = validarMensagemManual("  Olá   pessoa  ");
+    expect(r.ok).toBe(true);
+    expect(r.texto).toBe("Olá pessoa");
+    expect(r.erro).toBeUndefined();
+  });
+
+  it("rejeita mensagem vazia ou só com espaços", () => {
+    expect(validarMensagemManual("").erro).toBe("mensagem_vazia");
+    expect(validarMensagemManual("   ").erro).toBe("mensagem_vazia");
+    expect(validarMensagemManual(null).erro).toBe("mensagem_vazia");
+    expect(validarMensagemManual(undefined).erro).toBe("mensagem_vazia");
+  });
+
+  it("rejeita mensagem acima do limite", () => {
+    const longa = "a".repeat(MENSAGEM_MANUAL_MAX + 1);
+    const r = validarMensagemManual(longa);
+    expect(r.ok).toBe(false);
+    expect(r.erro).toBe("mensagem_muito_longa");
+  });
+
+  it("aceita mensagem exatamente no limite", () => {
+    const exata = "a".repeat(MENSAGEM_MANUAL_MAX);
+    expect(validarMensagemManual(exata).ok).toBe(true);
+  });
+});
+
+describe("ehMensagemManual", () => {
+  it("identifica o evento de mensagem manual", () => {
+    expect(ehMensagemManual("mensagem_manual")).toBe(true);
+    expect(ehMensagemManual("sessao_lembrete")).toBe(false);
+    expect(ehMensagemManual(null)).toBe(false);
+    expect(ehMensagemManual(undefined)).toBe(false);
+  });
+});
+
+describe("rótulos de mensagem manual", () => {
+  it("traduz erros da ação manual", () => {
+    expect(rotuloMotivo("mensagem_vazia")).toBe(MOTIVO_LABEL.mensagem_vazia);
+    expect(rotuloMotivo("permissao_negada")).toBe(MOTIVO_LABEL.permissao_negada);
+    expect(rotuloMotivo("destinatario_invalido")).toBe(MOTIVO_LABEL.destinatario_invalido);
   });
 });
