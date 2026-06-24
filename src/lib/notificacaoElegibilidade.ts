@@ -61,6 +61,8 @@ export const MOTIVO_LABEL: Record<string, string> = {
   template_indisponivel: "Modelo de mensagem indisponível",
   // Encerramento manual de item inviável por erro de cadastro (ação humana):
   erro_cadastro: "Encerrado manualmente — erro de cadastro",
+  // Confirmação de agendamento enviada cedo demais para sessão futura distante:
+  agendamento_antecipado_indevido: "Cancelado — agendamento antecipado indevido (tratamento só recebe lembrete 24h antes)",
   // Invalidação de lembretes antigos por exceção operacional:
   sessao_remarcada_por_excecao: "Lembrete invalidado (sessão remarcada por exceção)",
   entrevista_remarcada_por_excecao: "Lembrete invalidado (entrevista remarcada por exceção)",
