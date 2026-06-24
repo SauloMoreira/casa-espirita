@@ -276,6 +276,8 @@ além do registro de efeito operacional (`PLANO_PRESENCA_AVANCO`) quando aplicá
 
 ---
 
+## 8. Invariantes de governança operacional
+
 ### INV-GOV-001 — Flags e parâmetros críticos devem ser governados
 Parâmetros sensíveis devem ter: dono claro, permissão de alteração, auditoria,
 descrição funcional, valor atual e impacto operacional visível.
