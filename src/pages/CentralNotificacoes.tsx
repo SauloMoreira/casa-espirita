@@ -230,7 +230,11 @@ export default function CentralNotificacoes() {
         onChanged={load}
       />
 
-
+      <MensagemManualDialog
+        open={manualOpen}
+        onOpenChange={setManualOpen}
+        onEnviado={load}
+      />
     </div>
   );
 }
