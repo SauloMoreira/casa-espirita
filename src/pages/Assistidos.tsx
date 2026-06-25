@@ -367,7 +367,7 @@ export default function Assistidos() {
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">
                         <span>{a.nome}</span>
-                        {a.cadastro_completo === false && (
+                        {(a as any).cadastro_completo === false && (
                           <Badge variant="outline" className="ml-2 text-[10px] text-amber-600 border-amber-400">
                             Cadastro mínimo
                           </Badge>
