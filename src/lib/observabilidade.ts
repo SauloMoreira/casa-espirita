@@ -119,7 +119,14 @@ export function rotuloMotivoObservabilidade(codigo: string): string {
   return rotuloMotivo(codigo) ?? codigo;
 }
 
-/** Soma utilitária para totais de blocos (apresentação, sem regra de negócio). */
+/**
+ * Traduz o código de diagnóstico de pendência (L-02) em rótulo curto para o
+ * snapshot. Reusa o catálogo canônico `rotuloDiagnosticoPendencia`.
+ */
+export function rotuloDiagnostico(codigo: string): string {
+  return rotuloDiagnosticoPendencia(codigo)?.label ?? codigo;
+}
+
 export function somaQtd(itens: ReadonlyArray<{ qtd: number }>): number {
   return itens.reduce((acc, i) => acc + (i.qtd ?? 0), 0);
 }
