@@ -19,10 +19,13 @@ interface AddressFieldsProps {
   data: AddressData;
   onChange: (data: AddressData) => void;
   errors?: Partial<Record<keyof AddressData, string>>;
+  /** Quando false, não exibe asteriscos de obrigatoriedade (cadastro mínimo). */
+  required?: boolean;
 }
 
-export function AddressFields({ data, onChange, errors }: AddressFieldsProps) {
+export function AddressFields({ data, onChange, errors, required = true }: AddressFieldsProps) {
   const [loading, setLoading] = useState(false);
+  const req = required ? " *" : "";
 
   const set = (field: keyof AddressData, value: string) => {
     onChange({ ...data, [field]: value });
