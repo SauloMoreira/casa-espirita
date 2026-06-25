@@ -19,6 +19,7 @@ export const ROUTES = {
   notificacoes: "/notificacoes",
   centralNotificacoes: "/central-notificacoes",
   relatorios: "/relatorios",
+  observabilidade: "/observabilidade",
   ajuda: "/ajuda",
 
   // Atendimento
