@@ -13,7 +13,7 @@ import {
 import {
   fetchInitialData,
   fetchEntrevistaContext,
-  isCpfCadastrado,
+  
   insertAssistido,
   submitEntrevista,
   validateDatasIniciais,
