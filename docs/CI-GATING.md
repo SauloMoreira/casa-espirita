@@ -145,3 +145,57 @@ O `gate-summary` reconhece a label e emite *warning* visível + registro no resu
 5. Gates pesados isolados, seed determinístico, cleanup garantido, zero side effect.
 6. Override só via label auditada, com warning e autor rastreado.
 7. Noturno roda suíte completa sem bloquear PRs.
+
+---
+
+## 10. Janela observacional — instrumento de coleta e relatório
+
+> **Importante (limite real):** a janela observacional é medida pelas execuções
+> reais do GitHub Actions ao longo do tempo (10 PRs **ou** 14 dias corridos, o
+> que vier por último). Esses dados são produzidos pelo CI em produção e **não
+> podem ser simulados nem antecipados** pelo agente. Esta seção é o instrumento
+> oficial para registrar a coleta enquanto a janela transcorre, e o template do
+> relatório final que decide a evolução para a Fase 2.
+
+### 10.1 Como coletar (fonte dos dados)
+Para cada PR que entrar na janela, registrar a partir da aba **Actions** do
+repositório:
+- resultado de cada job observacional (`test-db`, `test-e2e-rls`, `test-e2e`);
+- se o job foi **disparado** (filtro acionou) ou **pulado** (N/A para o escopo);
+- em caso de falha, classificar a causa: **infra** (rede/banco indisponível,
+  timeout de ambiente), **configuração** (segredo `TEST_*` ausente/errado) ou
+  **asserção real** (regra/contrato quebrado);
+- se houve retry e se o retry resolveu (sinal de flaky de infra);
+- duração do job (para tendência de pipeline frágil/lenta).
+
+### 10.2 Log da janela (preencher por PR)
+
+| PR | Data | test-db (res/causa) | test-e2e-rls (res/causa) | test-e2e (res/causa) | Retry? | Duração pesados | Obs |
+|----|------|---------------------|--------------------------|----------------------|--------|-----------------|-----|
+| —  | —    | —                   | —                        | —                    | —      | —               | janela ainda não iniciada |
+
+> Critério de fechamento: registrar até atingir **10 PRs OU 14 dias corridos, o
+> que vier por último**.
+
+### 10.3 Template do relatório de estabilidade (entregar ao final)
+
+- **Cobertura:** nº de PRs observados; nº de dias corridos cobertos.
+- **Taxa de falha real por job observacional:** `test-db`, `test-e2e-rls`, `test-e2e`.
+- **Classificação das falhas:** infra × configuração × asserção real (com exemplos).
+- **Flaky de infra × falha reproduzível:** quantos retries; quantos resolveram.
+- **Qualidade dos filtros de path:** falsos disparos / falsos pulos detectados.
+- **Ajustes recomendados:** retry/timeouts, escopo de filtros, secrets.
+- **Pré-condições Fase 2 (checklist):**
+  - [ ] segredos `TEST_*` corretamente configurados (jobs não auto-pulando por falta de cred);
+  - [ ] estabilidade aceitável dos jobs pesados;
+  - [ ] ausência de flaky recorrente relevante;
+  - [ ] sem tendência de pipeline frágil.
+- **Recomendação objetiva:** **PRONTO** ou **NÃO PRONTO** para Fase 2 + justificativa.
+
+### 10.4 Pré-requisito operacional antes de iniciar a contagem
+Para que a janela produza dados úteis (e não apenas auto-skip), os segredos
+`TEST_*` do banco de teste dedicado devem estar configurados no repositório:
+`TEST_PGHOST`, `TEST_PGPORT`, `TEST_PGUSER`, `TEST_PGPASSWORD`, `TEST_PGDATABASE`,
+`TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_E2E_RLS_PASSWORD`,
+`TEST_SERVICE_ROLE_KEY`. Enquanto ausentes, os jobs pesados se auto-pulam
+(`HAS_DB`/`HAS_E2E`) e a observação não é representativa.
