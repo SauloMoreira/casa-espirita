@@ -139,36 +139,56 @@ export default function Assistidos() {
 
     setLoading(true);
     const cpfClean = form.cpf.replace(/\D/g, "");
+    const celClean = form.celular.replace(/\D/g, "");
     const payload = {
       nome: form.nome.trim(),
-      cpf: cpfClean,
-      celular: form.celular.replace(/\D/g, ""),
-      telefone: form.celular.replace(/\D/g, ""),
+      cpf: cpfClean || null,
+      celular: celClean,
+      telefone: celClean,
       email: form.email.trim() || null,
       data_nascimento: form.data_nascimento || null,
-      cep: form.cep.replace(/\D/g, ""),
-      logradouro: form.logradouro.trim(),
-      numero: form.numero.trim(),
+      cep: form.cep.replace(/\D/g, "") || null,
+      logradouro: form.logradouro.trim() || null,
+      numero: form.numero.trim() || null,
       complemento: form.complemento.trim() || null,
-      bairro: form.bairro.trim(),
-      cidade: form.cidade.trim(),
-      estado: form.estado.trim().toUpperCase(),
+      bairro: form.bairro.trim() || null,
+      cidade: form.cidade.trim() || null,
+      estado: form.estado.trim().toUpperCase() || null,
       foto_url: form.foto_url || null,
       observacoes: form.observacoes || null,
       status: form.status,
       quantidade_palestras: parseInt(form.quantidade_palestras) || 0,
     };
 
-    // Check CPF uniqueness
-    const cpfQuery = supabase.from("assistidos").select("id").eq("cpf", cpfClean).is("deleted_at", null);
-    if (editId) cpfQuery.neq("id", editId);
-    const { data: cpfExists } = await cpfQuery;
-    if (cpfExists && cpfExists.length > 0) {
-      setErrors({ cpf: "CPF já cadastrado" });
-      toast({ title: "CPF já cadastrado para outro assistido", variant: "destructive" });
+    // Deduplicação por celular (fonte de verdade no backend; aqui é otimista).
+    const celQuery = supabase
+      .from("assistidos")
+      .select("id")
+      .eq("celular", celClean)
+      .is("deleted_at", null)
+      .neq("status", "inativo");
+    if (editId) celQuery.neq("id", editId);
+    const { data: celExists } = await celQuery;
+    if (celExists && celExists.length > 0) {
+      setErrors({ celular: CELULAR_DUPLICADO_MSG });
+      toast({ title: CELULAR_DUPLICADO_MSG, variant: "destructive" });
       setLoading(false);
       return;
     }
+
+    // CPF continua único quando informado (opcional no cadastro mínimo).
+    if (cpfClean) {
+      const cpfQuery = supabase.from("assistidos").select("id").eq("cpf", cpfClean).is("deleted_at", null);
+      if (editId) cpfQuery.neq("id", editId);
+      const { data: cpfExists } = await cpfQuery;
+      if (cpfExists && cpfExists.length > 0) {
+        setErrors({ cpf: "CPF já cadastrado" });
+        toast({ title: "CPF já cadastrado para outro assistido", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+    }
+
 
     let error;
     if (editId) {
