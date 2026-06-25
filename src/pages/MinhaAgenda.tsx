@@ -126,7 +126,7 @@ export default function MinhaAgenda() {
               {sessoesFuturas.map((s) => {
                 const dataObj = new Date(s.data_sessao + "T12:00:00");
                 return (
-                  <div key={s.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                     <div>
                       <p className="text-sm font-medium">{s.tratamento_nome}</p>
                       <p className="text-xs text-muted-foreground">
@@ -134,9 +134,16 @@ export default function MinhaAgenda() {
                         {horarioCurto(s.horario) && ` às ${horarioCurto(s.horario)}`}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-[10px]">
-                      {STATUS_SESSAO_LABELS[s.status] || s.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {STATUS_SESSAO_LABELS[s.status] || s.status}
+                      </Badge>
+                      <AvisoAusenciaDialog
+                        tipoCompromisso="sessao"
+                        compromissoId={s.id}
+                        descricao={`${s.tratamento_nome} — ${format(dataObj, "dd/MM/yyyy")}`}
+                      />
+                    </div>
                   </div>
                 );
               })}
