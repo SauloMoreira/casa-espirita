@@ -15,7 +15,8 @@
     "test:unit": "vitest run src/lib",
     "test:integration": "vitest run src/test/integration",
     "test:e2e": "playwright test",
-    "validate": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "test:db": "vitest run --config vitest.integration.db.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
