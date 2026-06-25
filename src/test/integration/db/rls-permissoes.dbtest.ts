@@ -36,7 +36,7 @@ d("L-07 RLS/permissão real — parâmetro governado (caso A)", () => {
         "false",
         "itest L-07",
       ]);
-      expect(r.rows[0].res.ok).toBe(true);
+      expect(r.rows[0].res.valor).toBe("false");
       const v = await c.query("SELECT valor FROM regras_operacionais WHERE chave=$1", [FLAG]);
       expect(v.rows[0].valor).toBe("false");
     });
