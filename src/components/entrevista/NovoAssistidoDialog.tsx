@@ -49,7 +49,7 @@ export function NovoAssistidoDialog({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>CPF *</Label>
+              <Label>CPF</Label>
               <Input
                 value={form.cpf}
                 onChange={(e) => update({ cpf: maskCPF(e.target.value) })}
