@@ -6,6 +6,7 @@ import {
   actAsAnon,
   getUserByRole,
   getAssistidoComTelefone,
+  expectReject,
   closePool,
 } from "./_dbClient";
 
