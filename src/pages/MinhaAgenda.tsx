@@ -8,6 +8,7 @@ import { Calendar, Heart, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { diaSemanaDe, horarioCurto } from "@/lib/assistido";
+import { AvisoAusenciaDialog } from "@/components/avisos/AvisoAusenciaDialog";
 
 
 const STATUS_SESSAO_LABELS: Record<string, string> = {
@@ -85,14 +86,21 @@ export default function MinhaAgenda() {
           </CardHeader>
           <CardContent className="space-y-2">
             {entrevistas.map((e) => (
-              <div key={e.id} className="flex items-center justify-between rounded-lg border p-3">
+              <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                 <div>
                   <p className="text-sm font-medium">Entrevista Fraterna</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(e.data).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" })}
                   </p>
                 </div>
-                <Badge variant="secondary">{e.tipo_entrevista === "livre" ? "Livre" : "Regular"}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{e.tipo_entrevista === "livre" ? "Livre" : "Regular"}</Badge>
+                  <AvisoAusenciaDialog
+                    tipoCompromisso="entrevista"
+                    compromissoId={e.id}
+                    descricao={`Entrevista Fraterna — ${new Date(e.data).toLocaleDateString("pt-BR")}`}
+                  />
+                </div>
               </div>
             ))}
           </CardContent>
@@ -118,7 +126,7 @@ export default function MinhaAgenda() {
               {sessoesFuturas.map((s) => {
                 const dataObj = new Date(s.data_sessao + "T12:00:00");
                 return (
-                  <div key={s.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                     <div>
                       <p className="text-sm font-medium">{s.tratamento_nome}</p>
                       <p className="text-xs text-muted-foreground">
@@ -126,9 +134,16 @@ export default function MinhaAgenda() {
                         {horarioCurto(s.horario) && ` às ${horarioCurto(s.horario)}`}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-[10px]">
-                      {STATUS_SESSAO_LABELS[s.status] || s.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {STATUS_SESSAO_LABELS[s.status] || s.status}
+                      </Badge>
+                      <AvisoAusenciaDialog
+                        tipoCompromisso="sessao"
+                        compromissoId={s.id}
+                        descricao={`${s.tratamento_nome} — ${format(dataObj, "dd/MM/yyyy")}`}
+                      />
+                    </div>
                   </div>
                 );
               })}

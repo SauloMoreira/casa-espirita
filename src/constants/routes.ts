@@ -29,6 +29,7 @@ export const ROUTES = {
   entrevistas: "/entrevistas",
   fazerEntrevista: "/fazer-entrevista",
   agenda: "/agenda",
+  avisosAusencia: "/avisos-ausencia",
   presenca: "/presenca",
   sessoesPublicas: "/sessoes-publicas",
   acaoSocial: "/acao-social",
