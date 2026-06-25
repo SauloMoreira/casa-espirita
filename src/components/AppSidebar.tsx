@@ -7,7 +7,7 @@ import {
   CalendarX,
   CalendarClock,
   ClipboardCheck,
-  BookOpen,
+  
   Settings,
   Shield,
   ShieldCheck,
