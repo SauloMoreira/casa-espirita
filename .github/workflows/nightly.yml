@@ -1,0 +1,67 @@
+name: Nightly (full suite)
+
+# Suíte completa NÃO bloqueante: roda todos os gates pesados sem filtro de path,
+# para pegar regressões cruzadas que os filtros por escopo não cobririam.
+# Nunca bloqueia PRs — abre alerta em caso de falha.
+
+on:
+  schedule:
+    - cron: "0 4 * * *" # 04:00 UTC diariamente
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  full-suite:
+    name: Full suite (sempre completa)
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: ${{ secrets.TEST_PGHOST }}
+      PGPORT: ${{ secrets.TEST_PGPORT }}
+      PGUSER: ${{ secrets.TEST_PGUSER }}
+      PGPASSWORD: ${{ secrets.TEST_PGPASSWORD }}
+      PGDATABASE: ${{ secrets.TEST_PGDATABASE }}
+      VITE_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+      E2E_RLS_PASSWORD: ${{ secrets.TEST_E2E_RLS_PASSWORD }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TEST_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (reproducible)
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Unit, governance & integration tests
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+      - name: Real DB integration tests
+        run: bun run test:db
+
+      - name: Real RLS E2E tests
+        run: bun run test:e2e:rls
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Playwright E2E (todos)
+        run: bun run test:e2e
