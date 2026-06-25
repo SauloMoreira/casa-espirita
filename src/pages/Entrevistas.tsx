@@ -546,9 +546,13 @@ export default function Entrevistas() {
                           )}
                           {e.status === "realizada" && (
                             <>
-                              <Button variant="ghost" size="icon" title="Ver" onClick={() => openRealizar(e)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              {/* BUG-03: "Ver" abre o conteúdo sigiloso da entrevista
+                                  (observações/decisões) — restrito a admin/entrevistador. */}
+                              {canRealizar && (
+                                <Button variant="ghost" size="icon" title="Ver" onClick={() => openRealizar(e)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button variant="ghost" size="icon" title="Imprimir Carta" onClick={() => {
                                 setCartaAssistidoId(e.assistido_id);
                                 setCartaEntrevistaId(e.id);
