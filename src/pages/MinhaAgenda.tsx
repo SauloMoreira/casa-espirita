@@ -8,6 +8,7 @@ import { Calendar, Heart, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { diaSemanaDe, horarioCurto } from "@/lib/assistido";
+import { AvisoAusenciaDialog } from "@/components/avisos/AvisoAusenciaDialog";
 
 
 const STATUS_SESSAO_LABELS: Record<string, string> = {
