@@ -116,4 +116,3 @@ A Fase 2 só é ativada quando **todos** os itens abaixo são verdadeiros:
 
 > Decisão registrada por: __________________  Data: __________
 > Justificativa: ____________________________________________
-EOF_PLACEHOLDER
