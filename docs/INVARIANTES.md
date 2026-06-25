@@ -303,6 +303,18 @@ rollout, contenção e rollback operacional, quando aplicável.
 
 ---
 
+## 8b. Invariantes de observabilidade
+
+### INV-OBS-001 — Indicadores operacionais são somente leitura
+Indicadores operacionais são **somente leitura**, derivados de **fontes canônicas do
+backend**, e **nunca disparam efeito colateral** (sem escrita, sem comunicação, sem
+mutação de estado). A leitura é consolidada por RPC única autoexplicativa
+(`fn_observabilidade_operacional`) com snapshot atual e histórico por período
+claramente separados; a UI apenas traduz código→rótulo, sem lógica paralela.
+
+---
+
+
 ## 9. Como usar este catálogo
 
 **Em revisão de plano** — Sempre verificar:
