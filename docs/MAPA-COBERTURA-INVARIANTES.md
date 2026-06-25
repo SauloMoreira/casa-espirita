@@ -82,6 +82,9 @@ runner `npm run test:db`). Total do projeto (unit): **901 testes**.
 | INV-GOV-001 Flags/parâmetros governados | ✅ | `contratos-governanca-parametros.test.ts` |
 | INV-GOV-002 Mudança crítica observável | ✅🗄️ | `auditoria.dbtest.ts` (alteração de parâmetro grava antes/depois + autor) |
 | INV-GOV-003 Frente crítica com contenção | ⬜ | Kill switches (verificação operacional) |
+| INV-OBS-001 Indicadores somente leitura, de fonte canônica, sem efeito | ✅🗄️ | `observabilidade-operacional.test.ts` (contrato/tradução/vazio) + `observabilidade.dbtest.ts` (autorização real + somente leitura) |
+
+
 
 ## Contratos protegidos
 | Contrato | Status | Onde |
