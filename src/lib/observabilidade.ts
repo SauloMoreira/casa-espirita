@@ -9,7 +9,10 @@
  * INV-OBS-001 — Indicadores operacionais são somente leitura, derivados de
  * fontes canônicas do backend, e nunca disparam efeito colateral.
  */
-import { rotuloMotivo } from "@/lib/notificacaoElegibilidade";
+import {
+  rotuloMotivo,
+  rotuloDiagnosticoPendencia,
+} from "@/lib/notificacaoElegibilidade";
 
 /** Janelas temporais válidas para o bloco histórico. */
 export const JANELAS_OBSERVABILIDADE = ["24h", "7d", "30d"] as const;
