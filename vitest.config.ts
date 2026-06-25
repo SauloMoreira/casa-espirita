@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Real-DB integration suite (L-07) runs via its own runner (`npm run test:db`).
+    exclude: ["**/node_modules/**", "**/dist/**", "src/test/integration/db/**"],
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
