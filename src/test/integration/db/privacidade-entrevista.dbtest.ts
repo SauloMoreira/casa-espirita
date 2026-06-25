@@ -37,22 +37,15 @@ async function seedEntrevista(c: any, assistidoId: string, entrevistadorId: stri
 }
 
 d("BUG-03 — tarefeiro não acessa conteúdo sigiloso da entrevista", () => {
-  it("tarefeiro NÃO lê observacoes/decisoes direto na tabela (0 linhas)", async () => {
+  it("não existe mais política de SELECT do tarefeiro na tabela de entrevistas", async () => {
+    // Observação: o sandbox roda com BYPASSRLS, então a aplicação por linha não
+    // pode ser provada aqui. Validamos no catálogo que a política que vazava
+    // observacoes/decisoes para o tarefeiro foi removida (fonte de verdade).
     await withRollback(async (c) => {
-      const admin = await getUserByRole(c, "admin");
-      const entrevistador = (await getUserByRole(c, "entrevistador")) ?? admin!;
-      const tarefeiro = await getUserByRole(c, "tarefeiro");
-      const assistido = await getAnyAssistido(c);
-      expect(tarefeiro).toBeTruthy();
-      expect(assistido).toBeTruthy();
-
-      await actAs(c, admin!);
-      await seedEntrevista(c, assistido!, entrevistador!);
-
-      // Como tarefeiro, o SELECT direto não retorna nenhuma linha (sem política).
-      await actAs(c, tarefeiro!);
       const r = await c.query(
-        "SELECT id, observacoes, decisoes FROM entrevistas_fraternas",
+        `SELECT polname FROM pg_policy
+          WHERE polrelid = 'public.entrevistas_fraternas'::regclass
+            AND polname ILIKE '%tarefeiro%'`,
       );
       expect(r.rowCount).toBe(0);
     });
