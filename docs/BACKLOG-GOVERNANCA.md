@@ -226,7 +226,14 @@ Ordem de execução acordada: **L-02 (✅) → L-01 (✅) → L-03 (✅) → L-0
 - **Fora de escopo:** efeito real de exceção na agenda (INV-AGD-005) e confirmação
   de UI (INV-SEG-002) seguem como E2E de interface futuro.
 
-## P1.2 — Observabilidade operacional consolidada — ✅ IMPLEMENTADO
+## P1.2 — Observabilidade operacional consolidada — ✅ CONCLUÍDO E APROVADO
+- **Aprovação formal (2026-06-25):** frente fechada pelo responsável. Validado:
+  RPC única somente leitura; snapshot atual separado de histórico por período;
+  histórico baseado em evento temporal (não em estado atual da tabela); payload
+  autoexplicativo com metadados de contrato; rota própria `/observabilidade`;
+  UI apenas traduzindo códigos (sem lógica paralela); perfis V1 corretos
+  (admin, administrador_master, coordenador_de_tratamento); sem exposição de
+  conteúdo sensível; testes de governança e integração reais verdes; sem regressão.
 - **Objetivo:** visão única e confiável da saúde do pipeline (fila, notificações,
   avisos, agenda) para reduzir reação tardia — painel operacional, não decorativo.
 - **Backend como fonte de verdade:** RPC única de leitura
