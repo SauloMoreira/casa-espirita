@@ -114,6 +114,7 @@ const App = () => (
                   <Route path={ROUTES.entrevistas} element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "tarefeiro"]}><Entrevistas /></ProtectedRoute>} />
                   <Route path={ROUTES.fazerEntrevista} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}>{guard(<FazerEntrevista />, "Fazer Entrevista")}</ProtectedRoute>} />
                   <Route path={ROUTES.agenda} element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "tarefeiro"]}>{guard(<Agenda />, "Agenda")}</ProtectedRoute>} />
+                  <Route path={ROUTES.avisosAusencia} element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "tarefeiro", "coordenador_de_tratamento"]}>{guard(<AvisosAusencia />, "Avisos de Ausência")}</ProtectedRoute>} />
                   <Route path={ROUTES.presenca} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}>{guard(<Presenca />, "Controle de Presença")}</ProtectedRoute>} />
                   <Route path={ROUTES.meusTratamentos} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MeusTratamentos />, "Meus Tratamentos")}</ProtectedRoute>} />
                   <Route path={ROUTES.minhaAgenda} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MinhaAgenda />, "Minha Agenda")}</ProtectedRoute>} />
