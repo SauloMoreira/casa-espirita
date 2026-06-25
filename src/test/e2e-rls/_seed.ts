@@ -52,8 +52,8 @@ export async function cleanupNamespace(): Promise<void> {
   // Operational side effects of fn_registrar_aviso_ausencia (internal notices).
   await serviceRest(`avisos_internos?mensagem=like.${NS}%25`, { method: "DELETE" });
   await serviceRest(`avisos_internos?titulo=like.${NS}%25`, { method: "DELETE" });
-  // Any synthetic notification-queue rows tagged with the namespace.
-  await serviceRest(`notificacoes_fila?payload_json=ilike.%25${NS}%25`, { method: "DELETE" });
+  // Notification-queue rows are removed by ON DELETE CASCADE when the synthetic
+  // assistido is deleted below; we also sweep any namespaced dedupe keys for safety.
   await serviceRest(`notificacoes_fila?dedupe_key=like.${NS}%25`, { method: "DELETE" });
   // Domain fixtures: avisos, then entrevistas, then assistidos.
   await serviceRest(`avisos_ausencia?motivo=like.${NS}%25`, { method: "DELETE" });
