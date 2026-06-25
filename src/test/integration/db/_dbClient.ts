@@ -100,6 +100,29 @@ export async function getAssistidoTratamento(c: PoolClient): Promise<string | nu
   return r.rows[0]?.id ?? null;
 }
 
+/**
+ * Assert that a query is rejected, keeping the surrounding transaction usable
+ * via a SAVEPOINT (a failed statement otherwise aborts the whole tx).
+ */
+export async function expectReject(
+  c: PoolClient,
+  pattern: RegExp,
+  sql: string,
+  params: unknown[] = [],
+): Promise<void> {
+  await c.query("SAVEPOINT sp_reject");
+  let threw = false;
+  try {
+    await c.query(sql, params);
+  } catch (e) {
+    threw = true;
+    await c.query("ROLLBACK TO SAVEPOINT sp_reject");
+    if (!pattern.test((e as Error).message)) throw e;
+  }
+  if (!threw) throw new Error(`Esperava rejeição (${pattern}), mas a query foi aceita.`);
+}
+
+
 /** Read the current governed flag value (raw text). */
 export async function getParametro(c: PoolClient, chave: string): Promise<string | null> {
   const r = await c.query("SELECT valor FROM regras_operacionais WHERE chave = $1 AND ativo = true", [
