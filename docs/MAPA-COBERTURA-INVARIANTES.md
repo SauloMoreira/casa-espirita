@@ -19,8 +19,8 @@ runner `npm run test:db`). Total do projeto (unit): **901 testes**.
 | --- | --- | --- |
 | INV-ARQ-001 Backend é fonte de verdade | 🟡 | Espelhos testados como contraparte das `fn_*`; autoria final no banco |
 | INV-ARQ-002 UI não implementa lógica paralela | ✅ | `contratos-central.test.ts` (UI só traduz código do backend) |
-| INV-ARQ-003 Ação sensível auditável | ⬜ | Auditoria via trigger no banco (não unit-testável aqui) |
-| INV-ARQ-004 Permissão validada no backend | ⬜ | RLS / `SECURITY DEFINER` (cobertura via security scan) |
+| INV-ARQ-003 Ação sensível auditável | ✅🗄️ | `auditoria.dbtest.ts` (param/presença/entrevista gravam trilha real) |
+| INV-ARQ-004 Permissão validada no backend | ✅🗄️ | `rls-permissoes.dbtest.ts` (RPCs SECURITY DEFINER barram papel/anon); RLS por tabela: presença/políticas verificadas, *enforcement* por linha ainda via scanner (sandbox não faz SET ROLE) |
 
 ## Agenda e tratamento
 | Invariante | Status | Onde |
@@ -29,7 +29,7 @@ runner `npm run test:db`). Total do projeto (unit): **901 testes**.
 | INV-AGD-002 Uma próxima sessão válida por vez | ✅ | `invariantes-agenda-tratamento.test.ts` |
 | INV-AGD-003 Remarcação invalida a anterior | ✅ | `invariantes-agenda-tratamento.test.ts` + regressão |
 | INV-AGD-004 Cancelamento invalida a sessão | ✅ | `invariantes-agenda-tratamento.test.ts` |
-| INV-AGD-005 Exceção reflete efeito real na agenda | 🟡 | `invariantes-excecao-operacional.test.ts` (efeito no banco ⬜) |
+| INV-AGD-005 Exceção reflete efeito real na agenda | 🟡 | `invariantes-excecao-operacional.test.ts`; efeito real depende de UPDATE governado (sem grant no sandbox) — ainda ⬜ |
 
 ## Fila e notificações
 | Invariante | Status | Onde |
@@ -65,22 +65,22 @@ runner `npm run test:db`). Total do projeto (unit): **901 testes**.
 ## Segurança e confiabilidade
 | Invariante | Status | Onde |
 | --- | --- | --- |
-| INV-SEG-001 Funções críticas protegidas | ⬜ | `SECURITY DEFINER`/`search_path` (linter/scan) |
+| INV-SEG-001 Funções críticas protegidas | ✅🗄️ | `rls-permissoes.dbtest.ts` (checagem de papel real nas RPCs); `search_path` via linter |
 | INV-SEG-002 Ação sensível com confirmação explícita | ⬜ | UI de confirmação (cobertura E2E futura) |
-| INV-SEG-003 Idempotência em ações críticas | 🟡 | Dedupe em `checkinDedupe.test.ts`; demais ⬜ |
+| INV-SEG-003 Idempotência em ações críticas | ✅🗄️ | `idempotencia.dbtest.ts` (barreira `dedupe_key`/`ON CONFLICT` real) + `checkinDedupe.test.ts` |
 
 ## Presença (geral × operacional)
 | Invariante | Status | Onde |
 | --- | --- | --- |
 | INV-PRES-001 Geral separada da operacional | ✅ | `invariantes-presenca.test.ts` |
 | INV-PRES-002 Fonte única; justificado é só histórico | ✅ | `invariantes-presenca.test.ts` + regressão |
-| INV-PRES-003 Escrita em presença auditável | ⬜ | Trigger `trg_audit_presencas` (banco) |
+| INV-PRES-003 Escrita em presença auditável | ✅🗄️ | `auditoria.dbtest.ts` (insert real dispara `trg_audit_presencas`) |
 
 ## Governança operacional
 | Invariante | Status | Onde |
 | --- | --- | --- |
 | INV-GOV-001 Flags/parâmetros governados | ✅ | `contratos-governanca-parametros.test.ts` |
-| INV-GOV-002 Mudança crítica observável | ⬜ | Métricas/observabilidade operacional |
+| INV-GOV-002 Mudança crítica observável | ✅🗄️ | `auditoria.dbtest.ts` (alteração de parâmetro grava antes/depois + autor) |
 | INV-GOV-003 Frente crítica com contenção | ⬜ | Kill switches (verificação operacional) |
 
 ## Contratos protegidos
@@ -92,7 +92,7 @@ runner `npm run test:db`). Total do projeto (unit): **901 testes**.
 | `fn_atualizar_parametro_operacional` (espelho) | ✅ | `contratos-governanca-parametros.test.ts` |
 | `fn_fila_diagnostico_pendentes` (rótulos/tom) | ✅ | `contratos-central.test.ts` |
 | Rótulos de motivo (Central) | ✅ | `contratos-central.test.ts` |
-| `fn_confirmacao_entrevista_ativa` | ⬜ | Flag governada — efeito no trigger (banco) |
+| `fn_confirmacao_entrevista_ativa` | ✅🗄️ | `triggers-entrevista.dbtest.ts` (flag ON/OFF muda enfileiramento real) |
 | `fn_enfileirar_mensagem_manual` (validação) | ✅ | `invariantes-acao-manual.test.ts` |
 
 ## Pendências de cobertura (próxima sequência)
