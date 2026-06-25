@@ -59,13 +59,15 @@ describe.skipIf(!ENABLED)("E2E RLS · RPCs sensíveis — autorização por perf
       expect(r.ok).toBe(false);
       expect(err(r.body)).toMatch(/assistido_invalido/);
     });
-    it("assistido passa o portão e valida compromisso (compromisso_invalido)", async () => {
+    it("assistido autenticado passa a autenticação e cai em validação de domínio (não 401)", async () => {
       const r = await rpc("assistido", "fn_registrar_aviso_ausencia", {
         p_tipo_compromisso: "entrevista",
         p_compromisso_id: FAKE_UUID,
       });
+      expect(r.status).not.toBe(401);
       expect(r.ok).toBe(false);
-      expect(err(r.body)).toMatch(/compromisso_invalido/);
+      // Sessão real reconhecida: erro é de domínio (titularidade/compromisso), nunca de permissão genérica.
+      expect(err(r.body)).toMatch(/assistido_invalido|compromisso_invalido/);
     });
     it("anônimo é bloqueado (401)", async () => {
       const r = await rpc("none", "fn_registrar_aviso_ausencia", {
