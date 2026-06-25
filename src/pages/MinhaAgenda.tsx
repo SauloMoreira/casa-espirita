@@ -86,14 +86,21 @@ export default function MinhaAgenda() {
           </CardHeader>
           <CardContent className="space-y-2">
             {entrevistas.map((e) => (
-              <div key={e.id} className="flex items-center justify-between rounded-lg border p-3">
+              <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                 <div>
                   <p className="text-sm font-medium">Entrevista Fraterna</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(e.data).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" })}
                   </p>
                 </div>
-                <Badge variant="secondary">{e.tipo_entrevista === "livre" ? "Livre" : "Regular"}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{e.tipo_entrevista === "livre" ? "Livre" : "Regular"}</Badge>
+                  <AvisoAusenciaDialog
+                    tipoCompromisso="entrevista"
+                    compromissoId={e.id}
+                    descricao={`Entrevista Fraterna — ${new Date(e.data).toLocaleDateString("pt-BR")}`}
+                  />
+                </div>
               </div>
             ))}
           </CardContent>
