@@ -122,3 +122,43 @@ Itens que ainda **não** têm prova de execução real (limites do ambiente):
 - **INV-AGD-005 / INV-EXC efeito real na agenda:** dependem de `UPDATE` governado
   em tabelas operacionais (sem grant direto no sandbox) — manter como E2E futuro.
 - **INV-SEG-002 (confirmação explícita na UI):** cobertura E2E de interface.
+
+## Camada E2E real de RLS/JWT/PostgREST (P1.1)
+Suíte `src/test/e2e-rls/*.e2etest.ts` (runner próprio `npm run test:e2e:rls`,
+fora do CI/unit e do runner de banco). Prova o **caminho real de acesso**:
+login por senha no GoTrue → **JWT real** → endpoints **PostgREST reais** → RLS
+**por linha** efetivamente aplicada por perfil. Não usa `BYPASSRLS` nem simula
+`request.jwt.claims`; o `auth.uid()`/`has_role()`/política rodam de verdade.
+
+**Ferramenta:** Vitest (node) + `fetch` real contra GoTrue/PostgREST. **Perfis de
+teste reais (namespaced):** `e2e-rls-{admin,coordenador,entrevistador,tarefeiro,
+assistido}@lovable.test` + anônimo (anon-key) e sem-JWT. **Fixtures:** seed
+namespaced (`e2e_rls`) criado pelo caminho real (JWT admin + RPC do próprio
+assistido) e limpeza idempotente por namespace ao final.
+
+| Superfície / contrato | Prova observada | Status |
+| --- | --- | --- |
+| Entrevista — tabela direta (tarefeiro) | RLS por linha → vazio, sem `observacoes/decisoes` | ✅🔐 |
+| Entrevista — `fn_entrevistas_operacional` (tarefeiro) | payload reduzido (6 colunas, sem sensível) | ✅🔐 |
+| Entrevista — entrevistador/admin | leem conteúdo sensível permitido | ✅🔐 |
+| Entrevista — coordenador fora de escopo | RLS por linha → vazio | ✅🔐 |
+| Entrevista — anônimo (sem JWT) | 401 | ✅🔐 |
+| Aviso — tabela direta (tarefeiro) | sem vazamento de `motivo` | ✅🔐 |
+| Aviso — `fn_avisos_ausencia_pendentes` (tarefeiro) | `pode_ver_conteudo=false`, `motivo=null` | ✅🔐 |
+| Aviso — coordenação/entrevistador | conteúdo completo (`pode_ver_conteudo=true`) | ✅🔐 |
+| Aviso — assistido | só as próprias linhas; alheio → vazio | ✅🔐 |
+| Parâmetro governado — admin | altera pelo caminho real (RPC) | ✅🔐 |
+| Parâmetro governado — tarefeiro/entrevistador/assistido | `Permissão negada` | ✅🔐 |
+| RPCs sensíveis (7) | sucesso p/ perfil certo, negação coerente p/ indevido, 401 anon | ✅🔐 |
+
+> **Pendência RLS *por linha* — FECHADA (P1.1).** O que antes só estava mitigado
+> (presença de política + checagem de papel em RPC) agora tem **prova de
+> comportamento observado** com JWT e PostgREST reais. RPCs cobertas no caminho
+> real: `fn_entrevistas_operacional`, `fn_avisos_ausencia_pendentes`,
+> `fn_registrar_aviso_ausencia`, `fn_tratar_aviso_ausencia`,
+> `fn_atualizar_parametro_operacional`, `fn_enfileirar_mensagem_manual`,
+> `fn_encerrar_item_fila_erro_cadastro`.
+
+**Fora do escopo desta frente:** efeito real de exceção na agenda (INV-AGD-005) e
+confirmação explícita de UI (INV-SEG-002) seguem como E2E de interface futuro;
+provisionamento dos usuários de teste é one-shot (admin API), não recorrente.
