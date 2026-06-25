@@ -20,6 +20,7 @@ import {
   Building2,
   Bell,
   MessageCircle,
+  Activity,
   Brain,
   UserCheck,
   ChevronDown,
