@@ -477,6 +477,76 @@ export type Database = {
         }
         Relationships: []
       }
+      avisos_ausencia: {
+        Row: {
+          agenda_id: string | null
+          assistido_id: string
+          created_at: string
+          data_compromisso: string
+          entrevista_id: string | null
+          id: string
+          motivo: string | null
+          resolucao: string | null
+          status: string
+          tipo_compromisso: string
+          tratado_em: string | null
+          tratado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          agenda_id?: string | null
+          assistido_id: string
+          created_at?: string
+          data_compromisso: string
+          entrevista_id?: string | null
+          id?: string
+          motivo?: string | null
+          resolucao?: string | null
+          status?: string
+          tipo_compromisso: string
+          tratado_em?: string | null
+          tratado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agenda_id?: string | null
+          assistido_id?: string
+          created_at?: string
+          data_compromisso?: string
+          entrevista_id?: string | null
+          id?: string
+          motivo?: string | null
+          resolucao?: string | null
+          status?: string
+          tipo_compromisso?: string
+          tratado_em?: string | null
+          tratado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_ausencia_agenda_id_fkey"
+            columns: ["agenda_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_tratamentos_assistido"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_ausencia_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_ausencia_entrevista_id_fkey"
+            columns: ["entrevista_id"]
+            isOneToOne: false
+            referencedRelation: "entrevistas_fraternas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avisos_internos: {
         Row: {
           created_at: string
@@ -2804,6 +2874,23 @@ export type Database = {
         Args: { p_chave: string; p_observacao?: string; p_valor: string }
         Returns: Json
       }
+      fn_avisos_ausencia_pendentes: {
+        Args: { p_incluir_resolvidos?: boolean }
+        Returns: {
+          assistido_id: string
+          assistido_nome: string
+          created_at: string
+          data_compromisso: string
+          id: string
+          motivo: string
+          pode_ver_conteudo: boolean
+          resolucao: string
+          status: string
+          tipo_compromisso: string
+          tratado_em: string
+          tratado_por: string
+        }[]
+      }
       fn_confirmacao_agendamento_ativa: { Args: never; Returns: boolean }
       fn_confirmacao_entrevista_ativa: { Args: never; Returns: boolean }
       fn_eh_proxima_sessao: { Args: { p_agenda_id: string }; Returns: boolean }
@@ -2910,12 +2997,28 @@ export type Database = {
         Returns: string
       }
       fn_reconciliar_excecoes_notificacoes: { Args: never; Returns: Json }
+      fn_registrar_aviso_ausencia: {
+        Args: {
+          p_compromisso_id: string
+          p_motivo?: string
+          p_tipo_compromisso: string
+        }
+        Returns: Json
+      }
       fn_sanear_fila_notificacoes: {
         Args: never
         Returns: {
           r_fila_id: string
           r_motivo: string
         }[]
+      }
+      fn_tratar_aviso_ausencia: {
+        Args: {
+          p_aviso_id: string
+          p_novo_status: string
+          p_resolucao?: string
+        }
+        Returns: Json
       }
       gerenciar_termo_voluntario: {
         Args: {
