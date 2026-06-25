@@ -28,7 +28,7 @@
 
 | ID | Data | Classe | Severidade | Descrição | INV relacionada | Encaminhamento | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| _(aguardando entrada)_ | | | | Reservar aqui os bugs/melhorias encontrados nos testes manuais recentes. | | | |
+| AVM-001 | 2026-06-25 | Bug | Crítica | Registrar presença `presente`/`ausente` falhava em runtime: `fn_notif_presenca` passava `v_evento` (text) para `fn_enqueue_notificacao`, cujo 1º parâmetro é o enum `notif_evento` (sem cast implícito text→enum). Regressão do refactor L-03, invisível à suíte de espelho. Detectado pela integração real L-07. | INV-PRES-003, INV-ARQ-001 | Corrigido por migração (`v_evento::notif_evento`); travado por `src/test/integration/db/auditoria.dbtest.ts`. | ✅ |
 
 > **Observação:** esta seção foi criada como o mecanismo oficial pedido na frente de
 > "Testes de Invariantes e Contratos". Cole aqui os achados dos testes manuais que

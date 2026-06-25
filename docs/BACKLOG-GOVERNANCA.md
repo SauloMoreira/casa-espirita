@@ -154,13 +154,43 @@ Ordem de execução acordada: **L-02 (✅) → L-01 (✅) → L-03 (✅) → L-0
 
 ---
 
-## L-07 — Testes de integração de banco/edge para invariantes não unit-testáveis
+## L-07 — Testes de integração REAL de banco (RLS/permissão, auditoria, idempotência, triggers)
 - **Prioridade:** Média
-- **Status:** 📋 Backlog
-- **Objetivo:** Cobrir as invariantes marcadas ⬜ no mapa de cobertura, cujo efeito
-  só é observável em execução real (triggers, RLS, auditoria, idempotência).
-- **Escopo sugerido:** INV-ARQ-003/004, INV-SEG-001/002/003, INV-PRES-003,
-  INV-GOV-002/003, contrato de `fn_confirmacao_entrevista_ativa` (efeito no trigger).
-- **Próximo passo recomendado:** testes de integração contra o banco/edge functions
-  exercitando as `fn_*` reais e verificando trilha de auditoria e idempotência.
-- **Invariantes a observar:** as listadas como ⬜ em `docs/MAPA-COBERTURA-INVARIANTES.md`.
+- **Status:** ✅ Concluído
+- **Objetivo:** Sair do "bem coberto localmente" (espelhos/lógica pura) para
+  "também comprovado na execução real do banco" — cobrir as invariantes ⬜ cujo
+  efeito só é observável em runtime (triggers, auditoria, idempotência, checagem
+  de papel em RPC).
+- **Entregue:**
+  - Camada dedicada `src/test/integration/db/` (5 arquivos, **18 testes**) com
+    runner próprio `npm run test:db` (`vitest.integration.db.config.ts`), **fora**
+    do CI/unit (excluída em `vitest.config.ts`). Convenção `*.dbtest.ts`.
+  - Ambiente controlado e reprodutível: cada teste roda em transação **sempre
+    revertida** (`withRollback`), descobre dados em runtime (sem UUID frágil) e
+    simula o usuário via `request.jwt.claims` (igual ao Supabase).
+  - **Permissão real (INV-ARQ-004/INV-SEG-001):** `fn_atualizar_parametro_operacional`,
+    `fn_enfileirar_mensagem_manual` e `fn_encerrar_item_fila_erro_cadastro` barram
+    papéis não autorizados e anon — prova no backend, não na UI.
+  - **Trigger governado de entrevista (caso B / `fn_confirmacao_entrevista_ativa`):**
+    flag ON enfileira `entrevista_criada`; OFF não; lembrete sempre; date-only sem
+    horário fantasma (24h antes, tolerância 1 min).
+  - **Auditoria real (INV-ARQ-003/PRES-003/GOV-002):** parâmetro, presença e
+    entrevista gravam trilha (quem/antes/depois/vínculo) em `audit_logs`.
+  - **Idempotência real (INV-SEG-003):** barreira `dedupe_key` UNIQUE +
+    `ON CONFLICT DO NOTHING` não duplica nem sobrescreve item.
+  - **Coerência banco × espelho:** `fn_presenca_classificacao` concorda com o
+    espelho TS; justificado permanece só histórico.
+- **🐞 Achado crítico corrigido:** a suíte real flagrou que **registrar presença
+  `presente`/`ausente` falhava em runtime** — `fn_notif_presenca` passava
+  `v_evento` (text) para `fn_enqueue_notificacao` cujo 1º parâmetro é o enum
+  `notif_evento` (text→enum sem cast implícito na resolução). Regressão do refactor
+  L-03, **invisível** à suíte de espelho. Corrigido por migração
+  (`v_evento::notif_evento`) e travado pelo teste `auditoria.dbtest.ts`.
+- **Pendências explícitas (limites do ambiente):** enforcement de RLS *por linha*
+  não é executável no sandbox (`BYPASSRLS`, sem `SET ROLE`) — mitigado por
+  presença de políticas + checagem de papel nas RPCs + security scanner; fechar de
+  fato exige E2E via PostgREST com JWT real. Efeito real de exceção na agenda
+  (INV-AGD-005) e confirmação de UI (INV-SEG-002) ficam como E2E futuro.
+- **Sem regressão:** suíte unitária/governança **901 verde**; suíte de banco **18 verde**.
+- **Invariantes observadas:** INV-ARQ-003/004, INV-SEG-001/003, INV-PRES-003,
+  INV-GOV-001/002, INV-FILA-005, INV-TEMPO-001..003.
