@@ -4,10 +4,13 @@
 > ao teste executável que o protege. Atualize ao criar/refinar invariantes ou ao
 > adicionar/remover testes de governança.
 
-Suíte: `src/test/governanca/` (74 testes). Total do projeto: **901 testes**.
+Suíte de governança (unitária/espelho): `src/test/governanca/` (74 testes).
+Suíte de integração REAL de banco (L-07): `src/test/integration/db/` (18 testes,
+runner `npm run test:db`). Total do projeto (unit): **901 testes**.
 
 ## Legenda
 - ✅ **Protegida** — invariante coberta por teste estrutural executável.
+- ✅🗄️ **Protegida no banco real** — coberta por teste de integração real (L-07).
 - 🟡 **Parcial** — coberta no espelho/lógica pura; efeito de banco verificado indiretamente.
 - ⬜ **Pendente** — sem teste automatizado dedicado (depende de execução real no banco).
 
