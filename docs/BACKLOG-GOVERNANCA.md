@@ -198,3 +198,32 @@ Ordem de execução acordada: **L-02 (✅) → L-01 (✅) → L-03 (✅) → L-0
   suíte de banco **18 verde**.
 - **Invariantes observadas:** INV-ARQ-003/004, INV-SEG-001/003, INV-PRES-003,
   INV-GOV-001/002, INV-FILA-005, INV-TEMPO-001..003.
+
+## P1.1 — E2E real de RLS por linha (JWT + PostgREST) — ✅ CONCLUÍDO
+- **Objetivo:** fechar a principal lacuna remanescente de segurança real — provar,
+  com JWT e PostgREST reais, que cada perfil recebe exatamente o que pode ver.
+- **Entrega:** suíte dedicada `src/test/e2e-rls/*.e2etest.ts` (`npm run test:e2e:rls`),
+  separada de unit/governança e do runner de banco. **36/36 verde.**
+  - `entrevistas-privacidade.e2etest.ts` (7), `avisos-ausencia.e2etest.ts` (7),
+    `parametros-governados.e2etest.ts` (5), `rpcs-sensiveis.e2etest.ts` (17).
+- **Perfis reais:** 5 contas namespaced (`e2e-rls-*@lovable.test`, segredo
+  `E2E_RLS_PASSWORD`) + anônimo + sem-JWT. Seed/cleanup namespaced (`e2e_rls`).
+- **Provas observadas (comportamento, não “tem política”):**
+  - Tarefeiro nunca vê `observacoes/decisoes` da entrevista (tabela vazia; RPC
+    operacional com payload reduzido de 6 colunas).
+  - Aviso de ausência: tarefeiro só metadados (`pode_ver_conteudo=false`,
+    `motivo=null`); equipe vê conteúdo; assistido só as próprias linhas.
+  - Parâmetros governados: só admin altera; demais → `Permissão negada`; anon 401.
+  - 7 RPCs sensíveis: perfil correto passa, indevido recebe erro coerente, anon 401.
+  - RLS por linha: coordenador fora de escopo e assistido alheio → vazio.
+- **Pendência anterior fechada:** “enforcement de RLS por linha não executável no
+  sandbox” deixa de ser mitigação e passa a **prova real**.
+- **Sem regressão:** unit/governança **921 verde**; banco real **27 verde**; tsgo limpo.
+- **Fora de escopo:** efeito real de exceção na agenda (INV-AGD-005) e confirmação
+  de UI (INV-SEG-002) seguem como E2E de interface futuro.
+
+## INV-SEG-005 (nova invariante)
+> Em superfícies sensíveis, o **payload final sob JWT real** deve respeitar o menor
+> privilégio: campos sensíveis ausentes/nulos para perfis restritos, flags como
+> `pode_ver_conteudo` coerentes, listas reduzidas por perfil e zero vazamento
+> indireto — provado por comportamento real (PostgREST), não só por política criada.
