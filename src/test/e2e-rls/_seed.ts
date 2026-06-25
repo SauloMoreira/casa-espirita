@@ -40,9 +40,22 @@ async function serviceRest<T = unknown>(path: string, init: RequestInit = {}): P
   return { status: r.status, ok: r.ok, body };
 }
 
-/** Remove every namespaced fixture row. Idempotent; safe to call repeatedly. */
+/**
+ * Remove every namespaced fixture row. Idempotent; safe to call repeatedly.
+ *
+ * Order: side-effect rows first (internal notices / notification queue produced
+ * by the aviso RPC), then the aviso itself, then entrevistas and assistidos.
+ * `avisos_internos` and `notificacoes_fila` are operational side effects of the
+ * real RPC path, so they MUST be swept by namespace to guarantee zero residue.
+ */
 export async function cleanupNamespace(): Promise<void> {
-  // avisos first (FK-free but logically dependent), then entrevistas, assistidos.
+  // Operational side effects of fn_registrar_aviso_ausencia (internal notices).
+  await serviceRest(`avisos_internos?mensagem=like.${NS}%25`, { method: "DELETE" });
+  await serviceRest(`avisos_internos?titulo=like.${NS}%25`, { method: "DELETE" });
+  // Any synthetic notification-queue rows tagged with the namespace.
+  await serviceRest(`notificacoes_fila?payload_json=ilike.%25${NS}%25`, { method: "DELETE" });
+  await serviceRest(`notificacoes_fila?dedupe_key=like.${NS}%25`, { method: "DELETE" });
+  // Domain fixtures: avisos, then entrevistas, then assistidos.
   await serviceRest(`avisos_ausencia?motivo=like.${NS}%25`, { method: "DELETE" });
   await serviceRest(`entrevistas_fraternas?observacoes=like.${NS}%25`, { method: "DELETE" });
   await serviceRest(`assistidos?nome=like.${NS}%25`, { method: "DELETE" });
