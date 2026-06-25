@@ -299,3 +299,15 @@ Ordem de execução acordada: **L-02 (✅) → L-01 (✅) → L-03 (✅) → L-0
   Coleta registrada em `docs/CI-GATING.md` (seção "Janela observacional — log").
 - **Pré-condições para Fase 2:** segredos `TEST_*` corretos; estabilidade aceitável
   dos jobs pesados; sem flaky recorrente relevante; sem tendência de pipeline frágil.
+
+### Artefato de decisão — Ativação da Fase 2
+- **Documento:** [`CI-GATING-FASE2-CHECKLIST.md`](./CI-GATING-FASE2-CHECKLIST.md)
+- **Status:** ✅ Pronto para uso futuro (não ativa nada agora).
+- **Quando usar:** ao fechar a janela observacional (10 PRs OU 14 dias corridos,
+  o que vier por último) e com os segredos `TEST_*` validados.
+- **Conteúdo:** pré-condições técnicas, conclusão da janela, critérios de
+  estabilidade, ações de ativação, rollback Fase 2→Fase 1 e decisão formal
+  pronto/não pronto.
+- **Garantia:** consultar/aplicar esta checklist **não** altera o comportamento
+  da Fase 1 — a promoção à Fase 2 exige edição explícita de `ci.yml` + branch
+  protection conforme a seção 4 do documento.
