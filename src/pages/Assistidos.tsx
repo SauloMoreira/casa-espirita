@@ -293,6 +293,7 @@ export default function Assistidos() {
               </div>
 
               <AddressFields
+                required={false}
                 data={{ cep: form.cep, logradouro: form.logradouro, numero: form.numero, complemento: form.complemento, bairro: form.bairro, cidade: form.cidade, estado: form.estado }}
                 onChange={(addr) => setForm({ ...form, ...addr })}
                 errors={errors as any}
