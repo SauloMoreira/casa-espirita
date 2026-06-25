@@ -247,9 +247,9 @@ export function useFazerEntrevista() {
 
     const payload = {
       nome: assistidoForm.nome.trim(),
-      cpf: cpfClean,
-      celular: assistidoForm.celular.replace(/\D/g, ""),
-      telefone: assistidoForm.celular.replace(/\D/g, ""),
+      cpf: cpfClean || null,
+      celular: celClean,
+      telefone: celClean,
       email: assistidoForm.email.trim() || null,
       data_nascimento: assistidoForm.data_nascimento || null,
       cep: assistidoForm.cep.replace(/\D/g, "") || null,
