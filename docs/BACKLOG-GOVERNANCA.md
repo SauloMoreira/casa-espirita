@@ -274,3 +274,28 @@ Ordem de execução acordada: **L-02 (✅) → L-01 (✅) → L-03 (✅) → L-0
 > privilégio: campos sensíveis ausentes/nulos para perfis restritos, flags como
 > `pode_ver_conteudo` coerentes, listas reduzidas por perfil e zero vazamento
 > indireto — provado por comportamento real (PostgREST), não só por política criada.
+
+---
+
+## CI-GATING-#1 — Governança executável no merge (CI gating)
+- **Prioridade:** Alta
+- **Status Fase 1:** ✅ Implantada em **modo observacional**
+- **Status Fase 2/3:** ⏳ Bloqueadas — dependem do relatório de estabilidade da janela
+- **Objetivo:** transformar as suítes de governança/segurança/integração real em
+  proteção executável no merge para `main`, com `gate-summary` como check
+  consolidado e princípio **fail closed**.
+- **Entrega Fase 1:**
+  - `.github/workflows/ci.yml` — `changes` (paths-filter) + `quality` (único
+    bloqueante) + `test-db`/`test-e2e-rls`/`test-e2e` (observacionais,
+    `continue-on-error`) + `gate-summary`.
+  - `.github/workflows/nightly.yml` — suíte completa agendada, **não bloqueia PR**.
+  - `docs/CI-GATING.md` — governança formal (fases, regras, override, aceite).
+  - Filtros de path por risco/escopo; migração dispara `test:db` (inegociável);
+    Playwright contido a auth/rotas protegidas/UI crítica de segurança.
+  - Banco de teste dedicado via segredos `TEST_*` (separados do runtime).
+  - Override auditado `ci-override-aprovado` com regras escritas.
+- **Nada novo tornado bloqueante:** apenas `quality` falha o merge (comportamento legado).
+- **Janela observacional:** **10 PRs OU 14 dias corridos, o que vier por último.**
+  Coleta registrada em `docs/CI-GATING.md` (seção "Janela observacional — log").
+- **Pré-condições para Fase 2:** segredos `TEST_*` corretos; estabilidade aceitável
+  dos jobs pesados; sem flaky recorrente relevante; sem tendência de pipeline frágil.
