@@ -119,9 +119,9 @@ d("L-07 RLS/permissão real — encerrar item por erro de cadastro (caso D)", ()
       // Perfil não autorizado não consegue.
       const coord = await getUserByRole(c, "coordenador_de_tratamento");
       await actAs(c, coord!);
-      await expect(
-        c.query("SELECT public.fn_encerrar_item_fila_erro_cadastro($1)", [filaId]),
-      ).rejects.toThrow(/permissao_negada/);
+      await expectReject(c, /permissao_negada/, "SELECT public.fn_encerrar_item_fila_erro_cadastro($1)", [
+        filaId,
+      ]);
 
       // Admin encerra somente o item atual.
       await actAs(c, admin!);
