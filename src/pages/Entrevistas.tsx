@@ -188,11 +188,22 @@ export default function Entrevistas() {
     setLoading(false);
   };
 
-  const openRealizar = (e: Entrevista) => {
+  const openRealizar = async (e: Entrevista) => {
+    // BUG-03: o conteúdo sigiloso (observacoes/decisoes) só é buscado aqui, sob
+    // demanda, e a RLS da tabela só permite essa leitura para admin/entrevistador.
+    // Tarefeiro nunca chega neste ponto (botões "Ver"/"Realizar" são gated).
+    if (!canRealizar) return;
     setSelectedEntrevista(e);
-    setObservacoes(e.observacoes || "");
-    setDecisoes(e.decisoes || "");
     setDesignacoes([]);
+    setObservacoes("");
+    setDecisoes("");
+    const { data } = await supabase
+      .from("entrevistas_fraternas")
+      .select("observacoes, decisoes")
+      .eq("id", e.id)
+      .single();
+    setObservacoes(data?.observacoes || "");
+    setDecisoes(data?.decisoes || "");
     setRealizarOpen(true);
   };
 
