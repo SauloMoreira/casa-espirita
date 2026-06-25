@@ -265,7 +265,7 @@ export default function Assistidos() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>CPF *</Label>
+                  <Label>CPF</Label>
                   <Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} className={errors.cpf ? "border-destructive" : ""} />
                   {errors.cpf && <p className="text-xs text-destructive">{errors.cpf}</p>}
                 </div>
@@ -275,7 +275,7 @@ export default function Assistidos() {
                   {errors.celular && <p className="text-xs text-destructive">{errors.celular}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>E-mail *</Label>
+                  <Label>E-mail</Label>
                   <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={errors.email ? "border-destructive" : ""} />
                   {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
