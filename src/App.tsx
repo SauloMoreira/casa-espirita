@@ -33,6 +33,7 @@ const HomologacaoAgenda = lazy(() => import("./pages/HomologacaoAgenda"));
 const Entrevistas = lazy(() => import("./pages/Entrevistas"));
 const FazerEntrevista = lazy(() => import("./pages/FazerEntrevista"));
 const Agenda = lazy(() => import("./pages/Agenda"));
+const AvisosAusencia = lazy(() => import("./pages/AvisosAusencia"));
 const Presenca = lazy(() => import("./pages/Presenca"));
 const MeusTratamentos = lazy(() => import("./pages/MeusTratamentos"));
 const MinhaAgenda = lazy(() => import("./pages/MinhaAgenda"));
