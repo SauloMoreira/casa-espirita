@@ -31,7 +31,7 @@ import {
   type JanelaObservabilidade,
   type DiagnosticoContagem,
 } from "@/lib/observabilidade";
-import { rotuloDiagnosticoPendencia } from "@/lib/notificacaoElegibilidade";
+
 
 /** Lista simples código→qtd; trata vazio como "sem ocorrência", nunca erro. */
 function ListaContagem({
