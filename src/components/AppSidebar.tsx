@@ -96,6 +96,7 @@ export const navGroups: NavGroup[] = [
       { title: "Visão do Assistido", url: "/consulta-assistido", icon: UserSearch, roles: ["admin"] },
       { title: "Agenda de Entrevistas", url: "/agenda", icon: CalendarDays, roles: ["admin", "entrevistador", "tarefeiro"] },
       { title: "Registro de Presenças", url: "/presenca", icon: ClipboardCheck, roles: ["admin", "tarefeiro"] },
+      { title: "Avisos de Ausência", url: "/avisos-ausencia", icon: CalendarX, roles: ["admin", "entrevistador", "tarefeiro", "coordenador_de_tratamento"] },
       { title: "Agendar Entrevista", url: "/entrevistas", icon: Calendar, roles: ["admin", "entrevistador", "tarefeiro"] },
       { title: "Realizar Entrevista", url: "/fazer-entrevista", icon: Stethoscope, roles: ["admin", "entrevistador"] },
       { title: "Sessões Públicas", url: "/sessoes-publicas", icon: QrCode, roles: ["admin", "tarefeiro"] },
