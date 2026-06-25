@@ -144,6 +144,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: "Central de IA", url: "/central-ia", icon: Brain, roles: ["admin", "entrevistador"] },
       { title: "Fila de Notificações", url: "/central-notificacoes", icon: MessageCircle, roles: ["admin", "coordenador_de_tratamento"] },
+      { title: "Observabilidade", url: "/observabilidade", icon: Activity, roles: ["admin", "administrador_master", "coordenador_de_tratamento"] },
       { title: "Relatórios", url: "/relatorios", icon: BarChart3, roles: ["admin", "entrevistador", "coordenador_de_tratamento", "tarefeiro"] },
       { title: "Programação Padrão", url: "/programacao-padrao", icon: CalendarClock, roles: ["admin", "coordenador_de_tratamento"] },
       { title: "Exceções Operacionais", url: "/excecoes-operacionais", icon: CalendarX, roles: ["admin", "coordenador_de_tratamento"] },
