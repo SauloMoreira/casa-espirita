@@ -456,6 +456,17 @@ export function useVoluntarios() {
     openNew,
     toggleTipo,
     toggleFuncao,
+    // busca / reaproveitamento
+    buscaAtiva,
+    setBuscaAtiva,
+    buscaTermo,
+    setBuscaTermo,
+    buscaResultados,
+    buscaLoading,
+    buscarPessoas,
+    aplicarPessoa,
+    cadastrarDoZero,
+
     // termo / ficha
     termoOpen,
     setTermoOpen,
