@@ -361,9 +361,9 @@ export function useVoluntarios() {
       const matchesSearch =
         !filters.search ||
         v.nome_completo.toLowerCase().includes(searchLower) ||
-        v.cpf.includes(digits) ||
-        v.celular.includes(digits) ||
-        v.email.toLowerCase().includes(searchLower);
+        (v.cpf || "").includes(digits) ||
+        (v.celular || "").includes(digits) ||
+        (v.email || "").toLowerCase().includes(searchLower);
       const matchesStatus = filters.status === FILTER_TODOS || v.status === filters.status;
       const matchesTipo =
         filters.tipo === FILTER_TODOS ||
