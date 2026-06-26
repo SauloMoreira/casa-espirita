@@ -101,28 +101,23 @@ export function useVoluntarios() {
     );
   }, [voluntarios]);
 
+  // Cadastro MÍNIMO: só Nome, Celular válido e ao menos um tipo são exigidos.
+  // Demais campos validam formato apenas quando preenchidos (completar depois).
   const validate = useCallback((): boolean => {
     const e: VoluntarioFormErrors = {};
     const m = VOLUNTARIO_MESSAGES;
     if (!form.nome_completo.trim()) e.nome_completo = m.required;
     if (!form.celular.trim()) e.celular = m.required;
     else if (!isValidPhone(form.celular)) e.celular = m.invalidPhone;
-    if (!form.cpf.trim()) e.cpf = m.required;
-    else if (!isValidCPF(form.cpf)) e.cpf = m.invalidCpf;
-    if (!form.email.trim()) e.email = m.required;
-    else if (!isValidEmail(form.email)) e.email = m.invalidEmail;
-    if (!form.data_nascimento) e.data_nascimento = m.required;
-    if (!form.data_ingresso_sistema) e.data_ingresso_sistema = m.required;
-    if (!form.cep.trim()) e.cep = m.required;
-    if (!form.logradouro.trim()) e.logradouro = m.required;
-    if (!form.numero.trim()) e.numero = m.required;
-    if (!form.bairro.trim()) e.bairro = m.required;
-    if (!form.cidade.trim()) e.cidade = m.required;
-    if (!form.estado.trim()) e.estado = m.required;
     if (form.tipos_voluntario.length === 0) e.tipos_voluntario = m.selectTipo;
+    if (!form.data_ingresso_sistema) e.data_ingresso_sistema = m.required;
+    // Opcionais: validam formato só quando informados.
+    if (form.cpf.trim() && !isValidCPF(form.cpf)) e.cpf = m.invalidCpf;
+    if (form.email.trim() && !isValidEmail(form.email)) e.email = m.invalidEmail;
     setErrors(e);
     return Object.keys(e).length === 0;
   }, [form]);
+
 
   const handleSave = useCallback(async () => {
     if (!validate() || !user) return;
