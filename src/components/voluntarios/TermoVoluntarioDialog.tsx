@@ -7,13 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  FileText, Upload, Eye, CheckCircle2, XCircle, Loader2, RefreshCw,
+  FileText, Upload, Eye, CheckCircle2, XCircle, Loader2, RefreshCw, AlertTriangle,
 } from "lucide-react";
 import { TermoStatusBadge } from "./TermoStatusBadge";
 import { TERMO_UPLOAD } from "@/constants/voluntarios";
 import {
   canReviewTermo, canSendSigned, hasSignedTermo, validateTermoFile, buildTermoPath,
 } from "@/lib/termoVoluntario";
+import { podeGerarTermo } from "@/lib/voluntarioCadastro";
 import {
   uploadTermoAssinado, validarTermo, rejeitarTermo, getTermoSignedUrl,
 } from "@/services/voluntarios/voluntariosService";
