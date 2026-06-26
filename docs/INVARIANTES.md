@@ -315,6 +315,57 @@ claramente separados; a UI apenas traduz código→rótulo, sem lógica paralela
 ---
 
 
+## 8c. Invariantes de acesso, atuação e escopo
+
+> Modelo de 4 camadas independentes: **Pessoa** (identidade/cadastro base),
+> **Acesso** (permissão do sistema), **Atuação** (papel operacional/domínio) e
+> **Escopo operacional** (onde atua / por quais tratamentos responde). Nenhuma camada
+> altera outra automaticamente — a **única** exceção é a concessão automática do papel
+> base `assistido` no momento em que a conta passa a existir.
+
+### INV-ACC-BASE-001 — Assistido é o papel base automático
+Toda pessoa com conta no sistema **nasce** com o papel `assistido` em `user_roles`,
+de forma **automática**, **sem aprovação manual** e **sem concessão especial**.
+
+**Implica**
+- a concessão do papel base não depende da UI nem de fluxo de aprovação
+- o papel base é materializado em `user_roles` (fonte única de acesso)
+
+**Não pode acontecer**
+- pessoa com conta ativa sem o papel base `assistido`
+- exigir aprovação para o acesso básico
+
+### INV-ACC-BASE-002 — Concessão do papel base é idempotente e de fonte única
+A concessão automática de `assistido` ocorre em **um único ponto** — gatilho
+`AFTER INSERT` em `public.profiles` (artefato presente em toda conta) — e é
+**idempotente** (`ON CONFLICT DO NOTHING`), segura para múltiplas execuções e backfill.
+
+**Não pode acontecer**
+- duplicação da regra de concessão em vários triggers/serviços
+- erro/duplicidade ao reexecutar a concessão
+
+### INV-ACC-BASE-003 — Papel base é cumulativo, nunca substituído
+Papéis elevados são **linhas adicionais** em `user_roles`; conceder um papel elevado
+**não remove nem substitui** o papel base `assistido`.
+
+### INV-ACC-GOV-001 — Gestão de Acesso governa apenas papéis elevados
+A Gestão de Acesso trata **somente** papéis elevados (operacionais —
+`entrevistador`, `tarefeiro`, `coordenador_de_tratamento` — e administrativos —
+`admin`, `administrador_master`). `assistido` **não** aparece como perfil gerenciável
+na UI nem passa por concessão manual.
+
+### INV-ACC-NOCROSS-001 — Camadas não se alteram automaticamente
+Vincular **atuação** (função operacional) ou **escopo** (coordenação) **nunca** altera
+`user_roles`. Inconsistências entre camadas geram **alerta de coerência**, jamais
+concessão silenciosa de acesso. (Exceção única: papel base `assistido`, INV-ACC-BASE-001.)
+
+### INV-ACC-COORD-NN-001 — Coordenação de tratamento é N:N
+A responsabilidade de coordenação é uma relação **N:N** (um tratamento pode ter vários
+coordenadores; um coordenador pode responder por vários tratamentos), modelada em camada
+de escopo operacional separada do cadastro do tipo de tratamento e do acesso puro.
+
+---
+
 ## 9. Como usar este catálogo
 
 **Em revisão de plano** — Sempre verificar:
