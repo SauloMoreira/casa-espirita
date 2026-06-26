@@ -68,6 +68,12 @@ export function useVoluntarios() {
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Busca de pessoa existente (passo inicial do novo cadastro).
+  const [buscaAtiva, setBuscaAtiva] = useState(false);
+  const [buscaTermo, setBuscaTermo] = useState("");
+  const [buscaResultados, setBuscaResultados] = useState<PessoaCandidata[]>([]);
+  const [buscaLoading, setBuscaLoading] = useState(false);
+
   const [termoOpen, setTermoOpen] = useState(false);
   const [fichaOpen, setFichaOpen] = useState(false);
   const [selectedVoluntario, setSelectedVoluntario] = useState<VoluntarioListItem | null>(null);
