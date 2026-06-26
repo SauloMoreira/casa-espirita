@@ -187,18 +187,18 @@ export function useVoluntarios() {
     const funcIds = await fetchFuncoesIdsByVoluntario(v.id);
     setForm({
       nome_completo: v.nome_completo,
-      celular: maskPhone(v.celular),
-      cpf: maskCPF(v.cpf),
-      email: v.email,
+      celular: maskPhone(v.celular || ""),
+      cpf: maskCPF(v.cpf || ""),
+      email: v.email || "",
       rg: v.rg || "",
-      data_nascimento: v.data_nascimento,
-      cep: v.cep,
-      logradouro: v.logradouro,
-      numero: v.numero,
+      data_nascimento: v.data_nascimento || "",
+      cep: v.cep || "",
+      logradouro: v.logradouro || "",
+      numero: v.numero || "",
       complemento: v.complemento || "",
-      bairro: v.bairro,
-      cidade: v.cidade,
-      estado: v.estado,
+      bairro: v.bairro || "",
+      cidade: v.cidade || "",
+      estado: v.estado || "",
       foto_url: v.foto_url,
       data_ingresso_sistema: v.data_ingresso_sistema,
       data_adesao_voluntariado: v.data_adesao_voluntariado || "",
@@ -208,8 +208,12 @@ export function useVoluntarios() {
       status: v.status,
       data_desligamento: v.data_desligamento || "",
       observacoes: v.observacoes || "",
+      origem_cadastro: v.origem_cadastro ?? null,
+      origem_assistido_id: v.origem_assistido_id ?? null,
+      origem_user_id: v.origem_user_id ?? null,
     });
     setErrors({});
+    setBuscaAtiva(false);
     setOpen(true);
   }, []);
 
@@ -217,8 +221,43 @@ export function useVoluntarios() {
     setEditId(null);
     setForm(emptyVoluntarioForm);
     setErrors({});
+    setBuscaAtiva(true); // novo cadastro começa pela busca de pessoa existente
     setOpen(true);
   }, []);
+
+  // Aplica os DADOS-BASE de uma pessoa existente ao formulário (reaproveitamento).
+  const aplicarPessoa = useCallback((pessoa: PessoaCandidata) => {
+    const pre = mapearPessoaParaPrefill(pessoa);
+    setEditId(null);
+    setForm({
+      ...emptyVoluntarioForm,
+      nome_completo: pre.nome_completo,
+      celular: maskPhone(pre.celular),
+      cpf: maskCPF(pre.cpf),
+      email: pre.email,
+      data_nascimento: pre.data_nascimento,
+      cep: pre.cep,
+      logradouro: pre.logradouro,
+      numero: pre.numero,
+      complemento: pre.complemento,
+      bairro: pre.bairro,
+      cidade: pre.cidade,
+      estado: pre.estado,
+      foto_url: pre.foto_url,
+      origem_cadastro: pre.origem_cadastro,
+      origem_assistido_id: pre.origem_assistido_id,
+      origem_user_id: pre.origem_user_id,
+    });
+    setErrors({});
+    setBuscaAtiva(false);
+  }, []);
+
+  // Segue para cadastro do zero (ignora a busca).
+  const cadastrarDoZero = useCallback(() => {
+    setForm(emptyVoluntarioForm);
+    setBuscaAtiva(false);
+  }, []);
+
 
   const openFicha = useCallback((v: VoluntarioListItem) => {
     setSelectedVoluntario(v);
