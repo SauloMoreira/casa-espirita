@@ -151,7 +151,7 @@ DECLARE
   v_termo text := btrim(coalesce(p_termo,''));
   v_digits text := NULLIF(regexp_replace(coalesce(p_termo,''),'\D','','g'),'');
 BEGIN
-  IF NOT (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'coordenador')) THEN
+  IF NOT (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'administrador_master') OR has_role(auth.uid(),'coordenador_de_tratamento')) THEN
     RAISE EXCEPTION 'Sem permissão para buscar pessoas';
   END IF;
   IF length(v_termo) < 3 AND v_digits IS NULL THEN
