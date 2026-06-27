@@ -15,7 +15,8 @@ export const STATUS_COLORS: Record<string, string> = {
   desligado: "bg-red-100 text-red-800",
 };
 
-export const TIPOS_VOLUNTARIO = ["Médium", "Tarefeiro"];
+// Catálogo único de tipos de atuação. Fonte de verdade em src/lib/atuacao.ts.
+export { ATUACAO_TIPOS as TIPOS_VOLUNTARIO } from "@/lib/atuacao";
 
 /** Termo de Adesão lifecycle status. */
 export const TERMO_STATUS = {

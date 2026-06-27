@@ -364,6 +364,21 @@ A responsabilidade de coordenação é uma relação **N:N** (um tratamento pode
 coordenadores; um coordenador pode responder por vários tratamentos), modelada em camada
 de escopo operacional separada do cadastro do tipo de tratamento e do acesso puro.
 
+### INV-ATU-CATALOGO-001 — Catálogo de atuação é fonte única
+Os tipos de atuação (voluntariado) e as funções operacionais formam um **catálogo
+único** (`funcoes_voluntariado` + tipos canônicos em `src/lib/atuacao.ts`). Telas e
+filtros **não** redefinem listas locais de tipos/funções — consomem a fonte única.
+
+### INV-ATU-NOCROSS-001 — Atuação nunca altera acesso
+Vincular **atuação** (tipo/função de voluntariado) **nunca** cria, altera ou remove
+linhas em `user_roles`. Divergências entre atuação e acesso geram **alerta de coerência**
+(consultivo), jamais concessão silenciosa. A concessão de acesso é decisão manual
+exclusiva da Gestão de Acesso. (Especialização de INV-ACC-NOCROSS-001 para a atuação.)
+
+### INV-ATU-GATING-001 — Gating do termo preservado
+A atuação não relaxa o gating documental do voluntariado: o termo de adesão continua
+liberado **apenas** com cadastro completo (ver regras de `voluntarioCadastro`).
+
 ---
 
 ## 9. Como usar este catálogo
