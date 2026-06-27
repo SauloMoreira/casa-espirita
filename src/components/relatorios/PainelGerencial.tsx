@@ -27,8 +27,7 @@ export default function PainelGerencial() {
       // Get tipos_tratamento for coordinator filtering
       let tratFilter: string[] | null = null;
       if (role === "coordenador_de_tratamento" && user?.id) {
-        const { data: myTrats } = await supabase.from("tipos_tratamento").select("id").eq("coordenador_responsavel_id", user.id);
-        tratFilter = (myTrats || []).map((t) => t.id);
+        tratFilter = await getTratamentosCoordenados(user.id);
         if (tratFilter.length === 0) { setStats({ concluidos: 0, emAndamento: 0, assistidosAtivos: 0, sessoesRealizadas: 0, faltas: 0, maiorCarga: "—" }); return; }
       }
 
