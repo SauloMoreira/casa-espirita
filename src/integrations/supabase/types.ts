@@ -2940,6 +2940,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      fn_conceder_acesso_operacional: {
+        Args: {
+          p_motivo?: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
       fn_confirmacao_agendamento_ativa: { Args: never; Returns: boolean }
       fn_confirmacao_entrevista_ativa: { Args: never; Returns: boolean }
       fn_eh_proxima_sessao: { Args: { p_agenda_id: string }; Returns: boolean }
@@ -3055,6 +3063,14 @@ export type Database = {
           p_compromisso_id: string
           p_motivo?: string
           p_tipo_compromisso: string
+        }
+        Returns: Json
+      }
+      fn_revogar_acesso_operacional: {
+        Args: {
+          p_motivo?: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_target_user_id: string
         }
         Returns: Json
       }

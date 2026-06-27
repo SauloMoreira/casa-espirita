@@ -35,16 +35,20 @@ const ROLE_LABELS: Record<string, string> = {
   coordenador_de_tratamento: "Coordenador de Tratamento",
 };
 
-// Roles that can be assigned directly here. Administrative roles are granted
-// ONLY through the approval-gated workflow in Governança de Acessos.
-const ASSIGNABLE_ROLE_LABELS: Record<string, string> = {
-  entrevistador: "Entrevistador",
-  tarefeiro: "Tarefeiro",
-  assistido: "Assistido",
-  coordenador_de_tratamento: "Coordenador de Tratamento",
+// Roles are no longer editable here. Every person is born "assistido" (base role),
+// and all elevated roles (operational + administrative) are managed exclusively in
+// Gestão de Acesso. The order below is only used for display.
+const ROLE_ORDER: Record<string, number> = {
+  administrador_master: 0,
+  admin: 1,
+  coordenador_de_tratamento: 2,
+  entrevistador: 3,
+  tarefeiro: 4,
+  assistido: 5,
 };
 
-const isAdminRole = (r?: string | null) => r === "admin" || r === "administrador_master";
+const sortRoles = (rs: string[]) =>
+  [...rs].sort((a, b) => (ROLE_ORDER[a] ?? 99) - (ROLE_ORDER[b] ?? 99));
 
 interface UserRow {
   user_id: string;
@@ -69,7 +73,7 @@ interface Profile {
 
 interface MergedUser {
   user_id: string;
-  role: string;
+  roles: string[];
   profile: Profile | null;
   email: string | null;
 }
@@ -78,7 +82,7 @@ const emptyForm = {
   nome_completo: "", celular: "", cpf: "", email: "", password: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "",
   foto_url: null as string | null,
-  role: "assistido", status: "ativo",
+  status: "ativo",
 };
 
 type FormErrors = Partial<Record<string, string>>;
@@ -131,12 +135,22 @@ export default function Usuarios() {
     if (roles) {
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
       const emailMap = new Map((emails || []).map((e: any) => [e.user_id, e.email]));
-      setUsers(roles.map((r: any) => ({
-        ...r,
-        profile: profileMap.get(r.user_id) || null,
-        email: emailMap.get(r.user_id) || null,
+      // Roles are cumulative (one row per role) — group them per user so each
+      // person appears once with all their roles.
+      const rolesByUser = new Map<string, string[]>();
+      for (const r of roles as any[]) {
+        const arr = rolesByUser.get(r.user_id) || [];
+        arr.push(r.role);
+        rolesByUser.set(r.user_id, arr);
+      }
+      setUsers(Array.from(rolesByUser.entries()).map(([user_id, rs]) => ({
+        user_id,
+        roles: sortRoles(rs),
+        profile: profileMap.get(user_id) || null,
+        email: emailMap.get(user_id) || null,
       })));
     }
+
   };
 
   useEffect(() => { fetchUsers(); }, []);
@@ -185,7 +199,7 @@ export default function Usuarios() {
         body: {
           email: form.email.trim(),
           password: form.password,
-          role: form.role,
+          role: "assistido",
           profile: {
             nome_completo: form.nome_completo.trim(),
             celular: form.celular.replace(/\D/g, ""),
@@ -233,8 +247,8 @@ export default function Usuarios() {
       return;
     }
 
-    // Update role
-    await supabase.from("user_roles").update({ role: form.role as any }).eq("user_id", editUserId);
+    // Roles are NOT edited here — elevated access is managed only in Gestão de Acesso.
+
 
     // Upsert profile
     const profileData = {
@@ -283,7 +297,7 @@ export default function Usuarios() {
       cidade: p?.cidade || "",
       estado: p?.estado || "",
       foto_url: p?.foto_url || null,
-      role: u.role,
+      
       status: p?.status || "ativo",
     });
     setErrors({});
@@ -365,25 +379,27 @@ export default function Usuarios() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Perfil *</Label>
-                  {isAdminRole(form.role) ? (
-                    <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm text-muted-foreground">
-                      {ROLE_LABELS[form.role]} (gerido na Governança de Acessos)
-                    </div>
-                  ) : (
-                    <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ASSIGNABLE_ROLE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {isAdminRole(form.role) && (
-                    <p className="text-xs text-muted-foreground">
-                      Acesso administrativo só é concedido pelo fluxo de aprovação.
-                    </p>
-                  )}
+                  <Label>Perfis de acesso</Label>
+                  {(() => {
+                    const currentRoles = editUserId
+                      ? (users.find((u) => u.user_id === editUserId)?.roles ?? ["assistido"])
+                      : ["assistido"];
+                    return (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {currentRoles.map((r) => (
+                          <Badge key={r} variant={r === "assistido" ? "outline" : "secondary"}>
+                            {ROLE_LABELS[r] ?? r}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  <p className="text-xs text-muted-foreground">
+                    Acessos elevados (operacionais e administrativos) são geridos
+                    exclusivamente em Gestão de Acesso.
+                  </p>
                 </div>
+
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
@@ -448,8 +464,15 @@ export default function Usuarios() {
                       <TableCell className="hidden md:table-cell font-mono text-xs">{u.profile?.cpf ? maskCPF(u.profile.cpf) : "—"}</TableCell>
                       <TableCell className="hidden md:table-cell text-sm">{u.email || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="default">{ROLE_LABELS[u.role] || u.role}</Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {u.roles.map((r) => (
+                            <Badge key={r} variant={r === "assistido" ? "outline" : "secondary"}>
+                              {ROLE_LABELS[r] ?? r}
+                            </Badge>
+                          ))}
+                        </div>
                       </TableCell>
+
                       <TableCell className="hidden sm:table-cell">
                         <Badge variant={u.profile?.status === "ativo" ? "default" : "secondary"}>
                           {u.profile?.status === "ativo" ? "Ativo" : "Inativo"}
