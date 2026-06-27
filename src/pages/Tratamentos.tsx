@@ -107,7 +107,7 @@ export default function Tratamentos() {
       tratamento_livre: form.modo_agendamento === "livre_concomitante",
       bloqueia_proximo_tratamento: form.modo_agendamento === "sequencial_bloqueante",
       modo_agendamento: form.modo_agendamento,
-      coordenador_responsavel_id: form.coordenador_responsavel_id || null,
+      
       quantidade_padrao_sessoes: qtdPadrao,
       trabalho_publico: form.trabalho_publico,
       permite_entrada_sem_agendamento: form.permite_entrada_sem_agendamento,
