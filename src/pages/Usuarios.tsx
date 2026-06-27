@@ -27,14 +27,7 @@ import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { DeleteUserDialog } from "@/components/DeleteUserDialog";
 import { UserRolesBadges } from "@/components/UserRolesBadges";
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrador",
-  administrador_master: "Administrador Master",
-  entrevistador: "Entrevistador",
-  tarefeiro: "Tarefeiro",
-  assistido: "Assistido",
-  coordenador_de_tratamento: "Coordenador de Tratamento",
-};
+
 
 // Roles are no longer editable here. Every person is born "assistido" (base role),
 // and all elevated roles (operational + administrative) are managed exclusively in
