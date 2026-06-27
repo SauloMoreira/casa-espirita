@@ -25,6 +25,7 @@ import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { DeleteUserDialog } from "@/components/DeleteUserDialog";
+import { UserRolesBadges } from "@/components/UserRolesBadges";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
