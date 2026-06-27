@@ -297,7 +297,7 @@ export default function Usuarios() {
       cidade: p?.cidade || "",
       estado: p?.estado || "",
       foto_url: p?.foto_url || null,
-      role: u.role,
+      
       status: p?.status || "ativo",
     });
     setErrors({});
