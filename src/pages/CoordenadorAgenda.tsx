@@ -39,16 +39,18 @@ export default function CoordenadorAgenda() {
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
+      const tratIds = await getTratamentosCoordenados(user.id);
+      if (tratIds.length === 0) { setItems([]); return; }
+
       const { data: meusTrat } = await supabase
         .from("tipos_tratamento")
         .select("id, nome, tipo")
-        .eq("coordenador_responsavel_id", user.id);
+        .in("id", tratIds);
 
       if (!meusTrat || meusTrat.length === 0) { setItems([]); return; }
       const tratMap = Object.fromEntries(
         meusTrat.map((t: any) => [t.id, { nome: t.nome, tipo: t.tipo }]),
       );
-      const tratIds = meusTrat.map((t: any) => t.id);
 
       const today = format(new Date(), "yyyy-MM-dd");
       const limit30 = format(addDays(new Date(), 30), "yyyy-MM-dd");
