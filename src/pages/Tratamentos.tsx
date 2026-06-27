@@ -147,7 +147,7 @@ export default function Tratamentos() {
       tratamento_livre: t.tratamento_livre,
       bloqueia_proximo_tratamento: t.bloqueia_proximo_tratamento,
       modo_agendamento: (t as any).modo_agendamento || "sequencial_bloqueante",
-      coordenador_responsavel_id: (t as any).coordenador_responsavel_id || "",
+      
       quantidade_padrao_sessoes: (t as any).quantidade_padrao_sessoes?.toString() || "1",
       trabalho_publico: t.trabalho_publico ?? false,
       permite_entrada_sem_agendamento: t.permite_entrada_sem_agendamento ?? false,
