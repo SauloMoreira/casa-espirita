@@ -379,25 +379,27 @@ export default function Usuarios() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Perfil *</Label>
-                  {isAdminRole(form.role) ? (
-                    <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm text-muted-foreground">
-                      {ROLE_LABELS[form.role]} (gerido na Governança de Acessos)
-                    </div>
-                  ) : (
-                    <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ASSIGNABLE_ROLE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {isAdminRole(form.role) && (
-                    <p className="text-xs text-muted-foreground">
-                      Acesso administrativo só é concedido pelo fluxo de aprovação.
-                    </p>
-                  )}
+                  <Label>Perfis de acesso</Label>
+                  {(() => {
+                    const currentRoles = editUserId
+                      ? (users.find((u) => u.user_id === editUserId)?.roles ?? ["assistido"])
+                      : ["assistido"];
+                    return (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {currentRoles.map((r) => (
+                          <Badge key={r} variant={r === "assistido" ? "outline" : "secondary"}>
+                            {ROLE_LABELS[r] ?? r}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  <p className="text-xs text-muted-foreground">
+                    Acessos elevados (operacionais e administrativos) são geridos
+                    exclusivamente em Gestão de Acesso.
+                  </p>
                 </div>
+
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
