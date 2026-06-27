@@ -277,19 +277,13 @@ export default function Tratamentos() {
                 <p className="text-xs text-muted-foreground">Número de sessões usado quando o entrevistador não informar a quantidade na entrevista</p>
               </div>
               <div className="space-y-2">
-                <Label>Coordenador Responsável</Label>
-                {coordenadores.length > 0 ? (
-                  <Select value={form.coordenador_responsavel_id || "none"} onValueChange={(v) => setForm({ ...form, coordenador_responsavel_id: v === "none" ? "" : v })}>
-                    <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum</SelectItem>
-                      {coordenadores.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">Nenhum coordenador cadastrado. Crie um usuário com perfil "Coordenador de Tratamento" primeiro.</p>
-                )}
+                <Label>Coordenação (Escopo Operacional)</Label>
+                <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">
+                  A designação de coordenadores agora é feita na área <strong>Escopo Operacional</strong>,
+                  permitindo múltiplos coordenadores por tratamento. A coordenação não concede acesso automaticamente.
+                </p>
               </div>
+
 
               {/* Seção Trabalho Público */}
               <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
