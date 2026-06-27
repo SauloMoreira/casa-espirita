@@ -464,8 +464,15 @@ export default function Usuarios() {
                       <TableCell className="hidden md:table-cell font-mono text-xs">{u.profile?.cpf ? maskCPF(u.profile.cpf) : "—"}</TableCell>
                       <TableCell className="hidden md:table-cell text-sm">{u.email || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="default">{ROLE_LABELS[u.role] || u.role}</Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {u.roles.map((r) => (
+                            <Badge key={r} variant={r === "assistido" ? "outline" : "secondary"}>
+                              {ROLE_LABELS[r] ?? r}
+                            </Badge>
+                          ))}
+                        </div>
                       </TableCell>
+
                       <TableCell className="hidden sm:table-cell">
                         <Badge variant={u.profile?.status === "ativo" ? "default" : "secondary"}>
                           {u.profile?.status === "ativo" ? "Ativo" : "Inativo"}
