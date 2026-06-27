@@ -25,15 +25,9 @@ import { AddressFields } from "@/components/AddressFields";
 import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/lib/validators";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { DeleteUserDialog } from "@/components/DeleteUserDialog";
+import { UserRolesBadges } from "@/components/UserRolesBadges";
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrador",
-  administrador_master: "Administrador Master",
-  entrevistador: "Entrevistador",
-  tarefeiro: "Tarefeiro",
-  assistido: "Assistido",
-  coordenador_de_tratamento: "Coordenador de Tratamento",
-};
+
 
 // Roles are no longer editable here. Every person is born "assistido" (base role),
 // and all elevated roles (operational + administrative) are managed exclusively in
@@ -384,15 +378,7 @@ export default function Usuarios() {
                     const currentRoles = editUserId
                       ? (users.find((u) => u.user_id === editUserId)?.roles ?? ["assistido"])
                       : ["assistido"];
-                    return (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {currentRoles.map((r) => (
-                          <Badge key={r} variant={r === "assistido" ? "outline" : "secondary"}>
-                            {ROLE_LABELS[r] ?? r}
-                          </Badge>
-                        ))}
-                      </div>
-                    );
+                    return <UserRolesBadges roles={currentRoles} showGroupLabels className="pt-1" />;
                   })()}
                   <p className="text-xs text-muted-foreground">
                     Acessos elevados (operacionais e administrativos) são geridos
@@ -452,7 +438,7 @@ export default function Usuarios() {
                     <TableHead>Nome</TableHead>
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
                     <TableHead className="hidden md:table-cell">E-mail</TableHead>
-                    <TableHead>Perfil</TableHead>
+                    <TableHead>Acessos</TableHead>
                     <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
@@ -464,13 +450,7 @@ export default function Usuarios() {
                       <TableCell className="hidden md:table-cell font-mono text-xs">{u.profile?.cpf ? maskCPF(u.profile.cpf) : "—"}</TableCell>
                       <TableCell className="hidden md:table-cell text-sm">{u.email || "—"}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {u.roles.map((r) => (
-                            <Badge key={r} variant={r === "assistido" ? "outline" : "secondary"}>
-                              {ROLE_LABELS[r] ?? r}
-                            </Badge>
-                          ))}
-                        </div>
+                        <UserRolesBadges roles={u.roles} />
                       </TableCell>
 
                       <TableCell className="hidden sm:table-cell">

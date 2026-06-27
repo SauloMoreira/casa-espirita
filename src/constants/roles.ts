@@ -48,3 +48,48 @@ export const ADMIN_ONLY: AppRole[] = ["admin"];
 
 export const getRoleLabel = (role?: AppRole | null): string =>
   role ? ROLE_LABELS[role] ?? role : "";
+
+/**
+ * Role access classification — the three layers surfaced read-only in the user
+ * screen. "Acesso" (system permission) is split into:
+ *  - base: the automatic `assistido` role every person is born with
+ *  - operacional: operational roles managed in Gestão de Acesso
+ *  - administrativo: administrative roles managed via the approval-gated flow
+ *
+ * This is a presentation-only grouping. Manual role management lives exclusively
+ * in Gestão de Acesso (INV-ACC-GOV-001 / INV-ACC-NOCROSS-001).
+ */
+export type RoleClass = "base" | "operacional" | "administrativo";
+
+export const OPERATIONAL_ROLES: AppRole[] = [
+  "entrevistador",
+  "tarefeiro",
+  "coordenador_de_tratamento",
+];
+
+export const ADMINISTRATIVE_ROLES: AppRole[] = ["admin", "administrador_master"];
+
+export const ROLE_CLASS_LABELS: Record<RoleClass, string> = {
+  base: "Acesso base",
+  operacional: "Acessos operacionais",
+  administrativo: "Acessos administrativos",
+};
+
+export const classifyRole = (role: AppRole | string): RoleClass => {
+  if (role === "assistido") return "base";
+  if ((ADMINISTRATIVE_ROLES as string[]).includes(role)) return "administrativo";
+  return "operacional";
+};
+
+/** Group an array of cumulative roles by access class, preserving input order. */
+export const groupRolesByClass = (
+  roles: (AppRole | string)[],
+): Record<RoleClass, string[]> => {
+  const groups: Record<RoleClass, string[]> = {
+    base: [],
+    operacional: [],
+    administrativo: [],
+  };
+  for (const r of roles) groups[classifyRole(r)].push(r);
+  return groups;
+};
