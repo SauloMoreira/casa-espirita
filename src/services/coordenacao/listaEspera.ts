@@ -4,6 +4,7 @@ import {
   elegibilidadeListaEspera,
   type MotivoListaEspera,
 } from "@/lib/agendaRules";
+import { getTratamentosCoordenados } from "@/services/coordenacao/escopo";
 
 /**
  * Service ÚNICO da Lista de Espera do coordenador.
