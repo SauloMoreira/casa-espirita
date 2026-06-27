@@ -36,9 +36,16 @@ export function VoluntarioTipoFuncaoSection({
 }: Props) {
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        Voluntariado
-      </h3>
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Atuação
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Define o que a pessoa faz na casa (tipo e funções de voluntariado).
+          Atuação não concede acesso ao sistema — os acessos são geridos
+          exclusivamente em Gestão de Acesso.
+        </p>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Data de Ingresso no Sistema *</Label>
