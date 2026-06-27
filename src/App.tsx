@@ -23,6 +23,7 @@ const CheckinPublico = lazy(() => import("./pages/CheckinPublico"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const GovernancaAcessos = lazy(() => import("./pages/GovernancaAcessos"));
+const EscopoOperacional = lazy(() => import("./pages/EscopoOperacional"));
 const SolicitacoesCadastro = lazy(() => import("./pages/SolicitacoesCadastro"));
 const SegurancaConta = lazy(() => import("./pages/SegurancaConta"));
 const Tratamentos = lazy(() => import("./pages/Tratamentos"));
