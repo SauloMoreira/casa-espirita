@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
 import { ClipboardCheck, Heart, Calendar, Users } from "lucide-react";
 import { contarListaEspera } from "@/services/coordenacao/listaEspera";
+import { getTratamentosCoordenados } from "@/services/coordenacao/escopo";
 
 export default function CoordenadorDashboard() {
   const { user } = useAuth();

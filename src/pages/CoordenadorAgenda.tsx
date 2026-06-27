@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar, Search } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { isTratamentoHolistico } from "@/lib/agendaRules";
+import { getTratamentosCoordenados } from "@/services/coordenacao/escopo";
 
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Heart } from "lucide-react";
 import { format } from "date-fns";
+import { getTratamentosCoordenados } from "@/services/coordenacao/escopo";
 
 const STATUS_LABELS: Record<string, string> = {
   aguardando_inicio: "Aguardando Início",
