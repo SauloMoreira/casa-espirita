@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getTratamentosCoordenados } from "@/services/coordenacao/escopo";
 import { useAuth } from "@/contexts/AuthContext";
 import { StatCard } from "@/components/StatCard";
 import { CheckCircle, Activity, Users, Calendar, CalendarX, Trophy } from "lucide-react";
