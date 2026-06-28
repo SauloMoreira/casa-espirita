@@ -205,7 +205,7 @@ export default function MeuPerfil() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 max-w-2xl mx-auto pb-24 md:pb-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Meu Perfil</h1>
         <p className="text-sm text-muted-foreground mt-1">Visualize e atualize seus dados</p>

@@ -36,7 +36,7 @@ export default function CentralAjuda() {
   const guias = filtered.filter((a) => a.kind === "guia");
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-6">
       <header className="space-y-1.5">
         <div className="flex items-center gap-2">
           <LifeBuoy className="h-6 w-6 text-primary" />
