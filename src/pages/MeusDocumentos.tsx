@@ -115,7 +115,7 @@ export default function MeusDocumentos() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Documentos</h1>
         <p className="text-sm text-muted-foreground mt-1">Comprovantes e cartas de agendamento</p>
