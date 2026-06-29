@@ -146,10 +146,15 @@ policies/triggers; consolidação documental prevista para o Lote 3 (ver §5).
 - **Mitigação:** nomes com UUID; escrita isolada por usuário; só fotos.
 - **Impacto:** baixo. **Responsável:** Admin. **Revisão:** 2026-12-11.
 
-### R3 — Funções SECURITY DEFINER executáveis (lint 0028)
-- **Descrição:** funções auxiliares chamáveis por papéis autenticados/anon.
-- **Motivo:** necessárias dentro de policies/triggers (ex.: `has_role`).
-- **Mitigação:** retornam booleano/nome ou exigem contexto de trigger; sem vazamento de PII.
+### R3 — Funções SECURITY DEFINER executáveis por autenticado (lint 0029)
+- **Descrição:** após o Lote 1, **nenhuma** função `public` é executável por `anon`
+  (lint `0028` = 0). Permanecem funções `SECURITY DEFINER` chamáveis por usuário
+  **autenticado** (lint `0029`).
+- **Motivo:** necessárias dentro de policies/triggers (ex.: `has_role`) e como RPCs
+  de negócio que já exigem login.
+- **Mitigação:** cada uma faz checagem interna de papel via `has_role`/`auth.uid()`
+  ou retorna apenas booleano/nome; funções 100% internas só rodam via `service_role`.
+- **Plano:** consolidação documental "SECURITY DEFINER como fronteira de auth" no Lote 3.
 - **Impacto:** baixo. **Responsável:** Equipe técnica. **Revisão:** 2026-12-11.
 
 ### R4 — Realtime baseado em Postgres Changes
