@@ -55,12 +55,19 @@ Validação dirigida executada nesta frente (2026-06-11).
   que registra `INSERT/UPDATE/DELETE` com diffs JSON (`dados_anteriores`/`dados_novos`).
 - Leitura de logs: apenas `admin`.
 
-### 2.4 Avatar / storage — OK
-- Bucket `avatars` é público apenas para **leitura** (URLs públicas das fotos).
+### 2.4 Avatar / storage — OK (endurecido no Lote 2 / 2026-06-29)
+- Bucket `avatars` é público para **exibição** das imagens via URL pública direta
+  (`/object/public/...`, `getPublicUrl`), endpoint que ignora RLS em buckets públicos.
+- A **listagem pública** foi **removida**: a policy SELECT ampla para `public`
+  (`bucket_id = 'avatars'`) foi eliminada — ela permitia que qualquer visitante
+  enumerasse todos os arquivos e as pastas de topo (nomeadas por UID de usuário).
+- Permanece apenas uma policy SELECT para o **dono** listar a própria pasta
+  (`(storage.foldername(name))[1] = auth.uid()::text`), como defesa em profundidade.
 - INSERT/UPDATE/DELETE em `storage.objects` exigem que o primeiro segmento do
   caminho seja `auth.uid()` (`(storage.foldername(name))[1] = auth.uid()::text`).
 - `PhotoUpload.tsx` grava em `${uid}/${folder}/${uuid}.${ext}` → cada usuário só
   escreve/atualiza/apaga na própria pasta; não é possível sobrescrever arquivo de outro.
+- Buckets `ia-biblioteca` e `termos-voluntarios` são **privados** (sem leitura pública).
 
 ### 2.5 Reset de senha — OK
 - `profiles.senha_temporaria = true` força troca no primeiro acesso (`ProtectedRoute`).
