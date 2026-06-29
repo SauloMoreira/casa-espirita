@@ -194,22 +194,25 @@ autorização vive **dentro** da função (fronteira `SECURITY DEFINER`), não n
 - **Mitigação:** sem PII de pessoas; gestão restrita a `admin`.
 - **Impacto:** baixo. **Responsável:** Admin. **Revisão:** 2026-12-11.
 
-### R2 — Bucket público de avatar (leitura/listagem)
-- **Descrição:** leitura pública das fotos e possibilidade de listar objetos.
-- **Motivo:** exibição de fotos na UI via URL pública.
-- **Mitigação:** nomes com UUID; escrita isolada por usuário; só fotos.
+### R2 — Bucket público de avatar (exibição direta) — RESOLVIDO (Lote 2)
+- **Descrição:** leitura pública das imagens via URL direta. **Listagem pública removida.**
+- **Motivo:** exibição de fotos/imagens na UI via URL pública (`getPublicUrl`).
+- **Mitigação:** policy SELECT ampla para `public` removida; SELECT restrito ao dono;
+  escrita isolada por usuário. Sem capacidade de enumeração anônima (lint `0025` = 0).
 - **Impacto:** baixo. **Responsável:** Admin. **Revisão:** 2026-12-11.
 
-### R3 — Funções SECURITY DEFINER executáveis por autenticado (lint 0029)
-- **Descrição:** após o Lote 1, **nenhuma** função `public` é executável por `anon`
-  (lint `0028` = 0). Permanecem funções `SECURITY DEFINER` chamáveis por usuário
-  **autenticado** (lint `0029`).
-- **Motivo:** necessárias dentro de policies/triggers (ex.: `has_role`) e como RPCs
-  de negócio que já exigem login.
-- **Mitigação:** cada uma faz checagem interna de papel via `has_role`/`auth.uid()`
-  ou retorna apenas booleano/nome; funções 100% internas só rodam via `service_role`.
-- **Plano:** consolidação documental "SECURITY DEFINER como fronteira de auth" no Lote 3.
-- **Impacto:** baixo. **Responsável:** Equipe técnica. **Revisão:** 2026-12-11.
+### R3 — Funções SECURITY DEFINER executáveis por autenticado (lint 0029) — CONSOLIDADO (Lote 3)
+- **Descrição:** nenhuma função `public` é executável por `anon` (`0028` = 0). Permanecem
+  **65** funções `SECURITY DEFINER` chamáveis por `authenticated` (`0029`).
+- **Motivo:** são (a) RPCs de negócio que exigem login e validam papel internamente,
+  (b) helpers booleanos/escopados que sustentam RLS/policies (`has_role`, `is_active_*`,
+  `*_belongs_to_coordinator`), ou (c) funções que só operam sobre o próprio `auth.uid()`.
+- **Mitigação:** padrão formal "SECURITY DEFINER como fronteira de autorização" (§3):
+  autorização vive dentro da função. Lote 3 corrigiu os 2 casos reais sem checagem
+  (`lista_usuarios_email`, `staff_names`), removeu `authenticated` de 2 funções internas
+  (`comunicadores_elegiveis`, `fila_humana_pendente`) e dos 13 gatilhos.
+- **Impacto residual:** baixo e **aceito por arquitetura**. **Responsável:** Equipe técnica.
+  **Revisão:** 2026-12-11.
 
 ### R4 — Realtime baseado em Postgres Changes
 - **Descrição:** entrega de eventos em tempo real.
