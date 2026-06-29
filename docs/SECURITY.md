@@ -55,12 +55,19 @@ Validação dirigida executada nesta frente (2026-06-11).
   que registra `INSERT/UPDATE/DELETE` com diffs JSON (`dados_anteriores`/`dados_novos`).
 - Leitura de logs: apenas `admin`.
 
-### 2.4 Avatar / storage — OK
-- Bucket `avatars` é público apenas para **leitura** (URLs públicas das fotos).
+### 2.4 Avatar / storage — OK (endurecido no Lote 2 / 2026-06-29)
+- Bucket `avatars` é público para **exibição** das imagens via URL pública direta
+  (`/object/public/...`, `getPublicUrl`), endpoint que ignora RLS em buckets públicos.
+- A **listagem pública** foi **removida**: a policy SELECT ampla para `public`
+  (`bucket_id = 'avatars'`) foi eliminada — ela permitia que qualquer visitante
+  enumerasse todos os arquivos e as pastas de topo (nomeadas por UID de usuário).
+- Permanece apenas uma policy SELECT para o **dono** listar a própria pasta
+  (`(storage.foldername(name))[1] = auth.uid()::text`), como defesa em profundidade.
 - INSERT/UPDATE/DELETE em `storage.objects` exigem que o primeiro segmento do
   caminho seja `auth.uid()` (`(storage.foldername(name))[1] = auth.uid()::text`).
 - `PhotoUpload.tsx` grava em `${uid}/${folder}/${uuid}.${ext}` → cada usuário só
   escreve/atualiza/apaga na própria pasta; não é possível sobrescrever arquivo de outro.
+- Buckets `ia-biblioteca` e `termos-voluntarios` são **privados** (sem leitura pública).
 
 ### 2.5 Reset de senha — OK
 - `profiles.senha_temporaria = true` força troca no primeiro acesso (`ProtectedRoute`).
@@ -118,17 +125,31 @@ policies/triggers; consolidação documental prevista para o Lote 3 (ver §5).
 
 ---
 
-## 4. Revisão do bucket de avatar
+## 4. Revisão do bucket de avatar (lint 0025 — RESOLVIDO no Lote 2)
 
-- **Dado armazenado:** apenas fotos de perfil (não sensível por si).
-- **Caminhos:** `${uid}/${folder}/${uuid}.${ext}` — nomes com UUID aleatório.
-- **Enumeração:** mitigada pelo UUID no nome do arquivo (não sequencial/adivinhável).
-  O lint `0025` alerta que o bucket público permite _listar_ objetos; o impacto é baixo
-  pois são apenas fotos e os nomes não revelam PII.
-- **Isolamento de escrita:** INSERT/UPDATE/DELETE restritos à pasta do próprio usuário.
-- **Exposição:** somente leitura pública das imagens, necessária para exibição na UI.
+- **Dado armazenado:** fotos de perfil e imagens institucionais (campanhas/eventos);
+  não sensível por si, mas as **pastas de topo** eram nomeadas por **UID de usuário**.
+- **Achado real (lint `0025`):** o bucket público `avatars` tinha policy SELECT ampla
+  para `public`, permitindo `POST /object/list/avatars` por **anon** — confirmado em
+  teste: retornava a lista de pastas com UIDs reais (enumeração de PII).
+- **A listagem pública é necessária?** **Não.** Nenhum código usa `storage.list()`; a
+  exibição usa exclusivamente `getPublicUrl` (endpoint público que ignora RLS). A
+  geração de imagens institucionais (`conteudo-imagem-ia`) usa `service_role`.
+- **Correção aplicada:** `DROP POLICY "Avatar images are publicly accessible"` e criação
+  de policy SELECT restrita ao dono. A enumeração anônima foi **eliminada**.
+- **Impacto:** **nenhum** — validado pós-migração:
+  - `POST /object/list/avatars` (anon) → `[]` (antes: lista com UIDs).
+  - `GET /object/public/avatars/<arquivo>` → `200` (exibição de imagens preservada).
+  - uploads e visualização das imagens existentes inalterados.
 
-**Conclusão:** bucket público de avatar **continua aceitável**.
+**Conclusão:** lint `0025` **resolvido**; bucket permanece público apenas para
+**exibição direta**, sem qualquer capacidade de listagem pública.
+
+### Superfícies externas intencionais remanescentes
+- **Exibição pública de imagens via URL direta** (`avatars`): intencional e necessária
+  para renderizar fotos/imagens na UI; sem listagem, sem PII derivável da URL.
+- **Edge functions públicas** (`checkin-publico`, `whatsapp-inbound`): mantêm validação
+  própria de token/assinatura — não fazem parte do escopo de storage do Lote 2.
 
 ---
 
