@@ -91,7 +91,7 @@ Todas com `SET search_path = public` e responsabilidade única:
 | `has_role` | Verifica role em `user_roles` | Mínimo privilégio; só lê 1 tabela. OK |
 | `fn_audit_trigger` | Grava em `audit_logs` (trigger) | Única forma de inserir logs. OK |
 | `staff_names` | Retorna apenas `user_id`+`nome_completo` | Expõe somente nome (não PII). OK |
-| `registrar_presenca` | Registra presença com validações | Escrita controlada/idempotente. OK |
+| `registrar_presenca` | Registra presença com validações | Usa `auth.uid()` + checagem de papel (tarefeiro/admin/master); `anon` revogado. OK |
 | `liberar_proximo_tratamento` | Libera próximo tratamento (trigger) | Escopo limitado ao assistido. OK |
 | `assistido_belongs_to_coordinator` / `entrevista_*` | Escopo de coordenador | Apenas booleano de pertencimento. OK |
 | `calc_quantidade_faltante`, `update_*` | Triggers utilitárias | Cálculo/atualização locais. OK |
