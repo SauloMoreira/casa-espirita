@@ -96,10 +96,25 @@ Todas com `SET search_path = public` e responsabilidade única:
 | `assistido_belongs_to_coordinator` / `entrevista_*` | Escopo de coordenador | Apenas booleano de pertencimento. OK |
 | `calc_quantidade_faltante`, `update_*` | Triggers utilitárias | Cálculo/atualização locais. OK |
 
-**Nota:** o linter sinaliza que essas funções são executáveis por `anon`/`authenticated`
-(lint `0028`). É **intencional** — `has_role` e demais são usadas dentro das policies/triggers.
-Nenhuma vaza dados sensíveis quando chamada diretamente (retornam booleano, nome ou exigem
-contexto de trigger). Aceito como risco residual (ver §5).
+**Endurecimento S1 / Lote 1 (2026-06-29):** a superfície anônima do lint `0028`
+foi **eliminada**. Para todas as funções `public` antes executáveis por `anon`
+(60 no total) foi feito `REVOKE EXECUTE ... FROM PUBLIC, anon`:
+
+- **`registrar_presenca`** deixou de confiar em `p_registrado_por`; agora usa
+  `auth.uid()` como fonte de verdade do registrador e valida internamente o papel
+  autorizado (`tarefeiro`, `admin`, `administrador_master`). `anon` revogado.
+- **Funções 100% internas** (`fn_enqueue_notificacao`, `fn_promover_proxima_sessao`,
+  `marcar_envio_concluido`) tiveram `anon` **e** `authenticated` revogados — só
+  executam via `service_role`/contexto interno (são chamadas dentro de outras
+  funções `SECURITY DEFINER`/triggers, que rodam como owner).
+- **Demais RPCs** passaram a exigir login (`authenticated` mantido/garantido).
+- **Funções de gatilho** tiveram `anon`/`PUBLIC` revogados por consistência
+  (triggers não precisam de `EXECUTE` para disparar).
+
+Resultado: `0028` (anon) = **0**. O lint `0029` (SECURITY DEFINER executável por
+usuário autenticado) permanece como risco residual aceito — essas funções já
+fazem checagem interna de papel via `has_role`/`auth.uid()` e/ou são usadas em
+policies/triggers; consolidação documental prevista para o Lote 3 (ver §5).
 
 ---
 
