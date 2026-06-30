@@ -1,10 +1,11 @@
 # Q1-B1 — Diagnóstico final dos contratos críticos de status
 
 > **Frente:** qualidade técnica / contratos canônicos.
-> **Status:** 🟡 diagnóstico (SEM implementação, SEM alteração de runtime).
+> **Status:** ✅ correção aplicada em **Q1-B2** (ver §6). Diagnóstico original
+> mantido para auditoria.
 > **Diretrizes invioláveis (mantidas):** não alterar RLS, grants/revokes,
 > `SECURITY DEFINER`, guardas S1/P1/Q1-A2.
-> Documento somente leitura/auditoria.
+> Documento de auditoria.
 
 ---
 
@@ -176,5 +177,18 @@ Nesta etapa (apenas diagnóstico), **nada** foi alterado:
 - Runtime/frontend — sem mudança.
 - Métricas de segurança mantidas: **0028=0, 0025=0, 0029=56**.
 
-> Próximo passo só após aprovação: Q1-B2 (correção das duas constantes +
-> testes de paridade), sem schema change e sem tocar segurança.
+---
+
+## 6. Q1-B2 — Correção aplicada ✅
+
+- `ENTREVISTA_STATUS` (`src/constants/status.ts`) agora inclui `remarcada`.
+  Valores finais: `agendada`, `realizada`, `cancelada`, `remarcada`.
+- `VINCULO_STATUS` (`src/constants/status.ts`) redefinido para os 8 valores
+  reais do CHECK: `aguardando_inicio`, `aguardando_liberacao`,
+  `aguardando_agendamento`, `liberado`, `em_andamento`, `concluido`,
+  `suspenso`, `cancelado`. `ativo`/`pausado` removidos.
+- Testes: `src/test/governanca/q1b2-status-canonicos.test.ts` (puro) e
+  `src/test/integration/db/q1b2-status-paridade.dbtest.ts` (banco real,
+  paridade contra os CHECK).
+- Sem schema change, sem tocar RLS/grants/`SECURITY DEFINER`/guardas
+  S1/P1/Q1-A2. `0028=0, 0025=0, 0029=56` mantidos.

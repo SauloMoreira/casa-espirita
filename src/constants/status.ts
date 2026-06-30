@@ -3,12 +3,18 @@
  * Keep these aligned with the database enums/check constraints.
  */
 
-// Vínculo assistido <-> tratamento (estados do vínculo de tratamento)
+// Vínculo assistido <-> tratamento (estados do vínculo de tratamento).
+// Q1-B2: alinhado EXATAMENTE ao check constraint real
+// `assistido_tratamentos_status_check` (8 valores canônicos do banco).
+// NÃO usar "ativo"/"pausado" — não existem no domínio real.
 export const VINCULO_STATUS = {
+  aguardandoInicio: "aguardando_inicio",
   aguardandoLiberacao: "aguardando_liberacao",
-  ativo: "ativo",
-  pausado: "pausado",
+  aguardandoAgendamento: "aguardando_agendamento",
+  liberado: "liberado",
+  emAndamento: "em_andamento",
   concluido: "concluido",
+  suspenso: "suspenso",
   cancelado: "cancelado",
 } as const;
 export type VinculoStatus = (typeof VINCULO_STATUS)[keyof typeof VINCULO_STATUS];
@@ -46,10 +52,13 @@ export const PRIORIDADE = {
 export type Prioridade = (typeof PRIORIDADE)[keyof typeof PRIORIDADE];
 
 // Entrevista
+// Q1-B2: alinhado ao check `entrevistas_fraternas_status_check` (inclui
+// `remarcada`, valor canônico real já tratado pelas superfícies de agenda).
 export const ENTREVISTA_STATUS = {
   agendada: "agendada",
   realizada: "realizada",
   cancelada: "cancelada",
+  remarcada: "remarcada",
 } as const;
 export type EntrevistaStatus =
   (typeof ENTREVISTA_STATUS)[keyof typeof ENTREVISTA_STATUS];

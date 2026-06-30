@@ -19,11 +19,11 @@ verdade) e espelhos no frontend. Foram identificados **9 contratos**. Resultado:
 | Presença (`presencas_tratamentos.status_presenca`) | ✅ aceitável (espelho consolidado) |
 | Fila/notificações (`notif_status`, `notif_evento`, `notif_canal`) | ⚠️ precisa correção (espelho parcial) |
 | Diagnóstico de pendência (`fn_fila_diagnostico_pendentes`) | ⚠️ precisa correção (sem espelho tipado) |
-| Entrevista (`entrevistas_fraternas.status`) | 🔴 precisa correção (drift: falta `remarcada`) |
+| Entrevista (`entrevistas_fraternas.status`) | ✅ corrigido em Q1-B2 (`remarcada` adicionado a `ENTREVISTA_STATUS`) |
 | Aviso de ausência (`avisos_ausencia.status`) | ⚠️ precisa correção (sem espelho tipado) |
 | Termo de voluntário (`voluntarios.termo_status`) | ✅ aceitável por arquitetura (sem constraint DB) |
 | Status de voluntário (`voluntarios.status`) | ✅ aceitável por arquitetura (sem constraint DB) |
-| Vínculo de tratamento (`assistido_tratamentos.status`) | 🔴 crítico (drift de conjunto entre DB e `VINCULO_STATUS`) |
+| Vínculo de tratamento (`assistido_tratamentos.status`) | ✅ corrigido em Q1-B2 (`VINCULO_STATUS` redefinido para os 8 valores reais) |
 | Motivos de inelegibilidade (`fn_fila_motivo_inelegivel`) | ✅ aceitável (espelho documentado) |
 
 Nenhuma correção foi aplicada. Tudo abaixo é proposta para Q1-B (implementação).
