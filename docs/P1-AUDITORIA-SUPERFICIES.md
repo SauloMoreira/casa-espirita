@@ -1,5 +1,10 @@
 # P1 — Auditoria de superfícies privilegiadas
 
+> **Status: ✅ CONCLUÍDA (2026-06-30).** S1 (fechamento de warnings) concluída antes;
+> P1 (auditoria profunda das superfícies privilegiadas) agora também encerrada formalmente.
+> Risco residual remanescente (`0029`=56) está documentado e **aceito por arquitetura intencional**.
+> Próximo passo sai da **próxima prioridade do backlog** — não há mais trabalho aberto dentro da P1.
+>
 > Inventário orientado a risco das superfícies privilegiadas (edge functions, storage, `0029`).
 > Princípio: **usar `service_role` internamente não é vulnerabilidade**; o risco é *guarda inadequado*,
 > *bypass de autenticação/autorização* ou *operação privilegiada exposta a quem não deveria*.
