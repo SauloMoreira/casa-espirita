@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowLeft, Users, CalendarCheck, ClipboardList, CheckCircle, CalendarX, Briefcase, Megaphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLE, GERENCIAL_ROLES } from "@/constants/roles";
 import AssistidosPorTratamento from "@/components/relatorios/AssistidosPorTratamento";
 import FrequenciaPresenca from "@/components/relatorios/FrequenciaPresenca";
 import EntrevistasRealizadas from "@/components/relatorios/EntrevistasRealizadas";
@@ -39,7 +40,7 @@ export default function Relatorios() {
   const { role } = useAuth();
 
   // Gerencial reports restricted to admin and coordenador
-  const showGerencial = role === "admin" || role === "coordenador_de_tratamento";
+  const showGerencial = !!role && GERENCIAL_ROLES.includes(role);
 
   if (active) {
     const report = REPORTS.find((r) => r.key === active)!;
@@ -75,8 +76,8 @@ export default function Relatorios() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {REPORTS.filter((r) => !(r.key === "carga" && (role === "tarefeiro" || role === "coordenador_de_tratamento")))
-          .filter((r) => !(r.key === "trabalhos_publicos" && !(role === "admin" || role === "coordenador_de_tratamento" || role === "tarefeiro")))
+        {REPORTS.filter((r) => !(r.key === "carga" && (role === ROLE.TAREFEIRO || role === ROLE.COORDENADOR_DE_TRATAMENTO)))
+          .filter((r) => !(r.key === "trabalhos_publicos" && !(role === ROLE.ADMIN || role === ROLE.COORDENADOR_DE_TRATAMENTO || role === ROLE.TAREFEIRO)))
           .map((r) => {
           const Icon = r.icon;
           return (

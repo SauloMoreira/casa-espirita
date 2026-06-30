@@ -27,12 +27,25 @@
   proposta de correção + proposta de testes bloqueantes.
 
 ## Q1-A2 — Consolidação segura de roles/enums
-- **Status:** aguardando aprovação do A1
+- **Status:** ✅ implementado / em validação
 - **Tipo:** qualidade técnica / contratos canônicos
 - **Escopo:** substituir strings soltas por constantes canônicas onde o A1
   classificou como "precisa correção"/"crítico"; criar testes bloqueantes com
   allowlist; adicionar paridade enum/type/check constraint onde for seguro;
   garantir não regressão. Sem tocar guardas/RLS/SECURITY DEFINER.
+- **Entregue:**
+  - Constantes canônicas `ROLE.*` e `GERENCIAL_ROLES` em `src/constants/roles.ts`.
+  - Literais substituídos em `ProtectedRoute.tsx`, `Dashboard.tsx`,
+    `Relatorios.tsx` (consumidores de visibilidade/roteamento/view).
+  - `notificacoesService.ts` reclassificado como **falso positivo**: as
+    ocorrências de `"assistido"` são tipo de autor de mensagem
+    (`autor: "assistido" | "ia" | ...`), não papel de acesso — sem alteração.
+  - Teste puro `src/test/governanca/q1a2-roles-canonicos.test.ts` (paridade
+    `app_role` × types.ts, trava de regressão dos arquivos consolidados,
+    allowlist documentada). Teste de banco real
+    `src/test/integration/db/q1a2-enums-paridade.dbtest.ts` (paridade `pg_enum`).
+  - Nenhuma guarda S1/P1, RLS, permissão, grant/revoke ou `SECURITY DEFINER`
+    alterada. `0028=0`, `0025=0`, `0029=56` mantidos.
 
 ## Q1-B — Status e estados operacionais
 - **Status:** planejado

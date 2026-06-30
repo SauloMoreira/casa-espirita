@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
+import { ROLE } from "@/constants/roles";
 import { useEffect } from "react";
 
 interface Props {
@@ -69,7 +70,7 @@ export const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   if (allowedRoles && allowedRoles.length > 0) {
     const effectiveRoles = new Set<AppRole>(roles);
     if (role) effectiveRoles.add(role);
-    if (effectiveRoles.has("administrador_master")) effectiveRoles.add("admin");
+    if (effectiveRoles.has(ROLE.ADMINISTRADOR_MASTER)) effectiveRoles.add(ROLE.ADMIN);
 
     if (effectiveRoles.size === 0) {
       return <Navigate to="/login" replace />;
