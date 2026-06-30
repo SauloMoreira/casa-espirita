@@ -40,7 +40,7 @@ export default function Relatorios() {
   const { role } = useAuth();
 
   // Gerencial reports restricted to admin and coordenador
-  const showGerencial = role === "admin" || role === "coordenador_de_tratamento";
+  const showGerencial = !!role && GERENCIAL_ROLES.includes(role);
 
   if (active) {
     const report = REPORTS.find((r) => r.key === active)!;
