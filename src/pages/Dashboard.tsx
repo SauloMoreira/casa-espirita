@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLE } from "@/constants/roles";
 import AdminDashboard from "./dashboard/AdminDashboard";
 import EntrevistadorDashboard from "./dashboard/EntrevistadorDashboard";
 import TarefeiroDashboard from "./dashboard/TarefeiroDashboard";
@@ -9,15 +10,15 @@ export default function Dashboard() {
   const { role } = useAuth();
 
   switch (role) {
-    case "admin":
+    case ROLE.ADMIN:
       return <AdminDashboard />;
-    case "entrevistador":
+    case ROLE.ENTREVISTADOR:
       return <EntrevistadorDashboard />;
-    case "tarefeiro":
+    case ROLE.TAREFEIRO:
       return <TarefeiroDashboard />;
-    case "assistido":
+    case ROLE.ASSISTIDO:
       return <AssistidoDashboard />;
-    case "coordenador_de_tratamento":
+    case ROLE.COORDENADOR_DE_TRATAMENTO:
       return <CoordenadorDashboard />;
     default:
       return <AssistidoDashboard />;
