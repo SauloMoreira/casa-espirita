@@ -48,7 +48,7 @@
     alterada. `0028=0`, `0025=0`, `0029=56` mantidos.
 
 ## Q1-B — Status e estados operacionais
-- **Status:** 🟢 em andamento (Q1-B1 ✅ / Q1-B2 ✅ / Q1-B3 🟡 desenho)
+- **Status:** 🟢 em andamento (Q1-B1 ✅ / Q1-B2 ✅ / Q1-B3 ✅)
 - **Escopo:** presença, fila, diagnóstico, entrevista, aviso de ausência, termo,
   voluntário e vínculo. Tornar contratos `Record<string,string>` tipados quando
   seguro; travar conjuntos contra check constraints reais (testes de integração).
