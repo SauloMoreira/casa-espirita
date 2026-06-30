@@ -289,3 +289,48 @@ autorização vive **dentro** da função (fronteira `SECURITY DEFINER`), não n
   `Permissions-Policy`) dependem de configuração no provedor de hospedagem.
 - Endurecimento global de tipagem (`strict` no tsconfig) e remoção ampla de `any` em
   módulos não críticos — fazer de forma incremental para evitar regressões em massa.
+
+## 9. P1 — Lote B · Storage institucional e funções privilegiadas
+
+### 9.1 Bucket `conteudo-institucional` (campanhas/eventos)
+Modelo de conteúdo **institucional** (não pertence a um `auth.uid()`), portanto as
+policies NÃO usam escopo por pasta de usuário.
+
+- **Leitura por URL direta:** desejada como pública (leitura anônima por URL, **sem
+  listagem**). O flag público de bucket está **bloqueado pela política do workspace**
+  (`cloud_block_public_buckets`). Enquanto não for liberado, o bucket permanece privado
+  e os uploads novos continuam no bucket `avatars` (já público) — ver débito 9.3.
+  Quando o público for habilitado: marcar `conteudo-institucional` como público e
+  **não** criar policy `anon SELECT` (ausência de SELECT anônimo = sem listagem pública;
+  a leitura por URL direta passa pela rota `/object/public`).
+- **Listagem/leitura via API autenticada:** `conteudo_institucional_select_staff`
+  (apenas `fn_eh_staff`). Sem policy `anon` ⇒ sem listagem pública.
+- **Upload/Update/Delete:** apenas staff/gestor (`fn_eh_staff`) — policies
+  `conteudo_institucional_{insert,update,delete}_staff`. Sem escopo de pasta por uid.
+- **MIME/size:** limites de bucket (`allowed_mime_types`, `file_size_limit`) não são
+  ajustáveis pelos tools disponíveis (escrita em `storage.buckets` é bloqueada).
+  Enforcement na camada de aplicação: `validarUploadImagem` (JPG/PNG/WEBP, ≤10MB) no
+  cliente e validação na edge `conteudo-imagem-ia`.
+
+### 9.2 `preparar_envio_institucional`
+- Caller oficial **único**: UI autenticada (`src/services/comunicacaoInstitucional.ts`).
+- Guarda interna: `fn_eh_gestor(auth.uid())` (admin, administrador_master,
+  coordenador_de_tratamento).
+- **Sem semântica implícita:** `auth.uid()` nulo ⇒ acesso negado explicitamente
+  (não é atalho de "execução interna"). **Não há** caminho service_role/interno.
+- `EXECUTE` revogado de `anon`/`PUBLIC`; concedido a `authenticated`.
+
+### 9.3 Débitos controlados registrados
+- **Legado `avatars/{uid}/conteudo-*`:** URLs antigas permanecem válidas; **não migrar
+  agora**. Novos uploads devem ir para `conteudo-institucional` quando a leitura pública
+  for habilitada. Conteúdo legado fica como **débito controlado futuro** (fora do escopo
+  do Lote B).
+- **Funções de piloto/homologação** `pts_homologacao_auditar` e `pts_rollback_piloto`:
+  guarda dura (admin) mantida; **débito de expiração** — ao encerrar o piloto/homologação
+  devem ser revisadas para remoção ou restrição ainda mais dura.
+
+### 9.4 Rotação do segredo de cron (`app_cron_secrets`)
+Procedimento operacional: gerar novo segredo, atualizar a linha `name='default'` em
+`app_cron_secrets` (acesso service_role) e atualizar o header `x-cron-secret` usado pelos
+jobs pg_cron. A função compartilhada `_shared/auth.ts::guardCronOrStaff` valida o segredo
+contra a tabela; trocar a tabela e o agendador na mesma janela evita downtime.
