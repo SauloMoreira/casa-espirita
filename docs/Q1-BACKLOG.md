@@ -48,10 +48,15 @@
     alterada. `0028=0`, `0025=0`, `0029=56` mantidos.
 
 ## Q1-B — Status e estados operacionais
-- **Status:** 🟢 em andamento (Q1-B1 diagnóstico ✅ / Q1-B2 correção crítica ✅)
+- **Status:** 🟢 em andamento (Q1-B1 ✅ / Q1-B2 ✅ / Q1-B3 🟡 desenho)
 - **Escopo:** presença, fila, diagnóstico, entrevista, aviso de ausência, termo,
   voluntário e vínculo. Tornar contratos `Record<string,string>` tipados quando
   seguro; travar conjuntos contra check constraints reais (testes de integração).
+
+### Q1-B1 — Diagnóstico dos contratos críticos de status
+- **Status:** ✅ concluído (relatório em `docs/Q1-B1-DIAGNOSTICO-CRITICOS.md`)
+- **Escopo:** diagnóstico final de `entrevistas_fraternas.status` e
+  `assistido_tratamentos.status` (drift real classificado, sem implementação).
 
 ### Q1-B2 — Correção cirúrgica dos contratos críticos de status
 - **Status:** ✅ concluído (sem schema change, sem tocar RLS/grants/SECURITY DEFINER)
@@ -69,6 +74,16 @@
   - `npm run test:db` 65/65 verdes; governança pura verde.
   - Nenhuma alteração de runtime, RLS, grants/revokes ou `SECURITY DEFINER`.
     `0028=0`, `0025=0`, `0029=56` mantidos.
+
+### Q1-B3 — Status operacionais remanescentes
+- **Status:** 🟡 desenho operacional (inventário em `docs/Q1-B3-INVENTARIO.md`,
+  SEM implementação corretiva)
+- **Escopo:** `notif_status`, `notif_evento`, `notif_canal`, diagnóstico de
+  pendência de fila (`fn_fila_diagnostico_pendentes`) e `avisos_ausencia.status`.
+- **Fora de escopo:** termo/status de voluntário, labels amplos, fluxo de agenda,
+  payloads RPC (Q1-C) e qualquer alteração de segurança.
+
+
 
 ## Q1-C — Payloads RPC e espelhos TS
 - **Status:** planejado
