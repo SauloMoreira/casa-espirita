@@ -76,12 +76,21 @@
     `0028=0`, `0025=0`, `0029=56` mantidos.
 
 ### Q1-B3 — Status operacionais remanescentes
-- **Status:** 🟡 desenho operacional (inventário em `docs/Q1-B3-INVENTARIO.md`,
-  SEM implementação corretiva)
+- **Status:** ✅ concluído (inventário em `docs/Q1-B3-INVENTARIO.md`; implementação
+  controlada aplicada — contratos canônicos + testes de paridade)
 - **Escopo:** `notif_status`, `notif_evento`, `notif_canal`, diagnóstico de
   pendência de fila (`fn_fila_diagnostico_pendentes`) e `avisos_ausencia.status`.
+- **Entrega:**
+  - `src/constants/notificacoes.ts` — `NOTIF_STATUS` (5), `NOTIF_EVENTO` (16,
+    inclui `aviso_ausencia_recebido`), `NOTIF_CANAL` (1) como espelhos read-only.
+  - Paridade pura: `src/test/governanca/q1b3-status-notificacoes.test.ts`.
+  - Paridade real (banco): `src/test/integration/db/q1b3-status-paridade.dbtest.ts`.
+  - `DiagnosticoPendencia` e `StatusAviso` mantidos (apenas reforço de teste).
+- **Sem alteração:** runtime, dispatch, fila, inserts, RLS, grants/revokes,
+  `SECURITY DEFINER`, guardas S1/P1/Q1-A2.
 - **Fora de escopo:** termo/status de voluntário, labels amplos, fluxo de agenda,
   payloads RPC (Q1-C) e qualquer alteração de segurança.
+
 
 
 
