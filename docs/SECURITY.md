@@ -392,3 +392,33 @@ expiração já registrado em §9.3).
 - Integração real de banco: `src/test/integration/db/lote-c-residual-0029.dbtest.ts` (17 testes).
 - Governança: 130/130 verdes (sem regressão).
 - `0029` final confirmado por consulta direta = **56**.
+
+## 11. Correção complementar de segurança pós-P1 — CONCLUÍDA
+
+**Status:** ✅ Concluída após re-scan confirmatório (2026-06-30). Não reabre S1 nem P1.
+
+### 11.1 Escopo (achados aceitos como correção complementar)
+- **Exposição de erro técnico em endpoints públicos** (`raw_err_public_fns`):
+  `checkin-publico`, `request-signup`.
+- **Leitura ampla de regras sensíveis** (`sensivel_regras_broad_read`):
+  `regras_operacionais`.
+
+### 11.2 O que foi feito
+- `request-signup`: respostas 500 retornam mensagem genérica `"Erro interno. Tente novamente."`;
+  detalhe completo só via `log.error` (server-side).
+- `checkin-publico`: além do catch genérico, o helper `reject()` agora força mensagem
+  genérica em qualquer status ≥ 500 (cobrindo os 3 retornos que ainda passavam
+  `insertErr.message`). Detalhe completo permanece nos logs internos.
+- `regras_operacionais`: política de leitura
+  `Authenticated read non-sensitive regras` →
+  `sensivel = false` OU `admin` OU `coordenador_de_tratamento`.
+  Linhas sensíveis ficam bloqueadas para usuário comum/assistido.
+
+### 11.3 Validação (re-scan confirmatório)
+- Re-scan executado: `supabase items_found = 56`, **todos `warn` (0029)**, nenhum `error`.
+- Métricas mantidas: **0028 = 0**, **0025 = 0**, **0029 = 56**.
+- Política `regras_operacionais` verificada por consulta direta a `pg_policies`.
+  Dados: 19 linhas não sensíveis (legíveis) + 3 sensíveis (restritas).
+- Endpoints públicos: nenhuma resposta HTTP expõe detalhe técnico; detalhe só em logs.
+- **Sem alteração** em RLS de outras tabelas, grants/revokes ou `SECURITY DEFINER`.
+- Testes de governança/regressão: **138/138 verdes**.
