@@ -126,3 +126,12 @@ contrato do pipeline de exceção) em `docs/SECURITY.md` §10.
 > Critério de pronto da P1 atendido: 100% das funções privilegiadas com decisão registrada;
 > nenhuma superfície pública sem justificativa; warnings aceitos documentados como arquitetura
 > intencional. **P1 encerrada formalmente.**
+
+## 7. Registro formal de encerramento (2026-06-30)
+
+- **S1 — Fechamento dos warnings de segurança:** ✅ concluída (anterior). `0028`→0, `0025`→0.
+- **P1 — Auditoria de superfícies privilegiadas:** ✅ **concluída**. `0029` 66→56; baldes A=44 · B=10 · C=10 · Pilotos=2; nenhuma superfície `anon` reintroduzida.
+- **Risco residual remanescente:** documentado e **aceito por arquitetura intencional** (Balde A com guarda interna, Balde B helpers de RLS, Pilotos com débito de expiração registrado).
+- **Testes na conclusão:** integração real Lote C 17/17 · não regressão A/B/C 30/30 · governança 130/130.
+- **Documentação:** `docs/SECURITY.md` §10 + este documento (§6 e §7), com decisão nominal das 66 funções registrada.
+- **Próximo passo:** sair da **próxima prioridade do backlog**. Nenhum trabalho permanece aberto dentro da P1.
