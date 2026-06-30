@@ -3,8 +3,9 @@
 > **Frente:** qualidade técnica / contratos canônicos.
 > **Status:** ✅ correção aplicada em **Q1-B2** (ver §6). Diagnóstico original
 > mantido para auditoria.
+> **Diretrizes invioláveis (mantidas):** não alterar RLS, grants/revokes,
 > `SECURITY DEFINER`, guardas S1/P1/Q1-A2.
-> Documento somente leitura/auditoria.
+> Documento de auditoria.
 
 ---
 
