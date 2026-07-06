@@ -303,17 +303,15 @@ export async function registrarPresencaPlano(
   const baseStart = resolverDataBaseProjecao(null);
   const prox = calcularProximaEtapa(vinc, tt as TipoRow | undefined, numeroAtiva, baseStart);
 
-  const { data: resp, error } = await supabase.rpc("pts_registrar_presenca", {
-    p_vinculo_id: vinculoId,
-    p_data: data,
-    p_registrado_por: registradoPor,
-    p_proxima_numero_etapa: prox?.numero_etapa ?? undefined,
-    p_proxima_data: prox?.data ?? undefined,
-    p_proxima_horario: prox?.horario ?? undefined,
-  } as never);
-  if (error) throw new Error(error.message);
+  const r = await registrarPresencaRpc({
+    vinculoId,
+    data,
+    registradoPor,
+    proximaNumeroEtapa: prox?.numero_etapa ?? undefined,
+    proximaData: prox?.data ?? undefined,
+    proximaHorario: prox?.horario ?? undefined,
+  });
 
-  const r = (resp ?? {}) as unknown as PresencaResult;
   // Encadeamento sequencial: se concluiu, ativa a próxima etapa necessária.
   if (r.concluido) {
     await reconciliarPlanoAssistido(vinc.assistido_id);
