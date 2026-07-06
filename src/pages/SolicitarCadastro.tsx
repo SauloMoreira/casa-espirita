@@ -58,7 +58,18 @@ export default function SolicitarCadastro() {
         throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
-      setDone(true);
+      // Immediate base access: sign the user in right after creation so the
+      // AuthContext hydrates the session + assistido role, then go to the app.
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: form.email.trim(),
+        password: form.password,
+      });
+      if (signInErr) {
+        // Account exists with access; fall back to the login screen.
+        setDone(true);
+        return;
+      }
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       toast({
         title: "Não foi possível enviar o cadastro",
