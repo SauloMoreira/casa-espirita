@@ -58,7 +58,18 @@ export default function SolicitarCadastro() {
         throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
-      setDone(true);
+      // Immediate base access: sign the user in right after creation so the
+      // AuthContext hydrates the session + assistido role, then go to the app.
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: form.email.trim(),
+        password: form.password,
+      });
+      if (signInErr) {
+        // Account exists with access; fall back to the login screen.
+        setDone(true);
+        return;
+      }
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       toast({
         title: "Não foi possível enviar o cadastro",
@@ -85,10 +96,10 @@ export default function SolicitarCadastro() {
           </div>
           <div className="space-y-1.5">
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Solicitar <span className="text-primary">cadastro</span>
+              Criar <span className="text-primary">conta</span>
             </h1>
             <p className="text-sm text-muted-foreground">
-              Preencha seus dados. O acesso é liberado após aprovação.
+              Preencha seus dados. Seu acesso de assistido é liberado na hora.
             </p>
           </div>
         </header>
@@ -99,21 +110,21 @@ export default function SolicitarCadastro() {
               <div className="space-y-5 text-center">
                 <CheckCircle2 className="mx-auto h-14 w-14 text-primary" />
                 <div className="space-y-1.5">
-                  <h2 className="font-display text-xl font-semibold text-foreground">Cadastro enviado!</h2>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Conta criada!</h2>
                   <p className="text-sm text-muted-foreground">
-                    Sua solicitação está <strong>aguardando aprovação</strong> da administração.
-                    Você poderá entrar assim que for liberado.
+                    Seu acesso de <strong>assistido</strong> já está liberado.
+                    Entre com seu e-mail e senha para acessar.
                   </p>
                 </div>
-                <Button className="w-full" onClick={() => navigate("/login")}>Voltar para o login</Button>
+                <Button className="w-full" onClick={() => navigate("/login")}>Ir para o login</Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Alert>
                   <ShieldCheck className="h-4 w-4" />
-                  <AlertTitle className="text-sm">Acesso mediante aprovação</AlertTitle>
+                  <AlertTitle className="text-sm">Acesso imediato</AlertTitle>
                   <AlertDescription className="text-xs">
-                    O cadastro não libera acesso imediato. Após aprovado, você entra como assistido.
+                    Ao concluir o cadastro você entra automaticamente como assistido, sem aprovação.
                   </AlertDescription>
                 </Alert>
 
@@ -155,7 +166,7 @@ export default function SolicitarCadastro() {
                 </Field>
 
                 <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold" disabled={loading}>
-                  {loading ? "Enviando..." : "Solicitar cadastro"}
+                  {loading ? "Criando conta..." : "Criar conta"}
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground">
