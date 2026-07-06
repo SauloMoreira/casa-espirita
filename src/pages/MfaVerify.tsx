@@ -15,7 +15,10 @@ import ferIcon from "@/assets/fer-icon.png";
 export default function MfaVerify() {
   const { refreshMfa, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
   const [code, setCode] = useState("");
   const [recoveryMode, setRecoveryMode] = useState(false);
