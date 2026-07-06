@@ -65,7 +65,7 @@ export default function MfaVerify() {
         throw verErr;
       }
       await refreshMfa();
-      navigate("/dashboard", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch (err: any) {
       toast({ title: "Falha na verificação", description: err?.message || "Código incorreto.", variant: "destructive" });
     } finally {
