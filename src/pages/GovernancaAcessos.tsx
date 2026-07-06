@@ -188,14 +188,11 @@ export default function GovernancaAcessos() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("fn_conceder_acesso_operacional", {
-        p_target_user_id: opUserId,
-        p_role: opRole,
-        p_motivo: opMotivo.trim() || null,
+      const { status } = await concederAcessoOperacional({
+        targetUserId: opUserId,
+        role: opRole,
+        motivo: opMotivo.trim() || null,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      const status = (data as any)?.status;
       toast({
         title: status === "ja_concedido" ? "Acesso já existia" : "Acesso operacional concedido",
         description: status === "ja_concedido"
