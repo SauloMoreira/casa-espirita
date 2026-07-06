@@ -96,10 +96,10 @@ export default function SolicitarCadastro() {
           </div>
           <div className="space-y-1.5">
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Solicitar <span className="text-primary">cadastro</span>
+              Criar <span className="text-primary">conta</span>
             </h1>
             <p className="text-sm text-muted-foreground">
-              Preencha seus dados. O acesso é liberado após aprovação.
+              Preencha seus dados. Seu acesso de assistido é liberado na hora.
             </p>
           </div>
         </header>
