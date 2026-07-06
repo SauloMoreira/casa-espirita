@@ -20,9 +20,11 @@ function isValidCPF(cpf: string): boolean {
   return r === parseInt(c[10]);
 }
 
-// Public endpoint: creates a registration REQUEST. No access is granted here.
-// The auth account is created with a status of "pendente" and NO role until an
-// administrator approves it (which assigns the secure default role 'assistido').
+// Public endpoint: self-registration with IMMEDIATE base access.
+// The auth account is created and the profile is inserted as "ativo". The base
+// role 'assistido' is granted automatically by the AFTER INSERT trigger on
+// public.profiles (fn_conceder_acesso_base) — NO elevated role is ever granted
+// here and no manual administrative approval is required for base access.
 Deno.serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
   const json = (body: unknown, status = 200) =>
