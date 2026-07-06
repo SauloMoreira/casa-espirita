@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { buildCorsHeaders } from "../_shared/cors.ts";
+import { buildUserMessage } from "./payload.ts";
 
 
 interface TratamentoDisponivel {
@@ -143,7 +144,9 @@ ${tratamentosLista || "Nenhum tratamento cadastrado."}`;
 }
 Para cada tratamento, "quantidade" é o número de sessões recomendado (inteiro).`;
 
-    const userMessage = `Assistido: ${assistido_nome || "Não informado"}\n\nObservações da entrevista:\n${observacoes}`;
+    // Q2-A1: minimização LGPD — o payload enviado à IA contém apenas as
+    // observações da sessão, sem nome nem identificadores diretos do assistido.
+    const userMessage = buildUserMessage(observacoes);
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
