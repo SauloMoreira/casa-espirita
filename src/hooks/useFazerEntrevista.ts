@@ -667,8 +667,11 @@ export function useFazerEntrevista() {
     aiSugestao,
     aiEstruturada,
     aiSugestaoId,
+    aiMotivoAjuste,
+    setAiMotivoAjuste,
     isRecording,
     // derived
+    aiHasDivergencia,
     filteredAssistidos,
     isApto,
     totalAssigned,
