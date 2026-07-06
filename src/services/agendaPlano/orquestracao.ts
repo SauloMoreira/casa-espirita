@@ -204,24 +204,9 @@ export async function converterAssistidoParaPlano(
   return { planos: r.planos ?? 0, sessoes_neutralizadas: r.sessoes_neutralizadas ?? 0 };
 }
 
-export interface RollbackResult {
-  sessoes_removidas: number;
-  sessoes_restauradas: number;
-  etapas_removidas: number;
-}
-
 /** Reverte o piloto (reversão estrutural não destrutiva). Apenas administradores. */
 export async function reverterPilotoPlano(assistidoId: string): Promise<RollbackResult> {
-  const { data, error } = await supabase.rpc("pts_rollback_piloto", {
-    p_assistido_id: assistidoId,
-  });
-  if (error) throw new Error(error.message);
-  const r = (data ?? {}) as unknown as RollbackResult;
-  return {
-    sessoes_removidas: r.sessoes_removidas ?? 0,
-    sessoes_restauradas: r.sessoes_restauradas ?? 0,
-    etapas_removidas: r.etapas_removidas ?? 0,
-  };
+  return rollbackPilotoRpc(assistidoId);
 }
 
 /** Reconstrói/ativa a próxima etapa necessária do assistido (idempotente). */
