@@ -319,12 +319,6 @@ export async function registrarPresencaPlano(
   return r;
 }
 
-export interface AusenciaResult {
-  suspenso: boolean;
-  faltas_consecutivas: number;
-  remarcacoes_automaticas: number;
-}
-
 /** Registra ausência remarcando SOMENTE a etapa atual (porta única). */
 export async function registrarAusenciaPlano(
   vinculoId: string,
