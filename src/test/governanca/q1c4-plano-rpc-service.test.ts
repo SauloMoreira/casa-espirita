@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock do client Supabase antes de importar os services.
 const rpcMock = vi.fn();
+const fromMock = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (...args: unknown[]) => rpcMock(...args),
+    from: (...args: unknown[]) => fromMock(...args),
   },
 }));
 
@@ -14,9 +16,14 @@ import {
   rollbackPilotoRpc,
   homologacaoAuditarRpc,
 } from "@/services/agendaPlano/planoRpcService";
+import {
+  getComunicacaoGeralAtiva,
+  setComunicacaoGeralAtiva,
+} from "@/services/notificacoes/notificacoesService";
 
 beforeEach(() => {
   rpcMock.mockReset();
+  fromMock.mockReset();
 });
 
 describe("Q1-C4 planoRpcService — pts_registrar_presenca", () => {
