@@ -718,9 +718,9 @@ export async function rollbackControladoPlano(assistidoId: string): Promise<Roll
 /** Reprocessamento idempotente pelo painel (reconcilia + audita). */
 export async function reprocessarAssistidoHomologacao(assistidoId: string): Promise<void> {
   await reconciliarPlanoAssistido(assistidoId);
-  await supabase.rpc("pts_homologacao_auditar" as never, {
-    p_assistido_id: assistidoId,
-    p_acao: "PLANO_REPROCESSAMENTO_HOMOLOGACAO",
-    p_resultado: { reconciliado: true },
-  } as never);
+  await homologacaoAuditarRpc({
+    assistidoId,
+    acao: "PLANO_REPROCESSAMENTO_HOMOLOGACAO",
+    resultado: { reconciliado: true },
+  });
 }
