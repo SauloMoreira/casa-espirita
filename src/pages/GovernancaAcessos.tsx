@@ -144,13 +144,11 @@ export default function GovernancaAcessos() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("solicitar_promocao_admin", {
-        p_target_user_id: targetUserId,
-        p_target_role: targetRole,
-        p_justificativa: justificativa.trim(),
+      await solicitarPromocaoAdmin({
+        targetUserId,
+        targetRole,
+        justificativa: justificativa.trim(),
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Solicitação criada", description: "Aguardando aprovação." });
       setOpen(false);
       setTargetUserId(""); setJustificativa(""); setTargetRole("admin");
