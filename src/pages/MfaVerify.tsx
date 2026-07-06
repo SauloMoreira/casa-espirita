@@ -96,7 +96,7 @@ export default function MfaVerify() {
         description: "MFA desativado. Reative o autenticador assim que possível.",
       });
       await refreshMfa();
-      navigate("/dashboard", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch (err: any) {
       toast({ title: "Não foi possível recuperar", description: err?.message, variant: "destructive" });
     } finally {
