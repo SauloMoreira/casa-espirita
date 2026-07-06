@@ -175,7 +175,30 @@ export function aggregateIndicadores(
   }
 
   const avaliadas = feedbacks.length;
-  const pct = (n: number) => (avaliadas > 0 ? Math.round((n / avaliadas) * 100) : 0);
+
+  // Base de ADERÊNCIA: exclui estados inconclusivos ("sem uso" e
+  // "inconclusiva"), que não representam acerto nem divergência real da IA.
+  // Assim a taxa principal mede convergência com a decisão humana sobre os
+  // casos efetivamente comparáveis, sem diluição enganosa.
+  const baseAderencia = aderenciaTotal + aderenciaParcial + divergencia;
+  const pct = (n: number) =>
+    baseAderencia > 0 ? Math.round((n / baseAderencia) * 100) : 0;
+
+  // Contagem simples de feedbacks com motivo de ajuste/rejeição preenchido.
+  // NUNCA expõe o texto livre; apenas quantifica (LGPD / dado sensível).
+  const motivosPreenchidos = feedbacks.filter(
+    (f) => typeof f.motivo_ajuste === "string" && f.motivo_ajuste.trim().length > 0,
+  ).length;
+
+  // Pendências: sugestões sem feedback registrado. "Antigas" = criadas há
+  // mais de PENDENTE_ANTIGA_DIAS. Apenas leitura — sem cobrança/SLA/ranking.
+  let pendentesAntigas = 0;
+  const limiteAntiga = now.getTime() - PENDENTE_ANTIGA_DIAS * DIA_MS;
+  for (const s of sugestoes) {
+    if (fbBySugestao.has(s.id)) continue;
+    const ts = s.created_at ? new Date(s.created_at).getTime() : NaN;
+    if (Number.isFinite(ts) && ts < limiteAntiga) pendentesAntigas++;
+  }
 
   // Tratamentos sugeridos x atribuídos
   const sugeridosFlat: Array<{ nome?: string | null }> = [];
