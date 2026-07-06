@@ -75,6 +75,7 @@ export function useFazerEntrevista() {
   const [aiSugestao, setAiSugestao] = useState("");
   const [aiSugestaoId, setAiSugestaoId] = useState<string | null>(null);
   const [aiEstruturada, setAiEstruturada] = useState<IaSugestaoEstruturada | null>(null);
+  const [aiMotivoAjuste, setAiMotivoAjuste] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [agendaEntrevistaId, setAgendaEntrevistaId] = useState<string | null>(null);
 
