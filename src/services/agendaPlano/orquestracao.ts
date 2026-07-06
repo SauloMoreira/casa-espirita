@@ -267,12 +267,6 @@ function calcularProximaEtapa(
   };
 }
 
-export interface PresencaResult {
-  concluido: boolean;
-  quantidade_realizada: number;
-  quantidade_total: number;
-}
-
 /** Registra presença na etapa ativa e avança para a próxima (porta única). */
 export async function registrarPresencaPlano(
   vinculoId: string,
