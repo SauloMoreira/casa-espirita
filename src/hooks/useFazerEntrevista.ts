@@ -157,6 +157,29 @@ export function useFazerEntrevista() {
 
   const totalAssigned = Object.keys(quantidades).length;
 
+  // Divergência entre a sugestão da IA e a decisão atual do entrevistador.
+  // Só é relevante quando existe uma sugestão da IA carregada. Usada apenas
+  // para exibir, de forma opcional, o campo de motivo de ajuste/rejeição.
+  const aiHasDivergencia = useMemo(() => {
+    if (!aiSugestaoId || !aiEstruturada) return false;
+    const atribuidos: IaTratamentoAtribuido[] = Object.entries(quantidades)
+      .filter(([, q]) => Number(q) > 0)
+      .map(([tratId, q]) => ({
+        tratamento_id: tratId,
+        nome: tratamentoMap[tratId]?.nome ?? tratId,
+        quantidade: Number(q),
+      }));
+    const diff = computeDiferencas(
+      aiEstruturada.tratamentos_sugeridos as IaTratamentoSugerido[],
+      atribuidos,
+    );
+    return (
+      diff.adicionados.length > 0 ||
+      diff.removidos.length > 0 ||
+      diff.alterados.length > 0
+    );
+  }, [aiSugestaoId, aiEstruturada, quantidades, tratamentoMap]);
+
   const selectAssistido = useCallback((a: EntrevistaAssistido) => {
     setSelectedAssistido(a);
     setSearchTerm("");
