@@ -1,4 +1,32 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  parseConversasResultado,
+  parsePainelWhatsapp,
+  parsePainelV2,
+} from "./notificacoesContracts";
+import type {
+  ConversaEnriquecida,
+  ConversasResultado,
+  PainelPorTipo,
+  PainelIntent,
+  PainelFalha,
+  PainelWhatsapp,
+  SeriePonto,
+  PainelV2,
+} from "./notificacoesContracts";
+
+// Q1-C5 — contratos jsonb sensíveis centralizados em notificacoesContracts.
+// Re-exportados aqui para preservar compatibilidade com os consumidores.
+export type {
+  ConversaEnriquecida,
+  ConversasResultado,
+  PainelPorTipo,
+  PainelIntent,
+  PainelFalha,
+  PainelWhatsapp,
+  SeriePonto,
+  PainelV2,
+};
 
 export interface PreferenciaNotificacao {
   id: string;
