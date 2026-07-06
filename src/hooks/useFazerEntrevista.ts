@@ -399,6 +399,10 @@ export function useFazerEntrevista() {
             avaliadorId: user!.id,
             sugeridos: aiEstruturada.tratamentos_sugeridos as IaTratamentoSugerido[],
             atribuidos,
+            // Motivo opcional de ajuste/rejeição informado pelo entrevistador.
+            // A classificação continua sendo determinada por diff (não é
+            // sobrescrita); apenas anexamos o motivo quando houver.
+            motivo: aiMotivoAjuste.trim() || null,
           });
         } catch (fbErr) {
           console.error("Erro ao registrar feedback da IA:", fbErr);
