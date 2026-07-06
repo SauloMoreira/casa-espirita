@@ -101,9 +101,12 @@ export default function IndicadoresAssertividade() {
 
         {cards.map((c) => (
           <Card key={c.label}>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4" title={c.tip}>
               <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">{c.label}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  {c.label}
+                  <HelpCircle className="h-3 w-3 opacity-50" />
+                </p>
                 <c.icon className="h-4 w-4 text-primary" />
               </div>
               <p className="text-2xl font-bold mt-1">{c.value}</p>
@@ -112,6 +115,30 @@ export default function IndicadoresAssertividade() {
           </Card>
         ))}
       </div>
+
+      <Card className="border-dashed">
+        <CardContent className="pt-4 space-y-1.5 text-xs text-muted-foreground">
+          <p className="text-foreground/80">
+            Os indicadores medem a <strong>convergência entre a sugestão da IA e a
+            decisão humana registrada</strong> — não o "acerto absoluto" da IA. A IA é
+            apoio; a decisão final é sempre fraterna e humana.
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+            <span>Base de aderência: <strong>{data.baseAderencia}</strong> avaliações consideradas</span>
+            <span>Sugestões geradas no período: <strong>{data.totalSugestoes}</strong></span>
+            <span>Avaliadas: <strong>{data.avaliadas}</strong></span>
+            <span>Pendentes: <strong>{data.pendentes}</strong>{data.pendentesAntigas > 0 && (
+              <> · <span className="text-amber-600 dark:text-amber-500">{data.pendentesAntigas} pendente(s) há mais de 30 dias</span></>
+            )}</span>
+            <span>Feedbacks com motivo de ajuste: <strong>{data.motivosPreenchidos}</strong></span>
+          </div>
+          {data.baseAderencia > 0 && data.baseAderencia < 10 && (
+            <p className="text-amber-600 dark:text-amber-500">
+              Amostra pequena ({data.baseAderencia} avaliações): interprete os percentuais com cautela.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {data.avaliadas === 0 ? (
         <Card>
