@@ -80,7 +80,7 @@ describe("Q2-A2.1 — Registro opcional de rejeição/ajuste da sugestão IA", (
       motivo: "Caso exigiu tratamento diferente do sugerido",
     });
     const fb = inserts[0].payload;
-    expect(fb.table === undefined ? inserts[0].table : inserts[0].table).toBe("ia_feedback");
+    expect(inserts[0].table).toBe("ia_feedback");
     expect(fb.motivo_ajuste).toBe("Caso exigiu tratamento diferente do sugerido");
     // A classificação continua sendo derivada por diff, não pelo motivo.
     expect(fb.classificacao).toBe("inadequada");
