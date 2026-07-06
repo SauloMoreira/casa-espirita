@@ -119,3 +119,33 @@
 - **Status:** planejado
 - **Escopo:** `docs/Q1-CANONICAL-CONTRACTS.md`, atualização de
   `docs/INVARIANTES.md` e `docs/MAPA-COBERTURA-INVARIANTES.md`, critério final.
+
+
+## BUG — Assistido recém-cadastrado sem acesso automático (corrigido)
+- **Status:** ✅ corrigido
+- **Causa raiz:** o autocadastro (`request-signup`) criava o `profile` com
+  `status = "pendente"`, e o `ProtectedRoute` bloqueia contas `pendente`
+  (fazendo `signOut`). O papel base `assistido` JÁ era concedido pelo gatilho
+  `trg_profiles_acesso_base` → `fn_conceder_acesso_base()`; o bloqueio era pelo
+  STATUS do profile, não pelo papel. O acesso só era liberado após aprovação
+  manual de admin (`manage-signup`).
+- **Decisão do produto:** liberar acesso imediato do assistido no autocadastro,
+  sem aprovação manual (papel base automático).
+- **Correção cirúrgica:**
+  - `supabase/functions/request-signup/index.ts`: profile passa a nascer
+    `status = "ativo"`; a solicitação é registrada já `aprovado` (auditada);
+    mensagem de acesso imediato.
+  - `src/pages/SolicitarCadastro.tsx`: login automático após criar a conta e
+    redirecionamento para `/dashboard`; textos ajustados para acesso imediato.
+- **Sem alteração:** RLS, grants/revokes, `SECURITY DEFINER`, policies, schema,
+  guardas S1/P1, papéis administrativos e Gestão de Acesso. O gatilho de papel
+  base e a policy "Users can view own role" (leitura da própria role) já existiam
+  e permanecem intactos.
+- **Testes:**
+  - `src/test/integration/db/bug-autocadastro-assistido.dbtest.ts` (banco real):
+    profile `ativo` recebe `assistido`, status não bloqueante, nenhum papel
+    elevado concedido, policy de leitura da própria role presente.
+  - `src/test/governanca/bug-autocadastro-assistido.test.ts` (frontend/constantes):
+    regra de bloqueio só barra `pendente`/`inativo`; sem drift em `ROLE.ASSISTIDO`.
+- **Métricas de segurança preservadas:** 0028=0, 0025=0, 0029=56 (nenhum objeto
+  de segurança foi alterado).
