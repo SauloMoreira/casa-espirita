@@ -110,13 +110,13 @@ export default function SolicitarCadastro() {
               <div className="space-y-5 text-center">
                 <CheckCircle2 className="mx-auto h-14 w-14 text-primary" />
                 <div className="space-y-1.5">
-                  <h2 className="font-display text-xl font-semibold text-foreground">Cadastro enviado!</h2>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Conta criada!</h2>
                   <p className="text-sm text-muted-foreground">
-                    Sua solicitação está <strong>aguardando aprovação</strong> da administração.
-                    Você poderá entrar assim que for liberado.
+                    Seu acesso de <strong>assistido</strong> já está liberado.
+                    Entre com seu e-mail e senha para acessar.
                   </p>
                 </div>
-                <Button className="w-full" onClick={() => navigate("/login")}>Voltar para o login</Button>
+                <Button className="w-full" onClick={() => navigate("/login")}>Ir para o login</Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
