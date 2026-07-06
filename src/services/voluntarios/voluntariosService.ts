@@ -196,7 +196,7 @@ export async function getTermoSignedUrl(path: string): Promise<string> {
 
 // ---- Busca de pessoa existente para reaproveitamento ----
 
-import type { PessoaCandidata } from "@/lib/voluntarioCadastro";
+import { parsePessoaCandidatas, type PessoaCandidata } from "./voluntariosContracts";
 
 /**
  * Busca pessoas já cadastradas (assistidos + usuários) para reaproveitar dados.
@@ -206,5 +206,5 @@ import type { PessoaCandidata } from "@/lib/voluntarioCadastro";
 export async function buscarPessoaParaVoluntario(termo: string): Promise<PessoaCandidata[]> {
   const { data, error } = await supabase.rpc("fn_buscar_pessoa_para_voluntario", { p_termo: termo });
   if (error) throw error;
-  return (data ?? []) as unknown as PessoaCandidata[];
+  return parsePessoaCandidatas(data);
 }
