@@ -45,7 +45,7 @@ export async function registrarAvisoAusencia(params: {
   compromissoId: string;
   motivo?: string | null;
 }): Promise<{ id: string; status: string }> {
-  const { data, error } = await (supabase.rpc as any)("fn_registrar_aviso_ausencia", {
+  const { data, error } = await supabase.rpc("fn_registrar_aviso_ausencia", {
     p_tipo_compromisso: params.tipoCompromisso,
     p_compromisso_id: params.compromissoId,
     p_motivo: params.motivo ?? null,
@@ -63,7 +63,7 @@ export async function tratarAvisoAusencia(params: {
   if (!STATUS_TRATAMENTO.includes(params.novoStatus)) {
     throw new Error("status_invalido");
   }
-  const { data, error } = await (supabase.rpc as any)("fn_tratar_aviso_ausencia", {
+  const { data, error } = await supabase.rpc("fn_tratar_aviso_ausencia", {
     p_aviso_id: params.avisoId,
     p_novo_status: params.novoStatus,
     p_resolucao: params.resolucao ?? null,
@@ -76,7 +76,7 @@ export async function tratarAvisoAusencia(params: {
 export async function listarAvisosAusenciaPendentes(
   incluirResolvidos = false,
 ): Promise<AvisoAusenciaPendente[]> {
-  const { data, error } = await (supabase.rpc as any)("fn_avisos_ausencia_pendentes", {
+  const { data, error } = await supabase.rpc("fn_avisos_ausencia_pendentes", {
     p_incluir_resolvidos: incluirResolvidos,
   });
   if (error) throw error;
