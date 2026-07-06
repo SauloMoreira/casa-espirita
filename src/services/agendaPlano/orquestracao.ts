@@ -12,6 +12,17 @@ import {
   type ParametrosTipoAgenda,
 } from "@/lib/agendaRules";
 import { resolverDataBaseProjecao } from "@/lib/migracaoLegado";
+import {
+  registrarPresencaRpc,
+  registrarAusenciaRpc,
+  rollbackPilotoRpc,
+  homologacaoAuditarRpc,
+  type RollbackResult,
+  type PresencaResult,
+  type AusenciaResult,
+} from "@/services/agendaPlano/planoRpcService";
+
+export type { RollbackResult, PresencaResult, AusenciaResult };
 
 /**
  * Orquestração TS do NOVO MODELO (plano previsto + agenda ativa + histórico).
@@ -193,24 +204,9 @@ export async function converterAssistidoParaPlano(
   return { planos: r.planos ?? 0, sessoes_neutralizadas: r.sessoes_neutralizadas ?? 0 };
 }
 
-export interface RollbackResult {
-  sessoes_removidas: number;
-  sessoes_restauradas: number;
-  etapas_removidas: number;
-}
-
 /** Reverte o piloto (reversão estrutural não destrutiva). Apenas administradores. */
 export async function reverterPilotoPlano(assistidoId: string): Promise<RollbackResult> {
-  const { data, error } = await supabase.rpc("pts_rollback_piloto", {
-    p_assistido_id: assistidoId,
-  });
-  if (error) throw new Error(error.message);
-  const r = (data ?? {}) as unknown as RollbackResult;
-  return {
-    sessoes_removidas: r.sessoes_removidas ?? 0,
-    sessoes_restauradas: r.sessoes_restauradas ?? 0,
-    etapas_removidas: r.etapas_removidas ?? 0,
-  };
+  return rollbackPilotoRpc(assistidoId);
 }
 
 /** Reconstrói/ativa a próxima etapa necessária do assistido (idempotente). */
@@ -271,12 +267,6 @@ function calcularProximaEtapa(
   };
 }
 
-export interface PresencaResult {
-  concluido: boolean;
-  quantidade_realizada: number;
-  quantidade_total: number;
-}
-
 /** Registra presença na etapa ativa e avança para a próxima (porta única). */
 export async function registrarPresencaPlano(
   vinculoId: string,
@@ -313,28 +303,20 @@ export async function registrarPresencaPlano(
   const baseStart = resolverDataBaseProjecao(null);
   const prox = calcularProximaEtapa(vinc, tt as TipoRow | undefined, numeroAtiva, baseStart);
 
-  const { data: resp, error } = await supabase.rpc("pts_registrar_presenca", {
-    p_vinculo_id: vinculoId,
-    p_data: data,
-    p_registrado_por: registradoPor,
-    p_proxima_numero_etapa: prox?.numero_etapa ?? undefined,
-    p_proxima_data: prox?.data ?? undefined,
-    p_proxima_horario: prox?.horario ?? undefined,
-  } as never);
-  if (error) throw new Error(error.message);
+  const r = await registrarPresencaRpc({
+    vinculoId,
+    data,
+    registradoPor,
+    proximaNumeroEtapa: prox?.numero_etapa ?? undefined,
+    proximaData: prox?.data ?? undefined,
+    proximaHorario: prox?.horario ?? undefined,
+  });
 
-  const r = (resp ?? {}) as unknown as PresencaResult;
   // Encadeamento sequencial: se concluiu, ativa a próxima etapa necessária.
   if (r.concluido) {
     await reconciliarPlanoAssistido(vinc.assistido_id);
   }
   return r;
-}
-
-export interface AusenciaResult {
-  suspenso: boolean;
-  faltas_consecutivas: number;
-  remarcacoes_automaticas: number;
 }
 
 /** Registra ausência remarcando SOMENTE a etapa atual (porta única). */
@@ -400,16 +382,14 @@ export async function registrarAusenciaPlano(
   });
   const novaData = proj.sessoes[0]?.data_sessao ?? null;
 
-  const { data: resp, error } = await supabase.rpc("pts_registrar_ausencia", {
-    p_vinculo_id: vinculoId,
-    p_data: data,
-    p_registrado_por: registradoPor,
-    p_nova_data: novaData ?? undefined,
-    p_nova_horario: novoHorario ?? undefined,
-  } as never);
-  if (error) throw new Error(error.message);
+  const r = await registrarAusenciaRpc({
+    vinculoId,
+    data,
+    registradoPor,
+    novaData: novaData ?? undefined,
+    novaHorario: novoHorario ?? undefined,
+  });
 
-  const r = (resp ?? {}) as unknown as AusenciaResult;
   return {
     suspenso: r.suspenso ?? false,
     faltas_consecutivas: r.faltas_consecutivas ?? 0,
@@ -657,16 +637,16 @@ export async function gerarPreviaConversao(assistidoId: string): Promise<PreviaC
     total_sessoes_a_substituir: itens.reduce((s, i) => s + i.sessoes_a_substituir, 0),
   };
 
-  await supabase.rpc("pts_homologacao_auditar" as never, {
-    p_assistido_id: assistidoId,
-    p_acao: "PLANO_PREVIA_HOMOLOGACAO",
-    p_resultado: {
+  await homologacaoAuditarRpc({
+    assistidoId,
+    acao: "PLANO_PREVIA_HOMOLOGACAO",
+    resultado: {
       total_planos: resumo.total_planos,
       total_etapas: resumo.total_etapas,
       total_sessoes_ativas: resumo.total_sessoes_ativas,
       total_sessoes_a_substituir: resumo.total_sessoes_a_substituir,
     },
-  } as never);
+  });
 
   return resumo;
 }
@@ -738,9 +718,9 @@ export async function rollbackControladoPlano(assistidoId: string): Promise<Roll
 /** Reprocessamento idempotente pelo painel (reconcilia + audita). */
 export async function reprocessarAssistidoHomologacao(assistidoId: string): Promise<void> {
   await reconciliarPlanoAssistido(assistidoId);
-  await supabase.rpc("pts_homologacao_auditar" as never, {
-    p_assistido_id: assistidoId,
-    p_acao: "PLANO_REPROCESSAMENTO_HOMOLOGACAO",
-    p_resultado: { reconciliado: true },
-  } as never);
+  await homologacaoAuditarRpc({
+    assistidoId,
+    acao: "PLANO_REPROCESSAMENTO_HOMOLOGACAO",
+    resultado: { reconciliado: true },
+  });
 }
