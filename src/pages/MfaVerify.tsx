@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,10 @@ import ferIcon from "@/assets/fer-icon.png";
 export default function MfaVerify() {
   const { refreshMfa, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
   const [code, setCode] = useState("");
   const [recoveryMode, setRecoveryMode] = useState(false);
@@ -31,7 +34,7 @@ export default function MfaVerify() {
       if (!s) { if (active) navigate("/login", { replace: true }); return; }
       const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       const pending = data?.currentLevel === "aal1" && data?.nextLevel === "aal2";
-      if (active && !pending) navigate("/dashboard", { replace: true });
+      if (active && !pending) navigate(nextPath, { replace: true });
     })();
     return () => { active = false; };
   }, [navigate]);
@@ -62,7 +65,7 @@ export default function MfaVerify() {
         throw verErr;
       }
       await refreshMfa();
-      navigate("/dashboard", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch (err: any) {
       toast({ title: "Falha na verificação", description: err?.message || "Código incorreto.", variant: "destructive" });
     } finally {
@@ -93,7 +96,7 @@ export default function MfaVerify() {
         description: "MFA desativado. Reative o autenticador assim que possível.",
       });
       await refreshMfa();
-      navigate("/dashboard", { replace: true });
+      navigate(nextPath, { replace: true });
     } catch (err: any) {
       toast({ title: "Não foi possível recuperar", description: err?.message, variant: "destructive" });
     } finally {

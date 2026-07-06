@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://sstxquugeffchpwdyahe.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "fer-mcp",
+      "version": "0.1.0",
+      "title": "FER — Gestão de Tratamentos MCP"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Quem sou eu",
+        "description": "Retorna o perfil do usuário autenticado (nome, status e dados básicos de contato).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "minhas_notificacoes",
+        "title": "Minhas notificações",
+        "description": "Lista os avisos internos mais recentes do usuário autenticado. Opcionalmente filtra apenas os não lidos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "apenas_nao_lidos": {
+              "type": "boolean",
+              "default": false,
+              "description": "Se true, retorna apenas avisos ainda não lidos."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "description": "Quantidade máxima de avisos a retornar (1 a 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
