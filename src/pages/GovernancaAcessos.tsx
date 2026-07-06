@@ -18,6 +18,10 @@ import {
   PROMOTION_STATUS_LABELS, PROMOTION_ROLE_LABELS, isPromotionOpen,
   type PromotionStatus, type AdminPromotionRole,
 } from "@/lib/adminPromotion";
+import {
+  solicitarPromocaoAdmin, decidirPromocaoAdmin,
+  concederAcessoOperacional, revogarAcessoOperacional,
+} from "@/services/governanca/acessoService";
 
 interface ProfileLite {
   user_id: string;
