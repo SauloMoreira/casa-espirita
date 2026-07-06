@@ -122,9 +122,9 @@ export default function SolicitarCadastro() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Alert>
                   <ShieldCheck className="h-4 w-4" />
-                  <AlertTitle className="text-sm">Acesso mediante aprovação</AlertTitle>
+                  <AlertTitle className="text-sm">Acesso imediato</AlertTitle>
                   <AlertDescription className="text-xs">
-                    O cadastro não libera acesso imediato. Após aprovado, você entra como assistido.
+                    Ao concluir o cadastro você entra automaticamente como assistido, sem aprovação.
                   </AlertDescription>
                 </Alert>
 
