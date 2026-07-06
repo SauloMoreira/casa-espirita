@@ -228,7 +228,7 @@ export async function getComunicacaoGeralAtiva(assistidoId: string): Promise<boo
     .select("comunicacao_geral_ativa")
     .eq("assistido_id", assistidoId)
     .maybeSingle();
-  return data ? (data as any).comunicacao_geral_ativa !== false : true;
+  return data ? data.comunicacao_geral_ativa !== false : true;
 }
 
 /**
@@ -264,7 +264,7 @@ export async function getComunicacaoGeral(target: ComunicacaoGeralTarget): Promi
     .select("comunicacao_geral_ativa")
     .eq("user_id", target.userId)
     .maybeSingle();
-  return data ? (data as any).comunicacao_geral_ativa !== false : true;
+  return data ? data.comunicacao_geral_ativa !== false : true;
 }
 
 /** Gravação única da preferência de comunicação geral, independente do papel. */
@@ -274,7 +274,7 @@ export async function setComunicacaoGeral(target: ComunicacaoGeralTarget, ativa:
   }
   const { error } = await supabase
     .from("profiles")
-    .update({ comunicacao_geral_ativa: ativa } as any)
+    .update({ comunicacao_geral_ativa: ativa })
     .eq("user_id", target.userId);
   if (error) throw error;
 }
