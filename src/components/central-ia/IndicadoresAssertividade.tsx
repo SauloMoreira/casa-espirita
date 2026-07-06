@@ -56,9 +56,9 @@ export default function IndicadoresAssertividade() {
   if (loading) return <div className="space-y-6">{filtros}<div className="text-center text-muted-foreground py-12">Carregando indicadores...</div></div>;
 
   const pieData = [
-    { name: "Acertou totalmente", value: data.aderenciaTotal, color: "hsl(var(--primary))" },
-    { name: "Acertou parcialmente", value: data.aderenciaParcial, color: "hsl(var(--secondary))" },
-    { name: "Inadequada", value: data.divergencia, color: "hsl(var(--destructive))" },
+    { name: "Convergência total", value: data.aderenciaTotal, color: "hsl(var(--primary))" },
+    { name: "Convergência parcial", value: data.aderenciaParcial, color: "hsl(var(--secondary))" },
+    { name: "Divergência", value: data.divergencia, color: "hsl(var(--destructive))" },
     { name: "Inconclusiva", value: data.inconclusiva, color: "hsl(var(--muted-foreground))" },
     { name: "Sem uso", value: data.semUso, color: "hsl(var(--border))" },
   ].filter((d) => d.value > 0);
