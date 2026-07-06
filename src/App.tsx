@@ -67,6 +67,7 @@ const Eventos = lazy(() => import("./pages/Eventos"));
 const ComunicacaoInstitucional = lazy(() => import("./pages/ComunicacaoInstitucional"));
 const PainelInstitucional = lazy(() => import("./pages/PainelInstitucional"));
 const SegurancaPrivacidade = lazy(() => import("./pages/SegurancaPrivacidade"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
