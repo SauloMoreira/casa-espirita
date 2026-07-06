@@ -637,16 +637,16 @@ export async function gerarPreviaConversao(assistidoId: string): Promise<PreviaC
     total_sessoes_a_substituir: itens.reduce((s, i) => s + i.sessoes_a_substituir, 0),
   };
 
-  await supabase.rpc("pts_homologacao_auditar" as never, {
-    p_assistido_id: assistidoId,
-    p_acao: "PLANO_PREVIA_HOMOLOGACAO",
-    p_resultado: {
+  await homologacaoAuditarRpc({
+    assistidoId,
+    acao: "PLANO_PREVIA_HOMOLOGACAO",
+    resultado: {
       total_planos: resumo.total_planos,
       total_etapas: resumo.total_etapas,
       total_sessoes_ativas: resumo.total_sessoes_ativas,
       total_sessoes_a_substituir: resumo.total_sessoes_a_substituir,
     },
-  } as never);
+  });
 
   return resumo;
 }
