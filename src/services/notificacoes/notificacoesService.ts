@@ -674,7 +674,7 @@ export interface ConversasResultado {
 
 /** Lista o histórico de conversas WhatsApp enriquecido, com filtros server-side. */
 export async function listConversasEnriquecidas(filtros: ConversasFiltros = {}): Promise<ConversasResultado> {
-  const { data, error } = await (supabase.rpc as any)("painel_conversas", {
+  const { data, error } = await supabase.rpc("painel_conversas", {
     p_inicio: filtros.inicio ?? null,
     p_fim: filtros.fim ?? null,
     p_status: filtros.status ?? null,
