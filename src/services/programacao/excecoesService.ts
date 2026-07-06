@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { parseRolloutMonitor, type RolloutMonitor } from "./excecoesContracts";
 
 export interface ExcecaoOperacional {
   id: string;
@@ -103,18 +104,7 @@ export async function excluirExcecao(id: string): Promise<void> {
 
 const ROLLOUT_KEY = "excecao_notificacao_ativa";
 
-export interface RolloutMonitor {
-  rollout_ativo: boolean;
-  desde: string;
-  excecoes_processadas: number;
-  cancelamentos: number;
-  remarcacoes: number;
-  fila_por_status: Record<string, number>;
-  fila_por_evento: Record<string, number>;
-  fallback_por_nome: number;
-  publico_com_alvo: number;
-  dedupe_duplicados: number;
-}
+export type { RolloutMonitor };
 
 /** Lê o interruptor de contenção do rollout (true = liberado). */
 export async function obterRolloutAtivo(): Promise<boolean> {
@@ -143,5 +133,5 @@ export async function obterRolloutMonitor(diasJanela = 14): Promise<RolloutMonit
     p_desde: desde,
   });
   if (error) throw error;
-  return data as unknown as RolloutMonitor;
+  return parseRolloutMonitor(data);
 }
