@@ -166,7 +166,7 @@ export default function SolicitarCadastro() {
                 </Field>
 
                 <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold" disabled={loading}>
-                  {loading ? "Enviando..." : "Solicitar cadastro"}
+                  {loading ? "Criando conta..." : "Criar conta"}
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground">
