@@ -165,3 +165,50 @@ describe("Q1-C4 planoRpcService — pts_homologacao_auditar", () => {
     ).rejects.toMatchObject({ message: "audit erro" });
   });
 });
+
+describe("Q1-C4 notificacoesService — comunicacao_geral_ativa tipado", () => {
+  it("lê comunicacao_geral_ativa (default true sem registro)", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+    fromMock.mockReturnValue({ select });
+
+    const r = await getComunicacaoGeralAtiva("a1");
+    expect(fromMock).toHaveBeenCalledWith("notificacoes_preferencias");
+    expect(select).toHaveBeenCalledWith("comunicacao_geral_ativa");
+    expect(eq).toHaveBeenCalledWith("assistido_id", "a1");
+    expect(r).toBe(true);
+  });
+
+  it("lê comunicacao_geral_ativa = false quando desativado", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { comunicacao_geral_ativa: false },
+      error: null,
+    });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+    fromMock.mockReturnValue({ select });
+
+    expect(await getComunicacaoGeralAtiva("a1")).toBe(false);
+  });
+
+  it("escreve comunicacao_geral_ativa via upsert tipado", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockReturnValue({ upsert });
+
+    await setComunicacaoGeralAtiva("a1", false);
+    expect(fromMock).toHaveBeenCalledWith("notificacoes_preferencias");
+    expect(upsert).toHaveBeenCalledWith(
+      { assistido_id: "a1", comunicacao_geral_ativa: false },
+      { onConflict: "assistido_id" },
+    );
+  });
+
+  it("propaga erro técnico na escrita", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: { message: "upsert erro" } });
+    fromMock.mockReturnValue({ upsert });
+    await expect(setComunicacaoGeralAtiva("a1", true)).rejects.toMatchObject({
+      message: "upsert erro",
+    });
+  });
+});
