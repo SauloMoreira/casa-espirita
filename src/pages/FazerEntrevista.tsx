@@ -64,6 +64,15 @@ export default function FazerEntrevista() {
             onSetHorario={e.setHorario}
           />
 
+          {e.aiSugestaoId && e.aiHasDivergencia && (
+            <AjusteSugestaoIaField
+              value={e.aiMotivoAjuste}
+              onChange={e.setAiMotivoAjuste}
+            />
+          )}
+
+
+
 
           <EntrevistaActionsFooter
             onCancelar={e.clearSelection}
