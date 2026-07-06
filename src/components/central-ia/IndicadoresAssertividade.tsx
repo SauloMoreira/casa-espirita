@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle, X } from "lucide-react";
+import { BarChart3, CheckCircle, AlertTriangle, Brain, MinusCircle, X, HelpCircle } from "lucide-react";
 import {
   BarChart,
   Bar,
