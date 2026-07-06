@@ -89,19 +89,32 @@ Deno.serve(async (req) => {
       return json({ error: `Falha ao registrar a solicitação: ${reason}.` }, 500);
     };
 
-    // Profile is created as PENDING with NO role -> ProtectedRoute denies access.
+    // Profile is created as ATIVO. The AFTER INSERT trigger on public.profiles
+    // grants the base role 'assistido' automatically (idempotent, cumulative,
+    // never elevated) -> ProtectedRoute allows immediate base access.
     const { error: profErr } = await admin.from("profiles").insert({
       user_id: userId,
       nome_completo,
       cpf,
       celular,
-      status: "pendente",
+      status: "ativo",
     });
     if (profErr) return await rollback("não foi possível gravar o perfil");
 
+    // Keep an audited self-registration record, already resolved (auto-approved
+    // for base access). No elevated role is ever assigned by this flow.
+    const nowIso = new Date().toISOString();
     const { data: solic, error: solErr } = await admin
       .from("cadastro_solicitacoes")
-      .insert({ user_id: userId, nome_completo, email, cpf, celular, status: "pendente" })
+      .insert({
+        user_id: userId,
+        nome_completo,
+        email,
+        cpf,
+        celular,
+        status: "aprovado",
+        decidido_em: nowIso,
+      })
       .select("id")
       .single();
     if (solErr) return await rollback("não foi possível registrar a solicitação");
@@ -109,15 +122,15 @@ Deno.serve(async (req) => {
     await admin.from("audit_logs").insert({
       user_id: userId,
       tabela: "cadastro_solicitacoes",
-      acao: "CADASTRO_SOLICITADO",
+      acao: "CADASTRO_AUTOCADASTRO",
       registro_id: solic.id,
-      dados_novos: { nome_completo, email, origem: "tela_login" },
+      dados_novos: { nome_completo, email, origem: "tela_login", papel_inicial: "assistido", acesso: "imediato" },
     });
 
     log.info("request_signup_created", { userId, solicitacao: solic.id });
     return json({
       success: true,
-      message: "Cadastro enviado! Seu acesso está aguardando aprovação da administração.",
+      message: "Cadastro concluído! Seu acesso de assistido já está liberado.",
     });
   } catch (err) {
     log.error("request_signup_failed", { message: (err as Error).message });
