@@ -430,6 +430,7 @@ export function useFazerEntrevista() {
     agendaEntrevistaId,
     aiSugestaoId,
     aiEstruturada,
+    aiMotivoAjuste,
     toast,
     clearSelection,
   ]);
