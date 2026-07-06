@@ -3,6 +3,8 @@ import {
   parseConversasResultado,
   parsePainelWhatsapp,
   parsePainelV2,
+  parseEncerramentoErroCadastro,
+  parseMensagemManual,
 } from "./notificacoesContracts";
 import type {
   ConversaEnriquecida,
@@ -13,6 +15,8 @@ import type {
   PainelWhatsapp,
   SeriePonto,
   PainelV2,
+  EncerramentoErroCadastroResult,
+  MensagemManualResult,
 } from "./notificacoesContracts";
 
 // Q1-C5 — contratos jsonb sensíveis centralizados em notificacoesContracts.
