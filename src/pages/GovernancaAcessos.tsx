@@ -18,6 +18,10 @@ import {
   PROMOTION_STATUS_LABELS, PROMOTION_ROLE_LABELS, isPromotionOpen,
   type PromotionStatus, type AdminPromotionRole,
 } from "@/lib/adminPromotion";
+import {
+  solicitarPromocaoAdmin, decidirPromocaoAdmin,
+  concederAcessoOperacional, revogarAcessoOperacional,
+} from "@/services/governanca/acessoService";
 
 interface ProfileLite {
   user_id: string;
@@ -140,13 +144,11 @@ export default function GovernancaAcessos() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("solicitar_promocao_admin", {
-        p_target_user_id: targetUserId,
-        p_target_role: targetRole,
-        p_justificativa: justificativa.trim(),
+      await solicitarPromocaoAdmin({
+        targetUserId,
+        targetRole,
+        justificativa: justificativa.trim(),
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Solicitação criada", description: "Aguardando aprovação." });
       setOpen(false);
       setTargetUserId(""); setJustificativa(""); setTargetRole("admin");
@@ -161,14 +163,11 @@ export default function GovernancaAcessos() {
   const handleDecidir = async (req: RequestRow, decision: "aprovar" | "rejeitar", motivo?: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("decidir_promocao_admin", {
-        p_request_id: req.id,
-        p_decision: decision,
-        p_motivo: motivo || null,
+      const { status } = await decidirPromocaoAdmin({
+        requestId: req.id,
+        decision,
+        motivo: motivo || null,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      const status = (data as any)?.status as PromotionStatus;
       toast({
         title: decision === "rejeitar" ? "Solicitação rejeitada" : status === "aprovado" ? "Acesso concedido" : "Aprovação registrada",
         description: status === "aprovado_parcialmente" ? "Aguardando a segunda aprovação." : undefined,
@@ -189,14 +188,11 @@ export default function GovernancaAcessos() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("fn_conceder_acesso_operacional", {
-        p_target_user_id: opUserId,
-        p_role: opRole,
-        p_motivo: opMotivo.trim() || null,
+      const { status } = await concederAcessoOperacional({
+        targetUserId: opUserId,
+        role: opRole,
+        motivo: opMotivo.trim() || null,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      const status = (data as any)?.status;
       toast({
         title: status === "ja_concedido" ? "Acesso já existia" : "Acesso operacional concedido",
         description: status === "ja_concedido"
@@ -216,13 +212,11 @@ export default function GovernancaAcessos() {
   const handleRevogarOperacional = async (userId: string, opRoleToRevoke: OperationalRole) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("fn_revogar_acesso_operacional", {
-        p_target_user_id: userId,
-        p_role: opRoleToRevoke,
-        p_motivo: null,
+      await revogarAcessoOperacional({
+        targetUserId: userId,
+        role: opRoleToRevoke,
+        motivo: null,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Acesso operacional revogado", description: `${OPERATIONAL_ROLE_LABELS[opRoleToRevoke]} de ${nameOf(userId)}.` });
       fetchAll();
     } catch (err: any) {
