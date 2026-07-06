@@ -659,29 +659,6 @@ export async function vincularAssistidoConversa(conversaId: string, assistidoId:
 
 // ===== Histórico e gestão de conversas (aba Conversas) =====
 
-export interface ConversaEnriquecida {
-  id: string;
-  telefone: string;
-  assistido_id: string | null;
-  assistido_nome: string | null;
-  identificado: boolean;
-  status_conversa: string;
-  em_handoff: boolean;
-  ultimo_contato_em: string | null;
-  ultima_mensagem: string | null;
-  total_mensagens: number;
-  ultimo_autor: "assistido" | "ia" | "humano" | "sistema" | null;
-  intencao: string | null;
-  respondida_ia: boolean;
-  handoff_motivo: string | null;
-  handoff_origem: string | null;
-  handoff_status: string | null;
-  handoff_atendente_id: string | null;
-  tem_handoff: boolean;
-  atendente_nome: string | null;
-  canal: string;
-}
-
 export interface ConversasFiltros {
   inicio?: string | null;
   fim?: string | null;
@@ -692,12 +669,6 @@ export interface ConversasFiltros {
   atendente?: string | null;
   busca?: string | null;
   pendente?: boolean | null;
-}
-
-export interface ConversasResultado {
-  autorizado: boolean;
-  total: number;
-  rows: ConversaEnriquecida[];
 }
 
 /** Lista o histórico de conversas WhatsApp enriquecido, com filtros server-side. */
