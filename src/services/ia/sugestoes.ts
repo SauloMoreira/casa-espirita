@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { computeDiferencas, classifyAderencia } from "@/lib/iaAssertividade";
 import type {
   IaClassificacao,
