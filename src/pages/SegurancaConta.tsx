@@ -136,9 +136,11 @@ export default function SegurancaConta() {
 
       const { data, error } = await supabase.functions.invoke("mfa-manager", { body: { action: "generate_recovery" } });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const bodyErr = edgeBodyError(data);
+      if (bodyErr) throw new Error(bodyErr);
 
-      setCodes((data as any).codes || []);
+      const recovery = (data ?? {}) as { codes?: unknown };
+      setCodes(Array.isArray(recovery.codes) ? (recovery.codes as string[]) : []);
       setStep("codes");
       setPassword(""); setCode(""); setQr(null); setSecret(null);
       auditEvent("MFA_ATIVADO");
