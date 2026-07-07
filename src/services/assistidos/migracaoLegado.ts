@@ -148,7 +148,7 @@ export async function migrarAssistidoLegado(
     }
     const { error } = await supabase
       .from("assistidos")
-      .update(updatePayload as never)
+      .update(updatePayload as TablesUpdate<"assistidos">)
       .eq("id", assistidoId);
     if (error) throw new Error(error.message);
   } else {
