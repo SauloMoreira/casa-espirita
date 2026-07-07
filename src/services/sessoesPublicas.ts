@@ -21,7 +21,7 @@ export async function createSessaoPublica(
 ): Promise<void> {
   const { error } = await supabase
     .from("sessoes_publicas")
-    .insert(payload as never);
+    .insert(payload as TablesInsert<"sessoes_publicas">);
   if (error) throw error;
 }
 
@@ -30,6 +30,6 @@ export async function registrarCheckin(
 ): Promise<void> {
   const { error } = await supabase
     .from("checkins_publicos")
-    .insert(payload as never);
+    .insert(payload as TablesInsert<"checkins_publicos">);
   if (error) throw error;
 }
