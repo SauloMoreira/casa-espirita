@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import {
   buildAssistidoLegadoInsert,
   validateTratamentoLegado,
