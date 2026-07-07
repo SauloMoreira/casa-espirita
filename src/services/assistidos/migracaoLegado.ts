@@ -359,7 +359,7 @@ export async function reconciliarAssistidoLegado(
     "migrar_assistido_legado_tratamento",
     {
       p_assistido_id: assistidoId,
-      p_tratamentos: tratamentosPayload as never,
+      p_tratamentos: tratamentosPayload as unknown as Json,
     },
   );
   if (rpcErr) throw new Error(rpcErr.message);
