@@ -49,15 +49,10 @@ export default function SolicitarCadastro() {
       });
       if (error) {
         // Edge function returns JSON error bodies on non-2xx.
-        const ctx = (error as any)?.context;
-        let msg = error.message;
-        try {
-          const parsed = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
-          if (parsed?.error) msg = parsed.error;
-        } catch { /* ignore */ }
-        throw new Error(msg);
+        throw new Error(await resolveInvokeErrorMessage(error));
       }
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const bodyErr = edgeBodyError(data);
+      if (bodyErr) throw new Error(bodyErr);
       // Immediate base access: sign the user in right after creation so the
       // AuthContext hydrates the session + assistido role, then go to the app.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
