@@ -490,7 +490,7 @@ export async function registrarPresencaRoteada(
     p_data: data,
     p_status_presenca: status,
     p_registrado_por: registradoPor,
-  } as never);
+  });
   if (error) throw new Error(error.message);
   return { rota: "legado", usaNovoModelo, temPlano, remarcacaoAplicavel: false };
 }
