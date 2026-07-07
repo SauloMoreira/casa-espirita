@@ -93,7 +93,7 @@ export async function salvarExcecao(input: ExcecaoInput, id?: string): Promise<v
 export async function alternarAtivoExcecao(id: string, ativo: boolean): Promise<void> {
   const { error } = await supabase
     .from("excecoes_operacionais")
-    .update({ ativo } as never)
+    .update({ ativo } as TablesUpdate<"excecoes_operacionais">)
     .eq("id", id);
   if (error) throw error;
 }
