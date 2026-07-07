@@ -65,7 +65,7 @@ export async function insertAssistido(
 ): Promise<{ data: EntrevistaAssistido | null; error: { message: string } | null }> {
   const { data, error } = await supabase
     .from("assistidos")
-    .insert(payload as never)
+    .insert(payload as TablesInsert<"assistidos">)
     .select(ASSISTIDO_SELECT)
     .single();
   return { data: data as EntrevistaAssistido | null, error };
