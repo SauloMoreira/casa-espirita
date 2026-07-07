@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { addDays, format, getDay } from "date-fns";
 import { generateSessionDates, buildValidDesignacoes } from "@/lib/fazerEntrevista";
 import { MODO_AGENDAMENTO, VINCULO_STATUS_RESETAVEL } from "@/constants/fazerEntrevista";
