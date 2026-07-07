@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveInvokeErrorMessage, edgeBodyError } from "@/lib/edgeFunctionResponse";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,12 +73,10 @@ export default function SegurancaConta() {
         body: { action: "admin_reset", target_user_id: resetTarget },
       });
       if (error) {
-        const ctx = (error as any)?.context;
-        let msg = error.message;
-        try { const p = ctx && typeof ctx.json === "function" ? await ctx.json() : null; if (p?.error) msg = p.error; } catch { /* ignore */ }
-        throw new Error(msg);
+        throw new Error(await resolveInvokeErrorMessage(error));
       }
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const bodyErr = edgeBodyError(data);
+      if (bodyErr) throw new Error(bodyErr);
       toast({ title: "MFA resetado", description: "O usuário deverá reativar o MFA." });
       setResetTarget("");
     } catch (err: any) {
@@ -137,9 +136,11 @@ export default function SegurancaConta() {
 
       const { data, error } = await supabase.functions.invoke("mfa-manager", { body: { action: "generate_recovery" } });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const bodyErr = edgeBodyError(data);
+      if (bodyErr) throw new Error(bodyErr);
 
-      setCodes((data as any).codes || []);
+      const recovery = (data ?? {}) as { codes?: unknown };
+      setCodes(Array.isArray(recovery.codes) ? (recovery.codes as string[]) : []);
       setStep("codes");
       setPassword(""); setCode(""); setQr(null); setSecret(null);
       auditEvent("MFA_ATIVADO");

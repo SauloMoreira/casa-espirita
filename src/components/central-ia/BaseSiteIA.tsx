@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeBodyError } from "@/lib/edgeFunctionResponse";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,7 +113,7 @@ export default function BaseSiteIA() {
     });
     setCapturing(false);
     if (error || !data?.preview) {
-      const msg = (data as any)?.error || error?.message || "Falha ao capturar a página.";
+      const msg = edgeBodyError(data) || error?.message || "Falha ao capturar a página.";
       toast({ title: "Erro na captura", description: msg, variant: "destructive" });
       return;
     }

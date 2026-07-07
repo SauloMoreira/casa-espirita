@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveInvokeErrorMessage, edgeBodyError } from "@/lib/edgeFunctionResponse";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,15 +61,10 @@ export default function SolicitacoesCadastro() {
         body: { action, solicitacao_id: s.id, motivo: motivoArg || null },
       });
       if (error) {
-        const ctx = (error as any)?.context;
-        let msg = error.message;
-        try {
-          const parsed = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
-          if (parsed?.error) msg = parsed.error;
-        } catch { /* ignore */ }
-        throw new Error(msg);
+        throw new Error(await resolveInvokeErrorMessage(error));
       }
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const bodyErr = edgeBodyError(data);
+      if (bodyErr) throw new Error(bodyErr);
       toast({
         title: action === "aprovar" ? "Cadastro aprovado" : "Cadastro rejeitado",
         description: action === "aprovar" ? "Usuário criado como assistido." : undefined,
