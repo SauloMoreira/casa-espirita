@@ -46,10 +46,16 @@ async function seedBase(c: PoolClient): Promise<SeedIds> {
   ).rows[0].id as string;
 
   const a1 = (
-    await c.query(`INSERT INTO assistidos (nome, created_by) VALUES ('Q2B1 A1', $1) RETURNING id`, [admin])
+    await c.query(
+      `INSERT INTO assistidos (nome, created_by, celular) VALUES ('Q2B1 A1', $1, '11999990001') RETURNING id`,
+      [admin],
+    )
   ).rows[0].id as string;
   const a2 = (
-    await c.query(`INSERT INTO assistidos (nome, created_by) VALUES ('Q2B1 A2', $1) RETURNING id`, [admin])
+    await c.query(
+      `INSERT INTO assistidos (nome, created_by, celular) VALUES ('Q2B1 A2', $1, '11999990002') RETURNING id`,
+      [admin],
+    )
   ).rows[0].id as string;
 
   const vinc1 = (
