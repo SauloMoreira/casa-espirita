@@ -40,7 +40,7 @@ async function seedBase(c: PoolClient): Promise<SeedIds> {
   const tipo = (
     await c.query(
       `INSERT INTO tipos_tratamento (nome, tipo, tarefeiro_id)
-       VALUES ('Q2B1 Carga', 'passe', $1) RETURNING id`,
+       VALUES ('Q2B1 Carga', 'espiritual', $1) RETURNING id`,
       [admin],
     )
   ).rows[0].id as string;
