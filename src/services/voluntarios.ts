@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { Voluntario } from "@/types";
 
 export async function listFuncoesAtivas() {
