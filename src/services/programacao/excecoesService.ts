@@ -122,7 +122,7 @@ export async function obterRolloutAtivo(): Promise<boolean> {
 export async function definirRolloutAtivo(ativo: boolean): Promise<void> {
   const { error } = await supabase
     .from("regras_operacionais")
-    .update({ valor: ativo ? "true" : "false" } as never)
+    .update({ valor: ativo ? "true" : "false" } as TablesUpdate<"regras_operacionais">)
     .eq("chave", ROLLOUT_KEY);
   if (error) throw error;
 }
