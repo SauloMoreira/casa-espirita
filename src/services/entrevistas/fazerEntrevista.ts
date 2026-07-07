@@ -375,7 +375,7 @@ export async function submitEntrevista(
           status: "aguardando_agendamento",
           entrevista_id: entrevistaId,
           created_by: userId,
-        } as never);
+        } as TablesInsert<"assistido_tratamentos">);
       }
     }
   }
