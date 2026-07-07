@@ -223,8 +223,8 @@ export async function reconciliarPlanoAssistido(assistidoId: string): Promise<vo
   for (const p of planos) {
     const { error } = await supabase.rpc("pts_persistir_plano", {
       p_vinculo_id: p.ref,
-      p_etapas: etapasParaPayload(p.plano.etapas) as never,
-      p_sessao_ativa: sessaoAtivaParaPayload(p.plano.sessaoAtiva) as never,
+      p_etapas: etapasParaPayload(p.plano.etapas) as unknown as Json,
+      p_sessao_ativa: sessaoAtivaParaPayload(p.plano.sessaoAtiva) as unknown as Json,
     });
     if (error) throw new Error(error.message);
   }
