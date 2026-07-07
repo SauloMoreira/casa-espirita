@@ -29,9 +29,9 @@ export async function recordDecisaoFinal(params: {
     sugestao_ia_id: params.sugestaoId,
     avaliador_id: params.avaliadorId,
     classificacao,
-    sugestao_original_json: params.sugeridos as never,
-    atribuicao_final_json: params.atribuidos as never,
-    diferencas_json: diff as never,
+    sugestao_original_json: params.sugeridos as unknown as Json,
+    atribuicao_final_json: params.atribuidos as unknown as Json,
+    diferencas_json: diff as unknown as Json,
     motivo_ajuste: params.motivo ?? null,
     observacao: params.observacao ?? null,
   });
