@@ -159,7 +159,7 @@ export async function migrarAssistidoLegado(
     });
     const { data, error } = await supabase
       .from("assistidos")
-      .insert(payload as never)
+      .insert(payload as TablesInsert<"assistidos">)
       .select("id")
       .single();
     if (error || !data) throw new Error(error?.message || "Erro ao cadastrar assistido.");
