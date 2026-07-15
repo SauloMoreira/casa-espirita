@@ -101,6 +101,61 @@ Deno.serve(async (req) => {
     });
     if (profErr) return await rollback("não foi possível gravar o perfil");
 
+    // Reconciliação com registro de assistido pré-existente (ex: criado durante
+    // entrevista fraterna, antes da pessoa ter login). Tenta por CPF primeiro
+    // (mais confiável), depois por celular. Nunca bloqueia o cadastro se falhar.
+    try {
+      const cpfDigits = cpf ? cpf.replace(/\D/g, "") : "";
+      let candidato: { id: string } | null = null;
+
+      if (cpfDigits.length === 11) {
+        const { data } = await admin
+          .from("assistidos")
+          .select("id")
+          .eq("cpf", cpfDigits)
+          .is("user_id", null)
+          .limit(2);
+        if (data && data.length === 1) candidato = data[0];
+      }
+
+      if (!candidato && celular) {
+        const celDigits = celular.replace(/\D/g, "");
+        if (celDigits.length >= 10) {
+          const { data } = await admin
+            .from("assistidos")
+            .select("id")
+            .eq("celular", celDigits)
+            .is("user_id", null)
+            .limit(2);
+          if (data && data.length === 1) candidato = data[0];
+        }
+      }
+
+      if (candidato) {
+        const { error: reconErr } = await admin
+          .from("assistidos")
+          .update({ user_id: userId })
+          .eq("id", candidato.id)
+          .is("user_id", null);
+        if (!reconErr) {
+          await admin.from("audit_logs").insert({
+            user_id: userId,
+            acao: "reconciliacao_autocadastro",
+            tabela: "assistidos",
+            registro_id: candidato.id,
+            dados_novos: { motivo: "vinculo automatico no autocadastro", match_por: cpfDigits.length === 11 ? "cpf" : "celular" },
+          });
+          log.info("assistido_reconciliado", { assistidoId: candidato.id, userId });
+        } else {
+          log.error("reconciliacao_falhou", { message: reconErr.message, assistidoId: candidato.id });
+        }
+      }
+    } catch (reconErr) {
+      log.error("reconciliacao_excecao", { message: (reconErr as Error).message });
+    }
+
+
+
     // Keep an audited self-registration record, already resolved (auto-approved
     // for base access). No elevated role is ever assigned by this flow.
     const nowIso = new Date().toISOString();
