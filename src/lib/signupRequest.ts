@@ -28,11 +28,10 @@ export const FORBIDDEN_SELF_ROLES = [
 export interface SignupInput {
   nome_completo: string;
   email: string;
-  cpf?: string;
+  cpf: string;
   celular?: string;
-  password: string;
-  confirmPassword: string;
 }
+
 
 export interface ValidationResult {
   valid: boolean;
