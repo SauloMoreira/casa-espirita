@@ -19,11 +19,9 @@ export default function SolicitarCadastro() {
     email: "",
     cpf: "",
     celular: "",
-    password: "",
-    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const { toast } = useToast();
