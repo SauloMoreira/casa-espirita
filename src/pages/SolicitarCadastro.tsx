@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail, Lock, Eye, EyeOff, User, IdCard, Phone, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Mail, User, IdCard, Phone, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { validateSignup } from "@/lib/signupRequest";
 import { maskCPF, maskPhone } from "@/lib/validators";
