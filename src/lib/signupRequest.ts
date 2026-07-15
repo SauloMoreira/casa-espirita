@@ -55,7 +55,10 @@ export function validateSignup(input: SignupInput): ValidationResult {
   if (!email) errors.email = "Informe o e-mail.";
   else if (!isValidEmail(email)) errors.email = "E-mail inválido.";
 
-  if (input.cpf && input.cpf.replace(/\D/g, "").length > 0 && !isValidCPF(input.cpf)) {
+  const cpfDigits = (input.cpf || "").replace(/\D/g, "");
+  if (cpfDigits.length === 0) {
+    errors.cpf = "Informe seu CPF.";
+  } else if (!isValidCPF(input.cpf)) {
     errors.cpf = "CPF inválido.";
   }
 
@@ -63,13 +66,6 @@ export function validateSignup(input: SignupInput): ValidationResult {
     errors.celular = "Celular inválido.";
   }
 
-  if (!input.password || input.password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`;
-  }
-
-  if (input.password !== input.confirmPassword) {
-    errors.confirmPassword = "As senhas não coincidem.";
-  }
 
   return { valid: Object.keys(errors).length === 0, errors };
 }
