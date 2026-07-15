@@ -50,9 +50,13 @@ Deno.serve(async (req) => {
     if (nome_completo.length < 3) return json({ error: "Informe seu nome completo." }, 400);
     if (!isValidEmail(email)) return json({ error: "E-mail inválido." }, 400);
     if (password.length < 8) return json({ error: "A senha deve ter pelo menos 8 caracteres." }, 400);
-    if (cpf && cpf.replace(/\D/g, "").length > 0 && !isValidCPF(cpf)) {
+    if (!cpf || cpf.replace(/\D/g, "").length === 0) {
+      return json({ error: "Informe seu CPF." }, 400);
+    }
+    if (!isValidCPF(cpf)) {
       return json({ error: "CPF inválido." }, 400);
     }
+
 
     // Guard: avoid duplicate pending requests for the same email.
     const { data: existing } = await admin
