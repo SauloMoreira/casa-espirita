@@ -37,13 +37,14 @@ export default function SolicitarCadastro() {
 
     setLoading(true);
     try {
+      const senhaGerada = gerarSenhaSegura();
       const { data, error } = await supabase.functions.invoke("request-signup", {
         body: {
           nome_completo: form.nome_completo.trim(),
           email: form.email.trim(),
           cpf: form.cpf || null,
           celular: form.celular || null,
-          password: form.password,
+          password: senhaGerada,
         },
       });
       if (error) {
@@ -56,8 +57,9 @@ export default function SolicitarCadastro() {
       // AuthContext hydrates the session + assistido role, then go to the app.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
-        password: form.password,
+        password: senhaGerada,
       });
+
       if (signInErr) {
         // Account exists with access; fall back to the login screen.
         setDone(true);
