@@ -4,8 +4,8 @@ import {
   evaluateSignupDecision,
   DEFAULT_APPROVED_ROLE,
   FORBIDDEN_SELF_ROLES,
-  MIN_PASSWORD_LENGTH,
 } from "./signupRequest";
+
 
 const valid = {
   nome_completo: "Maria da Silva",
