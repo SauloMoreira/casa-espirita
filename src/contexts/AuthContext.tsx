@@ -19,6 +19,13 @@ interface AuthContextType {
   user: User | null;
   role: AppRole | null;
   roles: AppRole[];
+  /**
+   * Papéis cuja visão deve ser exibida (Dashboard/Sidebar), aplicando a regra
+   * de composição: admin domina (+ assistido se também presente); sem admin,
+   * é a união de todos os papéis que o usuário tem. NÃO usar para checagens de
+   * permissão pontual — para isso, usar "roles" ou "role" normalmente.
+   */
+  visibleRoles: AppRole[];
   isMaster: boolean;
   profile: UserProfile | null;
   loading: boolean;
@@ -167,8 +174,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isMaster = roles.includes("administrador_master");
 
+  const visibleRoles: AppRole[] = (() => {
+    if (roles.includes("admin") || roles.includes("administrador_master")) {
+      return roles.includes("assistido") ? ["admin", "assistido"] : ["admin"];
+    }
+    return roles.length > 0 ? roles : ["assistido"];
+  })();
+
   return (
-    <AuthContext.Provider value={{ session, user, role, roles, isMaster, profile, loading, rolesResolved, mfaPending, refreshMfa, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, role, roles, visibleRoles, isMaster, profile, loading, rolesResolved, mfaPending, refreshMfa, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

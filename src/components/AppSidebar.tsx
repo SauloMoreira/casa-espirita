@@ -201,7 +201,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, isMaster, user, profile, signOut } = useAuth();
+  const { role, visibleRoles, isMaster, user, profile, signOut } = useAuth();
   const isAssistido = role === "assistido";
   const [inst, setInst] = useState<{ logo_url: string | null; nome_fantasia: string | null } | null>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -240,7 +240,9 @@ export function AppSidebar() {
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => role && item.roles.includes(role)),
+      items: group.items.filter((item) =>
+        item.roles.some((r) => visibleRoles.includes(r)),
+      ),
     }))
     .filter((group) => group.items.length > 0);
 
