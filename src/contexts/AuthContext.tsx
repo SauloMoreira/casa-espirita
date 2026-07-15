@@ -19,6 +19,13 @@ interface AuthContextType {
   user: User | null;
   role: AppRole | null;
   roles: AppRole[];
+  /**
+   * Papéis cuja visão deve ser exibida (Dashboard/Sidebar), aplicando a regra
+   * de composição: admin domina (+ assistido se também presente); sem admin,
+   * é a união de todos os papéis que o usuário tem. NÃO usar para checagens de
+   * permissão pontual — para isso, usar "roles" ou "role" normalmente.
+   */
+  visibleRoles: AppRole[];
   isMaster: boolean;
   profile: UserProfile | null;
   loading: boolean;
