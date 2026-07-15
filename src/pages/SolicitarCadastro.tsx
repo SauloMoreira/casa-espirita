@@ -126,6 +126,7 @@ export default function SolicitarCadastro() {
                   <AlertTitle className="text-sm">Acesso imediato</AlertTitle>
                   <AlertDescription className="text-xs">
                     Ao concluir o cadastro você entra automaticamente como assistido, sem aprovação.
+                    Não precisa criar senha — o acesso já é liberado na hora.
                   </AlertDescription>
                 </Alert>
 
@@ -139,9 +140,9 @@ export default function SolicitarCadastro() {
                     placeholder="seu@email.com" className="h-11 pl-10" autoComplete="email" />
                 </Field>
 
-                <Field id="cpf" label="CPF (opcional)" icon={IdCard} error={errors.cpf}>
+                <Field id="cpf" label="CPF *" icon={IdCard} error={errors.cpf}>
                   <Input id="cpf" value={form.cpf} onChange={(e) => set("cpf", maskCPF(e.target.value))}
-                    placeholder="000.000.000-00" className="h-11 pl-10" inputMode="numeric" />
+                    placeholder="000.000.000-00" className="h-11 pl-10" inputMode="numeric" required />
                 </Field>
 
                 <Field id="celular" label="Celular (opcional)" icon={Phone} error={errors.celular}>
@@ -149,22 +150,6 @@ export default function SolicitarCadastro() {
                     placeholder="(00) 00000-0000" className="h-11 pl-10" inputMode="numeric" />
                 </Field>
 
-                <Field id="password" label="Senha *" icon={Lock} error={errors.password}>
-                  <Input id="password" type={showPassword ? "text" : "password"} value={form.password}
-                    onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 8 caracteres"
-                    className="h-11 pl-10 pr-10" autoComplete="new-password" />
-                  <button type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </Field>
-
-                <Field id="confirm" label="Confirmar senha *" icon={Lock} error={errors.confirmPassword}>
-                  <Input id="confirm" type={showPassword ? "text" : "password"} value={form.confirmPassword}
-                    onChange={(e) => set("confirmPassword", e.target.value)} placeholder="Repita a senha"
-                    className="h-11 pl-10" autoComplete="new-password" />
-                </Field>
 
                 <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold" disabled={loading}>
                   {loading ? "Criando conta..." : "Criar conta"}
