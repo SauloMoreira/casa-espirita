@@ -29,6 +29,11 @@ export default function SolicitarCadastro() {
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  function gerarSenhaSegura(): string {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = validateSignup(form);
