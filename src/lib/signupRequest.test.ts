@@ -4,17 +4,16 @@ import {
   evaluateSignupDecision,
   DEFAULT_APPROVED_ROLE,
   FORBIDDEN_SELF_ROLES,
-  MIN_PASSWORD_LENGTH,
 } from "./signupRequest";
+
 
 const valid = {
   nome_completo: "Maria da Silva",
   email: "maria@example.com",
   cpf: "529.982.247-25", // valid CPF
   celular: "(11) 91234-5678",
-  password: "segredo123",
-  confirmPassword: "segredo123",
 };
+
 
 describe("validateSignup", () => {
   it("accepts a complete valid request", () => {
@@ -39,23 +38,17 @@ describe("validateSignup", () => {
     expect(r.errors.cpf).toBeTruthy();
   });
 
-  it("allows omitting optional CPF and celular", () => {
-    const r = validateSignup({ ...valid, cpf: "", celular: "" });
+  it("requires CPF", () => {
+    const r = validateSignup({ ...valid, cpf: "" });
+    expect(r.valid).toBe(false);
+    expect(r.errors.cpf).toBeTruthy();
+  });
+
+  it("still allows omitting optional celular", () => {
+    const r = validateSignup({ ...valid, celular: "" });
     expect(r.valid).toBe(true);
   });
 
-  it("enforces minimum password length", () => {
-    const short = "a".repeat(MIN_PASSWORD_LENGTH - 1);
-    const r = validateSignup({ ...valid, password: short, confirmPassword: short });
-    expect(r.valid).toBe(false);
-    expect(r.errors.password).toBeTruthy();
-  });
-
-  it("requires matching password confirmation", () => {
-    const r = validateSignup({ ...valid, confirmPassword: "outra-senha" });
-    expect(r.valid).toBe(false);
-    expect(r.errors.confirmPassword).toBeTruthy();
-  });
 });
 
 describe("default and forbidden roles", () => {

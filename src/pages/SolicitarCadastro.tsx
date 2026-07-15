@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail, Lock, Eye, EyeOff, User, IdCard, Phone, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Mail, User, IdCard, Phone, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { validateSignup } from "@/lib/signupRequest";
 import { maskCPF, maskPhone } from "@/lib/validators";
@@ -19,17 +19,20 @@ export default function SolicitarCadastro() {
     email: "",
     cpf: "",
     celular: "",
-    password: "",
-    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  function gerarSenhaSegura(): string {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,13 +42,14 @@ export default function SolicitarCadastro() {
 
     setLoading(true);
     try {
+      const senhaGerada = gerarSenhaSegura();
       const { data, error } = await supabase.functions.invoke("request-signup", {
         body: {
           nome_completo: form.nome_completo.trim(),
           email: form.email.trim(),
           cpf: form.cpf || null,
           celular: form.celular || null,
-          password: form.password,
+          password: senhaGerada,
         },
       });
       if (error) {
@@ -58,8 +62,9 @@ export default function SolicitarCadastro() {
       // AuthContext hydrates the session + assistido role, then go to the app.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
-        password: form.password,
+        password: senhaGerada,
       });
+
       if (signInErr) {
         // Account exists with access; fall back to the login screen.
         setDone(true);
@@ -121,6 +126,7 @@ export default function SolicitarCadastro() {
                   <AlertTitle className="text-sm">Acesso imediato</AlertTitle>
                   <AlertDescription className="text-xs">
                     Ao concluir o cadastro você entra automaticamente como assistido, sem aprovação.
+                    Não precisa criar senha — o acesso já é liberado na hora.
                   </AlertDescription>
                 </Alert>
 
@@ -134,9 +140,9 @@ export default function SolicitarCadastro() {
                     placeholder="seu@email.com" className="h-11 pl-10" autoComplete="email" />
                 </Field>
 
-                <Field id="cpf" label="CPF (opcional)" icon={IdCard} error={errors.cpf}>
+                <Field id="cpf" label="CPF *" icon={IdCard} error={errors.cpf}>
                   <Input id="cpf" value={form.cpf} onChange={(e) => set("cpf", maskCPF(e.target.value))}
-                    placeholder="000.000.000-00" className="h-11 pl-10" inputMode="numeric" />
+                    placeholder="000.000.000-00" className="h-11 pl-10" inputMode="numeric" required />
                 </Field>
 
                 <Field id="celular" label="Celular (opcional)" icon={Phone} error={errors.celular}>
@@ -144,22 +150,6 @@ export default function SolicitarCadastro() {
                     placeholder="(00) 00000-0000" className="h-11 pl-10" inputMode="numeric" />
                 </Field>
 
-                <Field id="password" label="Senha *" icon={Lock} error={errors.password}>
-                  <Input id="password" type={showPassword ? "text" : "password"} value={form.password}
-                    onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 8 caracteres"
-                    className="h-11 pl-10 pr-10" autoComplete="new-password" />
-                  <button type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </Field>
-
-                <Field id="confirm" label="Confirmar senha *" icon={Lock} error={errors.confirmPassword}>
-                  <Input id="confirm" type={showPassword ? "text" : "password"} value={form.confirmPassword}
-                    onChange={(e) => set("confirmPassword", e.target.value)} placeholder="Repita a senha"
-                    className="h-11 pl-10" autoComplete="new-password" />
-                </Field>
 
                 <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold" disabled={loading}>
                   {loading ? "Criando conta..." : "Criar conta"}
