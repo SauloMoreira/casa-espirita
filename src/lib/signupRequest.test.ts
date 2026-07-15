@@ -12,9 +12,8 @@ const valid = {
   email: "maria@example.com",
   cpf: "529.982.247-25", // valid CPF
   celular: "(11) 91234-5678",
-  password: "segredo123",
-  confirmPassword: "segredo123",
 };
+
 
 describe("validateSignup", () => {
   it("accepts a complete valid request", () => {
