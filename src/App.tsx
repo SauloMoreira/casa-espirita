@@ -128,22 +128,22 @@ const App = () => (
                   <Route path={ROUTES.meusDocumentos} element={<ProtectedRoute allowedRoles={["assistido"]}>{guard(<MeusDocumentos />, "Meus Documentos")}</ProtectedRoute>} />
                   <Route path={ROUTES.notificacoes} element={<Notificacoes />} />
                   <Route path={ROUTES.ajuda} element={guard(<CentralAjuda />, "Central de Ajuda")} />
-                  <Route path={ROUTES.centralNotificacoes} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<CentralNotificacoes />, "Central de Notificações")}</ProtectedRoute>} />
-                  <Route path={ROUTES.observabilidade} element={<ProtectedRoute allowedRoles={["admin", "administrador_master", "coordenador_de_tratamento"]}>{guard(<Observabilidade />, "Observabilidade Operacional")}</ProtectedRoute>} />
+                  <Route path={ROUTES.centralNotificacoes} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<CentralNotificacoes />, "Central de Notificações")}</ProtectedRoute>} />
+                  <Route path={ROUTES.observabilidade} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Observabilidade />, "Observabilidade Operacional")}</ProtectedRoute>} />
                   <Route path={ROUTES.listaEspera} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorListaEspera /></ProtectedRoute>} />
                   <Route path={ROUTES.coordenadorTratamentos} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorTratamentos /></ProtectedRoute>} />
                   <Route path={ROUTES.coordenadorAgenda} element={<ProtectedRoute allowedRoles={["coordenador_de_tratamento"]}><CoordenadorAgenda /></ProtectedRoute>} />
-                  <Route path={ROUTES.relatorios} element={<ProtectedRoute allowedRoles={["admin", "entrevistador", "coordenador_de_tratamento", "tarefeiro"]}><Relatorios /></ProtectedRoute>} />
+                  <Route path={ROUTES.relatorios} element={<ProtectedRoute allowedRoles={["admin"]}><Relatorios /></ProtectedRoute>} />
                   <Route path={ROUTES.configuracoes} element={<ProtectedRoute allowedRoles={["admin"]}><Configuracoes /></ProtectedRoute>} />
                   <Route path={ROUTES.gestaoCores} element={<ProtectedRoute allowedRoles={["admin"]}><GestaoCores /></ProtectedRoute>} />
                   <Route path={ROUTES.auditoria} element={<ProtectedRoute allowedRoles={["admin"]}><Auditoria /></ProtectedRoute>} />
                   <Route path={ROUTES.regras} element={<ProtectedRoute allowedRoles={["admin"]}><RegrasOperacionais /></ProtectedRoute>} />
                   <Route path={ROUTES.governancaParametros} element={<ProtectedRoute allowedRoles={["admin", "administrador_master"]}><GovernancaParametros /></ProtectedRoute>} />
                   <Route path={ROUTES.excecoes} element={<ProtectedRoute allowedRoles={["admin"]}><Excecoes /></ProtectedRoute>} />
-                  <Route path={ROUTES.excecoesOperacionais} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<ExcecoesOperacionais />, "Exceções Operacionais")}</ProtectedRoute>} />
-                  <Route path={ROUTES.programacaoPadrao} element={<ProtectedRoute allowedRoles={["admin", "coordenador_de_tratamento"]}>{guard(<ProgramacaoPadrao />, "Programação Padrão")}</ProtectedRoute>} />
+                  <Route path={ROUTES.excecoesOperacionais} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<ExcecoesOperacionais />, "Exceções Operacionais")}</ProtectedRoute>} />
+                  <Route path={ROUTES.programacaoPadrao} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<ProgramacaoPadrao />, "Programação Padrão")}</ProtectedRoute>} />
                   <Route path={ROUTES.instituicao} element={<ProtectedRoute allowedRoles={["admin"]}><Instituicao /></ProtectedRoute>} />
-                  <Route path={ROUTES.centralIa} element={<ProtectedRoute allowedRoles={["admin", "entrevistador"]}><CentralIA /></ProtectedRoute>} />
+                  <Route path={ROUTES.centralIa} element={<ProtectedRoute allowedRoles={["admin"]}><CentralIA /></ProtectedRoute>} />
                   <Route path={ROUTES.voluntarios} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Voluntarios />, "Voluntários")}</ProtectedRoute>} />
                   <Route path={ROUTES.funcoesVoluntariado} element={<ProtectedRoute allowedRoles={["admin"]}><FuncoesVoluntariado /></ProtectedRoute>} />
                   <Route path={ROUTES.sessoesPublicas} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}>{guard(<SessoesPublicas />, "Sessões Públicas")}</ProtectedRoute>} />
