@@ -30,6 +30,8 @@ export interface SignupInput {
   email: string;
   cpf: string;
   celular?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 
@@ -66,6 +68,15 @@ export function validateSignup(input: SignupInput): ValidationResult {
     errors.celular = "Celular inválido.";
   }
 
+  const password = input.password || "";
+  if (!password) {
+    errors.password = "Crie uma senha.";
+  } else if (password.length < MIN_PASSWORD_LENGTH) {
+    errors.password = `A senha precisa ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+  }
+  if (password && input.confirmPassword !== password) {
+    errors.confirmPassword = "As senhas não coincidem.";
+  }
 
   return { valid: Object.keys(errors).length === 0, errors };
 }

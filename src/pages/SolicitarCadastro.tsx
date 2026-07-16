@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail, User, IdCard, Phone, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Mail, User, IdCard, Phone, ShieldCheck, CheckCircle2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { validateSignup } from "@/lib/signupRequest";
+import { validateSignup, MIN_PASSWORD_LENGTH } from "@/lib/signupRequest";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import ferIcon from "@/assets/fer-icon.png";
 
@@ -19,6 +19,8 @@ export default function SolicitarCadastro() {
     email: "",
     cpf: "",
     celular: "",
+    password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -29,11 +31,6 @@ export default function SolicitarCadastro() {
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  function gerarSenhaSegura(): string {
-    return crypto.randomUUID().replace(/-/g, "");
-  }
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = validateSignup(form);
@@ -42,14 +39,13 @@ export default function SolicitarCadastro() {
 
     setLoading(true);
     try {
-      const senhaGerada = gerarSenhaSegura();
       const { data, error } = await supabase.functions.invoke("request-signup", {
         body: {
           nome_completo: form.nome_completo.trim(),
           email: form.email.trim(),
           cpf: form.cpf || null,
           celular: form.celular || null,
-          password: senhaGerada,
+          password: form.password,
         },
       });
       if (error) {
@@ -62,7 +58,7 @@ export default function SolicitarCadastro() {
       // AuthContext hydrates the session + assistido role, then go to the app.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
-        password: senhaGerada,
+        password: form.password,
       });
 
       if (signInErr) {
@@ -126,7 +122,7 @@ export default function SolicitarCadastro() {
                   <AlertTitle className="text-sm">Acesso imediato</AlertTitle>
                   <AlertDescription className="text-xs">
                     Ao concluir o cadastro você entra automaticamente como assistido, sem aprovação.
-                    Não precisa criar senha — o acesso já é liberado na hora.
+                    Crie uma senha para usar sempre que acessar novamente.
                   </AlertDescription>
                 </Alert>
 
@@ -149,6 +145,17 @@ export default function SolicitarCadastro() {
                   <Input id="celular" value={form.celular} onChange={(e) => set("celular", maskPhone(e.target.value))}
                     placeholder="(00) 00000-0000" className="h-11 pl-10" inputMode="numeric" />
                 </Field>
+
+                <Field id="password" label={`Senha * (mín. ${MIN_PASSWORD_LENGTH} caracteres)`} icon={Lock} error={errors.password}>
+                  <Input id="password" type="password" value={form.password} onChange={(e) => set("password", e.target.value)}
+                    placeholder="Crie uma senha" className="h-11 pl-10" autoComplete="new-password" />
+                </Field>
+
+                <Field id="confirmPassword" label="Confirmar senha *" icon={Lock} error={errors.confirmPassword}>
+                  <Input id="confirmPassword" type="password" value={form.confirmPassword} onChange={(e) => set("confirmPassword", e.target.value)}
+                    placeholder="Repita a senha" className="h-11 pl-10" autoComplete="new-password" />
+                </Field>
+
 
 
                 <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold" disabled={loading}>
