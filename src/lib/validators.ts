@@ -24,9 +24,9 @@ export function maskCNPJ(value: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
-// CPF validation with check digits
-export function isValidCPF(cpf: string): boolean {
-  const cleaned = cpf.replace(/\D/g, "");
+// CPF validation with check digits — null-safe
+export function isValidCPF(cpf: string | null | undefined): boolean {
+  const cleaned = (cpf ?? "").replace(/\D/g, "");
   if (cleaned.length !== 11) return false;
   if (/^(\d)\1{10}$/.test(cleaned)) return false;
 
@@ -43,30 +43,31 @@ export function isValidCPF(cpf: string): boolean {
   return rest === parseInt(cleaned[10]);
 }
 
-export function isValidPhone(phone: string): boolean {
-  const cleaned = phone.replace(/\D/g, "");
+export function isValidPhone(phone: string | null | undefined): boolean {
+  const cleaned = (phone ?? "").replace(/\D/g, "");
   return cleaned.length === 10 || cleaned.length === 11;
 }
 
-export function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+export function isValidEmail(email: string | null | undefined): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email ?? "");
 }
 
-export function isValidCEP(cep: string): boolean {
-  return /^\d{5}-?\d{3}$/.test(cep);
+export function isValidCEP(cep: string | null | undefined): boolean {
+  return /^\d{5}-?\d{3}$/.test(cep ?? "");
 }
 
-// Masks
-export function maskCPF(value: string): string {
-  const cleaned = value.replace(/\D/g, "").slice(0, 11);
+// Masks — null-safe: retornam "" quando o valor é nulo/indefinido para
+// evitar crash de renderização em telas que exibem dados opcionais.
+export function maskCPF(value: string | null | undefined): string {
+  const cleaned = (value ?? "").replace(/\D/g, "").slice(0, 11);
   return cleaned
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
-export function maskPhone(value: string): string {
-  const cleaned = value.replace(/\D/g, "").slice(0, 11);
+export function maskPhone(value: string | null | undefined): string {
+  const cleaned = (value ?? "").replace(/\D/g, "").slice(0, 11);
   if (cleaned.length <= 10) {
     return cleaned
       .replace(/(\d{2})(\d)/, "($1) $2")
@@ -77,8 +78,8 @@ export function maskPhone(value: string): string {
     .replace(/(\d{5})(\d)/, "$1-$2");
 }
 
-export function maskCEP(value: string): string {
-  const cleaned = value.replace(/\D/g, "").slice(0, 8);
+export function maskCEP(value: string | null | undefined): string {
+  const cleaned = (value ?? "").replace(/\D/g, "").slice(0, 8);
   return cleaned.replace(/(\d{5})(\d)/, "$1-$2");
 }
 
