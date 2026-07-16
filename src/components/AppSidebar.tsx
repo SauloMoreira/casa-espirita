@@ -108,7 +108,7 @@ export const navGroups: NavGroup[] = [
     icon: Stethoscope,
     items: [
       { title: "Lista de Espera", url: "/lista-espera", icon: ClipboardCheck, roles: ["coordenador_de_tratamento"] },
-      { title: "Meus Tratamentos", url: "/coordenador-tratamentos", icon: Heart, roles: ["coordenador_de_tratamento"] },
+      { title: "Tratamentos que Coordeno", url: "/coordenador-tratamentos", icon: Heart, roles: ["coordenador_de_tratamento"] },
       { title: "Agenda do Tratamento", url: "/coordenador-agenda", icon: Calendar, roles: ["coordenador_de_tratamento"] },
     ],
   },
@@ -116,7 +116,7 @@ export const navGroups: NavGroup[] = [
     label: "Meu Espaço",
     icon: User,
     items: [
-      { title: "Meu Atendimento", url: "/meus-tratamentos", icon: Heart, roles: ["admin", "administrador_master", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
+      { title: "Meus Tratamentos", url: "/meus-tratamentos", icon: Heart, roles: ["admin", "administrador_master", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
       { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar, roles: ["assistido"] },
       { title: "Documentos", url: "/meus-documentos", icon: FileText, roles: ["assistido"] },
     ],
