@@ -45,9 +45,28 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "unknown";
+
+    if (ip !== "unknown") {
+      const since = new Date(Date.now() - RATE_WINDOW_SECONDS * 1000).toISOString();
+      const { count } = await admin
+        .from("signup_tentativas")
+        .select("id", { count: "exact", head: true })
+        .eq("ip", ip)
+        .gte("created_at", since);
+
+      if ((count ?? 0) >= RATE_MAX_ATTEMPTS) {
+        return json({ error: "Muitas tentativas. Aguarde um momento e tente novamente." }, 429);
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
     const nome_completo = String(body?.nome_completo || "").trim();
     const email = String(body?.email || "").trim().toLowerCase();
+    admin.from("signup_tentativas").insert({ ip, email }).then(() => {}, () => {});
     const password = String(body?.password || "");
     const cpf = body?.cpf ? String(body.cpf).trim() : null;
     const celular = body?.celular ? String(body.celular).trim() : null;
