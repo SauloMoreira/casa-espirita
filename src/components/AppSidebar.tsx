@@ -116,7 +116,7 @@ export const navGroups: NavGroup[] = [
     label: "Meu Espaço",
     icon: User,
     items: [
-      { title: "Meus Tratamentos", url: "/meus-tratamentos", icon: Heart, roles: ["assistido"] },
+      { title: "Meus Tratamentos", url: "/meus-tratamentos", icon: Heart, roles: ["admin", "administrador_master", "entrevistador", "tarefeiro", "assistido", "coordenador_de_tratamento"] },
       { title: "Minha Agenda", url: "/minha-agenda", icon: Calendar, roles: ["assistido"] },
       { title: "Documentos", url: "/meus-documentos", icon: FileText, roles: ["assistido"] },
     ],
