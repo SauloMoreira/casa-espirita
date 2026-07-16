@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail, User, IdCard, Phone, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Mail, User, IdCard, Phone, ShieldCheck, CheckCircle2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { validateSignup } from "@/lib/signupRequest";
+import { validateSignup, MIN_PASSWORD_LENGTH } from "@/lib/signupRequest";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import ferIcon from "@/assets/fer-icon.png";
 
@@ -19,6 +19,8 @@ export default function SolicitarCadastro() {
     email: "",
     cpf: "",
     celular: "",
+    password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -29,11 +31,6 @@ export default function SolicitarCadastro() {
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  function gerarSenhaSegura(): string {
-    return crypto.randomUUID().replace(/-/g, "");
-  }
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = validateSignup(form);
@@ -42,14 +39,13 @@ export default function SolicitarCadastro() {
 
     setLoading(true);
     try {
-      const senhaGerada = gerarSenhaSegura();
       const { data, error } = await supabase.functions.invoke("request-signup", {
         body: {
           nome_completo: form.nome_completo.trim(),
           email: form.email.trim(),
           cpf: form.cpf || null,
           celular: form.celular || null,
-          password: senhaGerada,
+          password: form.password,
         },
       });
       if (error) {
@@ -62,7 +58,7 @@ export default function SolicitarCadastro() {
       // AuthContext hydrates the session + assistido role, then go to the app.
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
-        password: senhaGerada,
+        password: form.password,
       });
 
       if (signInErr) {
