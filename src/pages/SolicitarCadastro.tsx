@@ -122,7 +122,7 @@ export default function SolicitarCadastro() {
                   <AlertTitle className="text-sm">Acesso imediato</AlertTitle>
                   <AlertDescription className="text-xs">
                     Ao concluir o cadastro você entra automaticamente como assistido, sem aprovação.
-                    Não precisa criar senha — o acesso já é liberado na hora.
+                    Crie uma senha para usar sempre que acessar novamente.
                   </AlertDescription>
                 </Alert>
 
@@ -145,6 +145,17 @@ export default function SolicitarCadastro() {
                   <Input id="celular" value={form.celular} onChange={(e) => set("celular", maskPhone(e.target.value))}
                     placeholder="(00) 00000-0000" className="h-11 pl-10" inputMode="numeric" />
                 </Field>
+
+                <Field id="password" label={`Senha * (mín. ${MIN_PASSWORD_LENGTH} caracteres)`} icon={Lock} error={errors.password}>
+                  <Input id="password" type="password" value={form.password} onChange={(e) => set("password", e.target.value)}
+                    placeholder="Crie uma senha" className="h-11 pl-10" autoComplete="new-password" />
+                </Field>
+
+                <Field id="confirmPassword" label="Confirmar senha *" icon={Lock} error={errors.confirmPassword}>
+                  <Input id="confirmPassword" type="password" value={form.confirmPassword} onChange={(e) => set("confirmPassword", e.target.value)}
+                    placeholder="Repita a senha" className="h-11 pl-10" autoComplete="new-password" />
+                </Field>
+
 
 
                 <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold" disabled={loading}>
