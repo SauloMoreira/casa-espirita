@@ -12,6 +12,8 @@ const valid = {
   email: "maria@example.com",
   cpf: "529.982.247-25", // valid CPF
   celular: "(11) 91234-5678",
+  password: "senhaSegura123",
+  confirmPassword: "senhaSegura123",
 };
 
 
@@ -47,6 +49,24 @@ describe("validateSignup", () => {
   it("still allows omitting optional celular", () => {
     const r = validateSignup({ ...valid, celular: "" });
     expect(r.valid).toBe(true);
+  });
+
+  it("requires a password", () => {
+    const r = validateSignup({ ...valid, password: "", confirmPassword: "" });
+    expect(r.valid).toBe(false);
+    expect(r.errors.password).toBeTruthy();
+  });
+
+  it("enforces minimum password length", () => {
+    const r = validateSignup({ ...valid, password: "123", confirmPassword: "123" });
+    expect(r.valid).toBe(false);
+    expect(r.errors.password).toBeTruthy();
+  });
+
+  it("requires matching password confirmation", () => {
+    const r = validateSignup({ ...valid, confirmPassword: "outraSenha123" });
+    expect(r.valid).toBe(false);
+    expect(r.errors.confirmPassword).toBeTruthy();
   });
 
 });
