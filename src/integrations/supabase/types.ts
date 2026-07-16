@@ -2479,6 +2479,33 @@ export type Database = {
           },
         ]
       }
+      signup_tentativas: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          ip: string | null
+          motivo: string | null
+          sucesso: boolean
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          motivo?: string | null
+          sucesso?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          motivo?: string | null
+          sucesso?: boolean
+        }
+        Relationships: []
+      }
       tipos_tratamento: {
         Row: {
           bloqueia_proximo_tratamento: boolean
