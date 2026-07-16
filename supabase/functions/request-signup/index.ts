@@ -20,6 +20,11 @@ function isValidCPF(cpf: string): boolean {
   return r === parseInt(c[10]);
 }
 
+// Rate-limit config (lightweight, IP based via signup_tentativas log) —
+// mesmo padrão já usado em checkin-publico.
+const RATE_WINDOW_SECONDS = 60;
+const RATE_MAX_ATTEMPTS = 15;
+
 // Public endpoint: self-registration with IMMEDIATE base access.
 // The auth account is created and the profile is inserted as "ativo". The base
 // role 'assistido' is granted automatically by the AFTER INSERT trigger on
