@@ -94,7 +94,7 @@ export const navGroups: NavGroup[] = [
     icon: HandHeart,
     items: [
       { title: "Assistidos", url: "/assistidos", icon: HandHeart, roles: ["admin", "entrevistador"] },
-      { title: "Visão do Assistido", url: "/consulta-assistido", icon: UserSearch, roles: ["admin"] },
+      { title: "Visão do Assistido", url: "/consulta-assistido", icon: UserSearch, roles: ["admin", "tarefeiro"] },
       { title: "Agenda de Entrevistas", url: "/agenda", icon: CalendarDays, roles: ["admin", "entrevistador", "tarefeiro"] },
       { title: "Registro de Presenças", url: "/presenca", icon: ClipboardCheck, roles: ["admin", "tarefeiro"] },
       { title: "Avisos de Ausência", url: "/avisos-ausencia", icon: CalendarX, roles: ["admin", "entrevistador", "tarefeiro", "coordenador_de_tratamento"] },
