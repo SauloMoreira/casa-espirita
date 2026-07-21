@@ -68,6 +68,7 @@ export default function Assistidos() {
   const [assistidos, setAssistidos] = useState<Assistido[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
