@@ -105,7 +105,7 @@ export default function Assistidos() {
       q = q.or(ors.join(","));
     }
 
-    const { data, count } = await q.order("nome").range(from, to);
+    const { data, count } = await q.order("nome", { ascending: sortAsc }).range(from, to);
     setAssistidos((data as any) || []);
     setTotal(count ?? 0);
     setListLoading(false);
