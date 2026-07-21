@@ -53,10 +53,8 @@ export default function MeuPerfil() {
 
       if (isAssistido) {
         const { data: assistido } = await supabase
-          .from("assistidos")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .rpc("get_meu_registro_assistido" as never)
+          .maybeSingle() as { data: any };
 
         if (assistido) {
           setAssistidoId(assistido.id);
