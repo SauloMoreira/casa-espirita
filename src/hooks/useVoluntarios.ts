@@ -358,25 +358,31 @@ export function useVoluntarios() {
   const filtered = useMemo(() => {
     const searchLower = filters.search.toLowerCase();
     const digits = filters.search.replace(/\D/g, "");
-    return voluntarios.filter((v) => {
-      const matchesSearch =
-        !filters.search ||
-        v.nome_completo.toLowerCase().includes(searchLower) ||
-        (v.cpf || "").includes(digits) ||
-        (v.celular || "").includes(digits) ||
-        (v.email || "").toLowerCase().includes(searchLower);
-      const matchesStatus = filters.status === FILTER_TODOS || v.status === filters.status;
-      const matchesTipo =
-        filters.tipo === FILTER_TODOS ||
-        (v.tipos_voluntario && v.tipos_voluntario.includes(filters.tipo));
-      const matchesFuncao =
-        filters.funcao === FILTER_TODOS ||
-        (voluntarioFuncoesMap[v.id] || []).includes(filters.funcao);
-      const matchesTermo =
-        filters.termo === FILTER_TODOS || (v.termo_status || "nao_gerado") === filters.termo;
-      return matchesSearch && matchesStatus && matchesTipo && matchesFuncao && matchesTermo;
-    });
-  }, [voluntarios, filters, voluntarioFuncoesMap]);
+    return voluntarios
+      .filter((v) => {
+        const matchesSearch =
+          !filters.search ||
+          v.nome_completo.toLowerCase().includes(searchLower) ||
+          (v.cpf || "").includes(digits) ||
+          (v.celular || "").includes(digits) ||
+          (v.email || "").toLowerCase().includes(searchLower);
+        const matchesStatus = filters.status === FILTER_TODOS || v.status === filters.status;
+        const matchesTipo =
+          filters.tipo === FILTER_TODOS ||
+          (v.tipos_voluntario && v.tipos_voluntario.includes(filters.tipo));
+        const matchesFuncao =
+          filters.funcao === FILTER_TODOS ||
+          (voluntarioFuncoesMap[v.id] || []).includes(filters.funcao);
+        const matchesTermo =
+          filters.termo === FILTER_TODOS || (v.termo_status || "nao_gerado") === filters.termo;
+        return matchesSearch && matchesStatus && matchesTipo && matchesFuncao && matchesTermo;
+      })
+      .sort((a, b) =>
+        sortAsc
+          ? a.nome_completo.localeCompare(b.nome_completo)
+          : b.nome_completo.localeCompare(a.nome_completo),
+      );
+  }, [voluntarios, filters, voluntarioFuncoesMap, sortAsc]);
 
   // Paginação (sobre o conjunto já filtrado, preservando o filtro por função).
   const [page, setPage] = useState(1);
