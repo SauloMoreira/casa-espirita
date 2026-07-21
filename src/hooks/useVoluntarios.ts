@@ -497,5 +497,7 @@ export function useVoluntarios() {
     setDeleteOpen,
     deleteTarget,
     onDeleted,
+    sortAsc,
+    setSortAsc,
   };
 }
