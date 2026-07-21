@@ -60,6 +60,7 @@ const statusLabel = (s: string) => STATUS_OPTIONS.find((o) => o.value === s)?.la
 
 const emptyForm = {
   nome: "", cpf: "", celular: "", email: "", data_nascimento: "",
+  responsavel_nome: "", responsavel_cpf: "", responsavel_celular: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "",
   foto_url: null as string | null,
   observacoes: "", status: "ativo", quantidade_palestras: "0",
