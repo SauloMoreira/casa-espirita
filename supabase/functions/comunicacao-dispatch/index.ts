@@ -29,7 +29,17 @@ function parseHoraMin(hora: string): number {
 }
 
 function dentroJanela(date: Date, inicio: string, fim: string): boolean {
-  const minutos = date.getHours() * 60 + date.getMinutes();
+  // Usa o horário de Brasília explicitamente, não o fuso do servidor
+  // (Deno roda em UTC por padrão — mesma causa dos bugs de fuso já
+  // corrigidos hoje em outros projetos).
+  const horaLocal = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+  const [h, m] = horaLocal.split(":").map(Number);
+  const minutos = h * 60 + m;
   return minutos >= parseHoraMin(inicio) && minutos < parseHoraMin(fim);
 }
 
