@@ -67,6 +67,7 @@ export function useVoluntarios() {
   const [errors, setErrors] = useState<VoluntarioFormErrors>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sortAsc, setSortAsc] = useState(true);
 
   // Busca de pessoa existente (passo inicial do novo cadastro).
   const [buscaAtiva, setBuscaAtiva] = useState(false);
