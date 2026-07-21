@@ -304,10 +304,17 @@ export default function Usuarios() {
   const filtered = users
     .filter((u) => {
       const s = search.toLowerCase();
+      if (!s) return true;
+      const digits = search.replace(/\D/g, "");
       const name = u.profile?.nome_completo?.toLowerCase() || "";
       const cpf = u.profile?.cpf || "";
       const email = u.email?.toLowerCase() || "";
-      return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
+      return (
+        name.includes(s) ||
+        (digits.length > 0 && cpf.includes(digits)) ||
+        email.includes(s) ||
+        u.user_id.includes(s)
+      );
     })
     .sort((a, b) => {
       const an = a.profile?.nome_completo?.toLowerCase() || "";
@@ -315,7 +322,7 @@ export default function Usuarios() {
       return sortAsc ? an.localeCompare(bn) : bn.localeCompare(an);
     });
 
-  console.log("[DIAG-temp] search:", JSON.stringify(search), "| users.length:", users.length, "| filtered.length:", filtered.length);
+  
 
 
   return (
@@ -431,7 +438,7 @@ export default function Usuarios() {
         <CardHeader className="pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, CPF ou e-mail..." className="pl-9" value={search} onChange={(e) => { console.log("[DIAG-temp] onChange disparado, valor:", JSON.stringify(e.target.value)); setSearch(e.target.value); }} />
+            <Input placeholder="Buscar por nome, CPF ou e-mail..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </CardHeader>
 
