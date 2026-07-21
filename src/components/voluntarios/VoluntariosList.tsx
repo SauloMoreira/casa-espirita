@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Pencil, FileText, Eye, MoreVertical, UserX, UserCheck, Trash2,
+  Pencil, FileText, Eye, MoreVertical, UserX, UserCheck, Trash2, ArrowUpDown,
 } from "lucide-react";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { VOLUNTARIO_MESSAGES } from "@/constants/voluntarios";
