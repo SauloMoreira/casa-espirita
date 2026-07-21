@@ -119,7 +119,7 @@ export default function Assistidos() {
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter, pageSize]);
+  }, [search, statusFilter, pageSize, sortAsc]);
 
   useEffect(() => {
     fetchAssistidos();
