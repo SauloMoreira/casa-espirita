@@ -124,7 +124,7 @@ export default function Usuarios() {
   const fetchUsers = async () => {
     const [{ data: roles }, { data: profiles }, { data: emails }] = await Promise.all([
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("profiles").select("*"),
+      supabase.from("profiles").select("*").order("nome_completo"),
       supabase.rpc("lista_usuarios_email"),
     ]);
     if (roles) {
