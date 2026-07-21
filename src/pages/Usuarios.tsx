@@ -301,13 +301,19 @@ export default function Usuarios() {
 
   const openNew = () => { setEditUserId(null); setForm(emptyForm); setErrors({}); setOpen(true); };
 
-  const filtered = users.filter((u) => {
-    const s = search.toLowerCase();
-    const name = u.profile?.nome_completo?.toLowerCase() || "";
-    const cpf = u.profile?.cpf || "";
-    const email = u.email?.toLowerCase() || "";
-    return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
-  });
+  const filtered = users
+    .filter((u) => {
+      const s = search.toLowerCase();
+      const name = u.profile?.nome_completo?.toLowerCase() || "";
+      const cpf = u.profile?.cpf || "";
+      const email = u.email?.toLowerCase() || "";
+      return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
+    })
+    .sort((a, b) => {
+      const an = a.profile?.nome_completo?.toLowerCase() || "";
+      const bn = b.profile?.nome_completo?.toLowerCase() || "";
+      return sortAsc ? an.localeCompare(bn) : bn.localeCompare(an);
+    });
 
   return (
     <div className="space-y-6">
