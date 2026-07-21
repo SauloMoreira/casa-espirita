@@ -16,7 +16,7 @@ import { FilaDetalheDrawer } from "@/components/notificacoes/FilaDetalheDrawer";
 import { FilaTab } from "@/components/notificacoes/FilaTab";
 import { MensagemManualDialog } from "@/components/notificacoes/MensagemManualDialog";
 import {
-  listFila, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
+  listFila, listFilaComunicacoesInstitucionais, listConversas, listHandoffsEnriquecidos, assumirHandoff, fecharHandoff, processarFila,
   listFilaDiagnostico, aplicarDiagnosticoFila,
   type FilaItem, type Conversa, type HandoffEnriquecido,
 } from "@/services/notificacoes/notificacoesService";
@@ -58,10 +58,13 @@ export default function CentralNotificacoes() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [f, c, h, diag] = await Promise.all([
-        listFila(), listConversas(), listHandoffsEnriquecidos(), listFilaDiagnostico(),
+      const [f, fi, c, h, diag] = await Promise.all([
+        listFila(), listFilaComunicacoesInstitucionais(), listConversas(), listHandoffsEnriquecidos(), listFilaDiagnostico(),
       ]);
-      setFila(aplicarDiagnosticoFila(f, diag)); setConversas(c); setHandoffs(h);
+      const filaCombinada = [...f, ...fi].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+      setFila(aplicarDiagnosticoFila(filaCombinada, diag)); setConversas(c); setHandoffs(h);
       setSelecionado((prev) => (prev ? h.find((x) => x.id === prev.id) ?? prev : prev));
     } catch (e: any) {
       toast({ title: "Erro ao carregar", description: e.message, variant: "destructive" });
