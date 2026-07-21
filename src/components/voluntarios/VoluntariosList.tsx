@@ -47,7 +47,16 @@ export function VoluntariosList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
+              <TableHead>
+                <button
+                  type="button"
+                  onClick={onToggleSort}
+                  className="flex items-center gap-1 hover:text-foreground"
+                  aria-label={sortAsc ? "Ordenar decrescente" : "Ordenar crescente"}
+                >
+                  Nome <ArrowUpDown className="w-3.5 h-3.5" />
+                </button>
+              </TableHead>
               <TableHead className="hidden md:table-cell">CPF</TableHead>
               <TableHead className="hidden md:table-cell">Celular</TableHead>
               <TableHead>Tipo</TableHead>
