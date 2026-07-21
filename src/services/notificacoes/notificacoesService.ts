@@ -323,6 +323,33 @@ export async function listFila(limit = 100): Promise<FilaItem[]> {
   return (data as FilaItem[]) ?? [];
 }
 
+export async function listFilaComunicacoesInstitucionais(limit = 100): Promise<FilaItem[]> {
+  const { data, error } = await supabase
+    .from("comunicacoes_institucionais_envios")
+    .select(
+      "id, status, scheduled_at, sent_at, retry_count, external_message_id, erro, created_at, telefone_normalizado, assistido_id, assistidos(nome), comunicacoes_institucionais(titulo, tipo)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((e: any) => ({
+    id: e.id,
+    evento_origem: `comunicacao_institucional_${e.comunicacoes_institucionais?.tipo ?? "comunicado"}`,
+    assistido_id: e.assistido_id,
+    telefone_normalizado: e.telefone_normalizado,
+    canal: "whatsapp",
+    template_codigo: e.comunicacoes_institucionais?.titulo ?? null,
+    status: e.status,
+    scheduled_at: e.scheduled_at,
+    sent_at: e.sent_at,
+    retry_count: e.retry_count,
+    external_message_id: e.external_message_id,
+    erro: e.erro,
+    created_at: e.created_at,
+    payload_json: { nome: e.assistidos?.nome ?? null },
+  })) as FilaItem[];
+}
+
 /**
  * Diagnóstico de pendência (L-02): para cada item pendente/agendado, por que
  * ainda não saiu (janela, limite diário, opt-out, inelegibilidade, etc.).
