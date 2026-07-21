@@ -3202,6 +3202,28 @@ export type Database = {
         Args: { p_action: string; p_motivo?: string; p_voluntario_id: string }
         Returns: Json
       }
+      get_meu_registro_assistido: {
+        Args: never
+        Returns: {
+          bairro: string
+          cadastro_completo: boolean
+          celular: string
+          cep: string
+          cidade: string
+          complemento: string
+          cpf: string
+          data_nascimento: string
+          email: string
+          estado: string
+          foto_url: string
+          id: string
+          logradouro: string
+          nome: string
+          numero: string
+          quantidade_palestras: number
+          status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
