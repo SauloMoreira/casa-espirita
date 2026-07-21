@@ -442,7 +442,15 @@ export default function Usuarios() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        onClick={() => setSortAsc((v) => !v)}
+                        className="flex items-center gap-1 hover:text-foreground"
+                      >
+                        Nome <ArrowUpDown className="w-3.5 h-3.5" />
+                      </button>
+                    </TableHead>
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
                     <TableHead className="hidden md:table-cell">E-mail</TableHead>
                     <TableHead>Acessos</TableHead>
