@@ -41,6 +41,9 @@ interface Assistido {
   status: string;
   quantidade_palestras: number;
   user_id: string | null;
+  responsavel_nome: string | null;
+  responsavel_cpf: string | null;
+  responsavel_celular: string | null;
 }
 
 const STATUS_OPTIONS = [
@@ -57,6 +60,7 @@ const statusLabel = (s: string) => STATUS_OPTIONS.find((o) => o.value === s)?.la
 
 const emptyForm = {
   nome: "", cpf: "", celular: "", email: "", data_nascimento: "",
+  responsavel_nome: "", responsavel_cpf: "", responsavel_celular: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "",
   foto_url: null as string | null,
   observacoes: "", status: "ativo", quantidade_palestras: "0",
@@ -148,6 +152,9 @@ export default function Assistidos() {
       telefone: celClean,
       email: form.email.trim() || null,
       data_nascimento: form.data_nascimento || null,
+      responsavel_nome: form.responsavel_nome.trim() || null,
+      responsavel_cpf: form.responsavel_cpf.replace(/\D/g, "") || null,
+      responsavel_celular: form.responsavel_celular.replace(/\D/g, "") || null,
       cep: form.cep.replace(/\D/g, "") || null,
       logradouro: form.logradouro.trim() || null,
       numero: form.numero.trim() || null,
@@ -219,6 +226,9 @@ export default function Assistidos() {
       celular: maskPhone(a.celular || a.telefone || ""),
       email: a.email || "",
       data_nascimento: a.data_nascimento || "",
+      responsavel_nome: a.responsavel_nome || "",
+      responsavel_cpf: a.responsavel_cpf ? maskCPF(a.responsavel_cpf) : "",
+      responsavel_celular: a.responsavel_celular ? maskPhone(a.responsavel_celular) : "",
       cep: a.cep || "",
       logradouro: a.logradouro || "",
       numero: a.numero || "",
@@ -292,6 +302,26 @@ export default function Assistidos() {
                   <Input type="number" min={0} value={form.quantidade_palestras} onChange={(e) => setForm({ ...form, quantidade_palestras: e.target.value })} />
                 </div>
               </div>
+
+              {form.data_nascimento && (new Date().getFullYear() - new Date(form.data_nascimento).getFullYear()) < 18 && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
+                  <p className="text-sm font-medium text-amber-800">Assistido menor de idade — dados do responsável</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nome do responsável</Label>
+                      <Input value={form.responsavel_nome} onChange={(e) => setForm({ ...form, responsavel_nome: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CPF do responsável</Label>
+                      <Input value={form.responsavel_cpf} onChange={(e) => setForm({ ...form, responsavel_cpf: maskCPF(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Celular do responsável</Label>
+                      <Input value={form.responsavel_celular} onChange={(e) => setForm({ ...form, responsavel_celular: maskPhone(e.target.value) })} />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <AddressFields
                 required={false}
