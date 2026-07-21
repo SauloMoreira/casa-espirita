@@ -34,6 +34,8 @@ interface Props {
   onInactivate: (v: VoluntarioListItem) => void;
   onReactivate: (v: VoluntarioListItem) => void;
   onDelete: (v: VoluntarioListItem) => void;
+  sortAsc: boolean;
+  onToggleSort: () => void;
 }
 
 export function VoluntariosList({
