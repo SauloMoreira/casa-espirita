@@ -372,6 +372,10 @@ export type Database = {
           observacoes: string | null
           origem_cadastro: string
           quantidade_palestras: number
+          responsavel_celular: string | null
+          responsavel_cpf: string | null
+          responsavel_nome: string | null
+          responsavel_user_id: string | null
           status: string
           telefone: string | null
           updated_at: string
@@ -404,6 +408,10 @@ export type Database = {
           observacoes?: string | null
           origem_cadastro?: string
           quantidade_palestras?: number
+          responsavel_celular?: string | null
+          responsavel_cpf?: string | null
+          responsavel_nome?: string | null
+          responsavel_user_id?: string | null
           status?: string
           telefone?: string | null
           updated_at?: string
@@ -436,13 +444,25 @@ export type Database = {
           observacoes?: string | null
           origem_cadastro?: string
           quantidade_palestras?: number
+          responsavel_celular?: string | null
+          responsavel_cpf?: string | null
+          responsavel_nome?: string | null
+          responsavel_user_id?: string | null
           status?: string
           telefone?: string | null
           updated_at?: string
           usa_agenda_plano?: boolean
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assistidos_responsavel_user_id_fkey"
+            columns: ["responsavel_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -3220,6 +3240,17 @@ export type Database = {
           logradouro: string
           nome: string
           numero: string
+          quantidade_palestras: number
+          status: string
+        }[]
+      }
+      get_meus_dependentes: {
+        Args: never
+        Returns: {
+          cadastro_completo: boolean
+          data_nascimento: string
+          id: string
+          nome: string
           quantidade_palestras: number
           status: string
         }[]
