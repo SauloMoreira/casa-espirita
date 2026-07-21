@@ -84,6 +84,7 @@ type FormErrors = Partial<Record<string, string>>;
 export default function Usuarios() {
   const [users, setUsers] = useState<MergedUser[]>([]);
   const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
