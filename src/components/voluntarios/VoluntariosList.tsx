@@ -39,7 +39,7 @@ interface Props {
 }
 
 export function VoluntariosList({
-  voluntarios, onEdit, onFicha, onTermo, onInactivate, onReactivate, onDelete,
+  voluntarios, onEdit, onFicha, onTermo, onInactivate, onReactivate, onDelete, sortAsc, onToggleSort,
 }: Props) {
   return (
     <Card>
