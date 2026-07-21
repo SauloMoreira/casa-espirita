@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Pencil, FileText, Eye, MoreVertical, UserX, UserCheck, Trash2,
+  Pencil, FileText, Eye, MoreVertical, UserX, UserCheck, Trash2, ArrowUpDown,
 } from "lucide-react";
 import { maskCPF, maskPhone } from "@/lib/validators";
 import { VOLUNTARIO_MESSAGES } from "@/constants/voluntarios";
@@ -34,10 +34,12 @@ interface Props {
   onInactivate: (v: VoluntarioListItem) => void;
   onReactivate: (v: VoluntarioListItem) => void;
   onDelete: (v: VoluntarioListItem) => void;
+  sortAsc: boolean;
+  onToggleSort: () => void;
 }
 
 export function VoluntariosList({
-  voluntarios, onEdit, onFicha, onTermo, onInactivate, onReactivate, onDelete,
+  voluntarios, onEdit, onFicha, onTermo, onInactivate, onReactivate, onDelete, sortAsc, onToggleSort,
 }: Props) {
   return (
     <Card>
@@ -45,7 +47,16 @@ export function VoluntariosList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
+              <TableHead>
+                <button
+                  type="button"
+                  onClick={onToggleSort}
+                  className="flex items-center gap-1 hover:text-foreground"
+                  aria-label={sortAsc ? "Ordenar decrescente" : "Ordenar crescente"}
+                >
+                  Nome <ArrowUpDown className="w-3.5 h-3.5" />
+                </button>
+              </TableHead>
               <TableHead className="hidden md:table-cell">CPF</TableHead>
               <TableHead className="hidden md:table-cell">Celular</TableHead>
               <TableHead>Tipo</TableHead>

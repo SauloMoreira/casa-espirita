@@ -18,7 +18,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Users as UsersIcon, Pencil, KeyRound, MoreVertical, UserX, UserCheck, Trash2, ShieldCheck } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Pencil, KeyRound, MoreVertical, UserX, UserCheck, Trash2, ShieldCheck, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
@@ -84,6 +84,7 @@ type FormErrors = Partial<Record<string, string>>;
 export default function Usuarios() {
   const [users, setUsers] = useState<MergedUser[]>([]);
   const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -123,7 +124,7 @@ export default function Usuarios() {
   const fetchUsers = async () => {
     const [{ data: roles }, { data: profiles }, { data: emails }] = await Promise.all([
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("profiles").select("*"),
+      supabase.from("profiles").select("*").order("nome_completo"),
       supabase.rpc("lista_usuarios_email"),
     ]);
     if (roles) {
@@ -300,13 +301,19 @@ export default function Usuarios() {
 
   const openNew = () => { setEditUserId(null); setForm(emptyForm); setErrors({}); setOpen(true); };
 
-  const filtered = users.filter((u) => {
-    const s = search.toLowerCase();
-    const name = u.profile?.nome_completo?.toLowerCase() || "";
-    const cpf = u.profile?.cpf || "";
-    const email = u.email?.toLowerCase() || "";
-    return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
-  });
+  const filtered = users
+    .filter((u) => {
+      const s = search.toLowerCase();
+      const name = u.profile?.nome_completo?.toLowerCase() || "";
+      const cpf = u.profile?.cpf || "";
+      const email = u.email?.toLowerCase() || "";
+      return name.includes(s) || cpf.includes(search.replace(/\D/g, "")) || email.includes(s) || u.user_id.includes(s);
+    })
+    .sort((a, b) => {
+      const an = a.profile?.nome_completo?.toLowerCase() || "";
+      const bn = b.profile?.nome_completo?.toLowerCase() || "";
+      return sortAsc ? an.localeCompare(bn) : bn.localeCompare(an);
+    });
 
   return (
     <div className="space-y-6">
@@ -435,7 +442,15 @@ export default function Usuarios() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        onClick={() => setSortAsc((v) => !v)}
+                        className="flex items-center gap-1 hover:text-foreground"
+                      >
+                        Nome <ArrowUpDown className="w-3.5 h-3.5" />
+                      </button>
+                    </TableHead>
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
                     <TableHead className="hidden md:table-cell">E-mail</TableHead>
                     <TableHead>Acessos</TableHead>

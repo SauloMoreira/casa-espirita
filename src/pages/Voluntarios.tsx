@@ -34,6 +34,8 @@ export default function Voluntarios() {
           }
         }}
         onDelete={v.openDelete}
+        sortAsc={v.sortAsc}
+        onToggleSort={() => v.setSortAsc((s) => !s)}
       />
 
       {v.total > 0 && (

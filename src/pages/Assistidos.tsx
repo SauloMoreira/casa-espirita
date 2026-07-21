@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, HandHeart, Pencil, KeyRound } from "lucide-react";
+import { Plus, Search, HandHeart, Pencil, KeyRound, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
@@ -68,6 +68,7 @@ export default function Assistidos() {
   const [assistidos, setAssistidos] = useState<Assistido[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -104,7 +105,7 @@ export default function Assistidos() {
       q = q.or(ors.join(","));
     }
 
-    const { data, count } = await q.order("nome").range(from, to);
+    const { data, count } = await q.order("nome", { ascending: sortAsc }).range(from, to);
     setAssistidos((data as any) || []);
     setTotal(count ?? 0);
     setListLoading(false);
@@ -118,7 +119,7 @@ export default function Assistidos() {
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter, pageSize]);
+  }, [search, statusFilter, pageSize, sortAsc]);
 
   useEffect(() => {
     fetchAssistidos();
@@ -353,7 +354,15 @@ export default function Assistidos() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        onClick={() => setSortAsc((v) => !v)}
+                        className="flex items-center gap-1 hover:text-foreground"
+                      >
+                        Nome <ArrowUpDown className="w-3.5 h-3.5" />
+                      </button>
+                    </TableHead>
                     <TableHead className="hidden md:table-cell">CPF</TableHead>
                     <TableHead className="hidden md:table-cell">Celular</TableHead>
                     <TableHead>Palestras</TableHead>
