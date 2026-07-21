@@ -303,6 +303,26 @@ export default function Assistidos() {
                 </div>
               </div>
 
+              {form.data_nascimento && (new Date().getFullYear() - new Date(form.data_nascimento).getFullYear()) < 18 && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
+                  <p className="text-sm font-medium text-amber-800">Assistido menor de idade — dados do responsável</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nome do responsável</Label>
+                      <Input value={form.responsavel_nome} onChange={(e) => setForm({ ...form, responsavel_nome: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CPF do responsável</Label>
+                      <Input value={form.responsavel_cpf} onChange={(e) => setForm({ ...form, responsavel_cpf: maskCPF(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Celular do responsável</Label>
+                      <Input value={form.responsavel_celular} onChange={(e) => setForm({ ...form, responsavel_celular: maskPhone(e.target.value) })} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <AddressFields
                 required={false}
                 data={{ cep: form.cep, logradouro: form.logradouro, numero: form.numero, complemento: form.complemento, bairro: form.bairro, cidade: form.cidade, estado: form.estado }}
