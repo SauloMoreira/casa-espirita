@@ -315,6 +315,9 @@ export default function Usuarios() {
       return sortAsc ? an.localeCompare(bn) : bn.localeCompare(an);
     });
 
+  console.log("[DIAG-temp] search:", JSON.stringify(search), "| users.length:", users.length, "| filtered.length:", filtered.length);
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -428,9 +431,10 @@ export default function Usuarios() {
         <CardHeader className="pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, CPF ou e-mail..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por nome, CPF ou e-mail..." className="pl-9" value={search} onChange={(e) => { console.log("[DIAG-temp] onChange disparado, valor:", JSON.stringify(e.target.value)); setSearch(e.target.value); }} />
           </div>
         </CardHeader>
+
         <CardContent>
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
