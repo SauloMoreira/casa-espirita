@@ -41,6 +41,9 @@ interface Assistido {
   status: string;
   quantidade_palestras: number;
   user_id: string | null;
+  responsavel_nome: string | null;
+  responsavel_cpf: string | null;
+  responsavel_celular: string | null;
 }
 
 const STATUS_OPTIONS = [
