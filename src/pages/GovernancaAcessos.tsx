@@ -11,8 +11,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ShieldAlert, Plus, Check, X, Info, Wrench, UserCog, Trash2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Plus, Check as CheckIcon, X, Info, Wrench, UserCog, Trash2, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   PROMOTION_STATUS_LABELS, PROMOTION_ROLE_LABELS, isPromotionOpen,
@@ -104,6 +106,7 @@ export default function GovernancaAcessos() {
   // Operational grant dialog state
   const [opOpen, setOpOpen] = useState(false);
   const [opUserId, setOpUserId] = useState("");
+  const [opUserPopoverOpen, setOpUserPopoverOpen] = useState(false);
   const [opRole, setOpRole] = useState<OperationalRole>("entrevistador");
   const [opMotivo, setOpMotivo] = useState("");
 
@@ -114,7 +117,7 @@ export default function GovernancaAcessos() {
 
   const fetchAll = useCallback(async () => {
     const [{ data: profs }, { data: reqs }, { data: apps }, { data: allRoles }, { count: mastersCount }, { data: adminRoles }] = await Promise.all([
-      supabase.from("profiles").select("user_id, nome_completo").eq("status", "ativo"),
+      supabase.from("profiles").select("user_id, nome_completo").eq("status", "ativo").order("nome_completo"),
       supabase.from("admin_promotion_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("admin_promotion_approvals").select("*"),
       supabase.from("user_roles").select("user_id, role"),
@@ -233,6 +236,7 @@ export default function GovernancaAcessos() {
   const closed_requests = requests.filter((r) => !isPromotionOpen(r.status));
 
   const candidates = profiles.filter((p) => p.user_id !== user?.id);
+  const candidatesOperacional = profiles;
 
   // Operational holders: group operational roles per user (active profiles only).
   const operationalByUser = (() => {
@@ -296,16 +300,39 @@ export default function GovernancaAcessos() {
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <Label>Usuário *</Label>
-                    <Select value={opUserId} onValueChange={setOpUserId}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o usuário" /></SelectTrigger>
-                      <SelectContent>
-                        {candidates.map((p) => (
-                          <SelectItem key={p.user_id} value={p.user_id}>
-                            {p.nome_completo || p.user_id.substring(0, 8)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={opUserPopoverOpen} onOpenChange={setOpUserPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                          {opUserId
+                            ? candidatesOperacional.find((p) => p.user_id === opUserId)?.nome_completo ?? "Selecione o usuário"
+                            : "Selecione o usuário"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar por nome..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {candidatesOperacional.map((p) => (
+                                <CommandItem
+                                  key={p.user_id}
+                                  value={p.nome_completo || p.user_id}
+                                  onSelect={() => {
+                                    setOpUserId(p.user_id);
+                                    setOpUserPopoverOpen(false);
+                                  }}
+                                >
+                                  <CheckIcon className={`mr-2 h-4 w-4 ${opUserId === p.user_id ? "opacity-100" : "opacity-0"}`} />
+                                  {p.nome_completo || p.user_id.substring(0, 8)}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label>Acesso operacional *</Label>
@@ -487,7 +514,7 @@ export default function GovernancaAcessos() {
                     )}
                     <div className="flex gap-2 pt-1">
                       <Button size="sm" disabled={blocked || loading} onClick={() => handleDecidir(r, "aprovar")}>
-                        <Check className="h-4 w-4 mr-1" /> Aprovar
+                        <CheckIcon className="h-4 w-4 mr-1" /> Aprovar
                       </Button>
                       <Button size="sm" variant="destructive" disabled={rejectBlocked || loading}
                         onClick={() => { setRejectTarget(r); setRejectMotivo(""); }}>
