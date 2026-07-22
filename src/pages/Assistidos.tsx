@@ -500,10 +500,16 @@ export default function Assistidos() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(a)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" title="Tratamentos" onClick={() => abrirTratamentos(a)}>
+                            <ClipboardPlus className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(a)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
+
                     </TableRow>
                   ))}
                 </TableBody>
