@@ -33,6 +33,7 @@ import {
   KeyRound,
   LifeBuoy,
   Apple,
+  HeartHandshake,
   Megaphone,
   CalendarDays,
   Send,
