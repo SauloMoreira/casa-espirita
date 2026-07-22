@@ -270,6 +270,46 @@ export default function Assistidos() {
 
   const openNew = () => { setEditId(null); setForm(emptyForm); setErrors({}); setOpen(true); };
 
+  const abrirTratamentos = async (a: Assistido) => {
+    setTratamentoAssistido(a);
+    setNovoTratamentoId("");
+    setNovaQuantidade("1");
+    const [{ data: tipos }, { data: vinculos }] = await Promise.all([
+      supabase.from("tipos_tratamento").select("id, nome").order("nome"),
+      supabase
+        .from("assistido_tratamentos")
+        .select("id, status, quantidade_total, quantidade_realizada, origem, tipos_tratamento(nome)")
+        .eq("assistido_id", a.id)
+        .order("created_at", { ascending: false }),
+    ]);
+    setTiposTratamento((tipos as any) || []);
+    setVinculosAtuais((vinculos as any) || []);
+    setTratamentoOpen(true);
+  };
+
+  const adicionarTratamentoManual = async () => {
+    if (!tratamentoAssistido || !novoTratamentoId) return;
+    setSalvandoTratamento(true);
+    const { error } = await supabase.from("assistido_tratamentos").insert({
+      assistido_id: tratamentoAssistido.id,
+      tratamento_id: novoTratamentoId,
+      entrevista_id: null,
+      origem: "manual",
+      status: "aguardando_agendamento",
+      quantidade_total: Number(novaQuantidade) || 1,
+      created_by: user?.id,
+    } as any);
+    setSalvandoTratamento(false);
+    if (error) {
+      toast({ title: "Erro ao adicionar tratamento", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Tratamento adicionado" });
+    abrirTratamentos(tratamentoAssistido);
+  };
+
+
+
   // Busca e filtro de status são aplicados server-side (paginação real).
   const filtered = assistidos;
 
