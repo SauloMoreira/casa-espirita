@@ -101,6 +101,14 @@ export default function Assistidos() {
   const [acessoAssistido, setAcessoAssistido] = useState<Assistido | null>(null);
   const [resetAssistido, setResetAssistido] = useState<Assistido | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [tratamentoOpen, setTratamentoOpen] = useState(false);
+  const [tratamentoAssistido, setTratamentoAssistido] = useState<Assistido | null>(null);
+  const [tiposTratamento, setTiposTratamento] = useState<{ id: string; nome: string }[]>([]);
+  const [vinculosAtuais, setVinculosAtuais] = useState<any[]>([]);
+  const [novoTratamentoId, setNovoTratamentoId] = useState("");
+  const [novaQuantidade, setNovaQuantidade] = useState("1");
+  const [salvandoTratamento, setSalvandoTratamento] = useState(false);
+
   const { user, role } = useAuth();
   const { toast } = useToast();
 
