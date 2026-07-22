@@ -108,7 +108,9 @@ async function reconcileOrphanedTreatments(assistidoId: string) {
     .from("assistido_tratamentos")
     .select("id, quantidade_realizada, status")
     .eq("assistido_id", assistidoId)
-    .is("entrevista_id", null);
+    .is("entrevista_id", null)
+    .neq("origem", "manual");
+
 
   if (!orphanedVinculos) return;
 
