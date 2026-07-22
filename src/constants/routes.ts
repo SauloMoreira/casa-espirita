@@ -35,6 +35,7 @@ export const ROUTES = {
   sessoesPublicas: "/sessoes-publicas",
   acaoSocial: "/acao-social",
   cadastroAcaoSocial: "/cadastro-acao-social",
+  entregaAcaoSocial: "/entrega-acao-social",
   campanhas: "/campanhas",
   eventos: "/eventos",
   comunicacaoInstitucional: "/comunicacao-institucional",

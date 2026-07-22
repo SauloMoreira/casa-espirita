@@ -3574,6 +3574,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      listar_beneficiarios_para_entrega: {
+        Args: { p_competencia: string }
+        Returns: {
+          ativo: boolean
+          beneficiario_id: string
+          celular: string
+          entrega_id: string
+          entregue: boolean
+          entregue_em: string
+          nome: string
+        }[]
+      }
       marcar_envio_concluido: {
         Args: { p_comunicacao_id: string }
         Returns: Json
