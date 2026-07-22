@@ -58,6 +58,21 @@ const STATUS_OPTIONS = [
 
 const statusLabel = (s: string) => STATUS_OPTIONS.find((o) => o.value === s)?.label || s;
 
+function calcularIdade(dataNascimentoStr: string): number {
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimentoStr);
+
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+
+  const aniversarioJaPassouEsteAno =
+    hoje.getMonth() > nascimento.getMonth() ||
+    (hoje.getMonth() === nascimento.getMonth() && hoje.getDate() >= nascimento.getDate());
+
+  if (!aniversarioJaPassouEsteAno) idade--;
+
+  return idade;
+}
+
 const emptyForm = {
   nome: "", cpf: "", celular: "", email: "", data_nascimento: "",
   responsavel_nome: "", responsavel_cpf: "", responsavel_celular: "",
