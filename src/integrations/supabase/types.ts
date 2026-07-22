@@ -3445,6 +3445,7 @@ export type Database = {
         | "assistido"
         | "coordenador_de_tratamento"
         | "administrador_master"
+        | "agente_acao_social"
       conversa_status: "ativa" | "encerrada"
       handoff_status: "aberto" | "em_atendimento" | "fechado"
       notif_canal: "whatsapp"
@@ -3608,6 +3609,7 @@ export const Constants = {
         "assistido",
         "coordenador_de_tratamento",
         "administrador_master",
+        "agente_acao_social",
       ],
       conversa_status: ["ativa", "encerrada"],
       handoff_status: ["aberto", "em_atendimento", "fechado"],
