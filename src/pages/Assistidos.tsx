@@ -551,6 +551,57 @@ export default function Assistidos() {
           targetUserEmail={resetAssistido.email}
         />
       )}
+
+      <Dialog open={tratamentoOpen} onOpenChange={setTratamentoOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tratamentos de {tratamentoAssistido?.nome}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              {vinculosAtuais.length === 0 && (
+                <p className="text-sm text-muted-foreground">Nenhum tratamento vinculado ainda.</p>
+              )}
+              {vinculosAtuais.map((v) => (
+                <div key={v.id} className="rounded-lg border p-3">
+                  <p className="text-sm font-medium">{v.tipos_tratamento?.nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {v.status} · {v.quantidade_realizada}/{v.quantidade_total} sessões
+                    {v.origem === "manual" && " · adicionado manualmente"}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 border-t pt-4">
+              <p className="text-sm font-medium">Adicionar novo tratamento (sem nova entrevista)</p>
+              <Select value={novoTratamentoId} onValueChange={setNovoTratamentoId}>
+                <SelectTrigger><SelectValue placeholder="Selecione um tratamento" /></SelectTrigger>
+                <SelectContent>
+                  {tiposTratamento.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                min={1}
+                value={novaQuantidade}
+                onChange={(e) => setNovaQuantidade(e.target.value)}
+                placeholder="Quantidade de sessões"
+              />
+              <Button
+                onClick={adicionarTratamentoManual}
+                disabled={salvandoTratamento || !novoTratamentoId}
+                className="w-full"
+              >
+                {salvandoTratamento ? "Adicionando..." : "Adicionar tratamento"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
