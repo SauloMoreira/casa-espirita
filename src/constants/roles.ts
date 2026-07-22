@@ -10,6 +10,7 @@ export const APP_ROLES = [
   "tarefeiro",
   "assistido",
   "coordenador_de_tratamento",
+  "agente_acao_social",
 ] as const;
 
 /**
