@@ -314,6 +314,7 @@ export type Database = {
       }
       acao_social_entregas: {
         Row: {
+          aviso_enviado_em: string | null
           beneficiario_id: string
           competencia: string
           created_at: string
@@ -324,6 +325,7 @@ export type Database = {
           observacao: string | null
         }
         Insert: {
+          aviso_enviado_em?: string | null
           beneficiario_id: string
           competencia: string
           created_at?: string
@@ -334,6 +336,7 @@ export type Database = {
           observacao?: string | null
         }
         Update: {
+          aviso_enviado_em?: string | null
           beneficiario_id?: string
           competencia?: string
           created_at?: string

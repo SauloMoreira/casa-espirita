@@ -1,0 +1,1 @@
+ALTER TABLE public.acao_social_entregas ADD COLUMN IF NOT EXISTS aviso_enviado_em timestamptz;
