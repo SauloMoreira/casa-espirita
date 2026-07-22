@@ -107,9 +107,9 @@ export const navGroups: NavGroup[] = [
     label: "Coordenação",
     icon: Stethoscope,
     items: [
-      { title: "Lista de Espera", url: "/lista-espera", icon: ClipboardCheck, roles: ["coordenador_de_tratamento"] },
-      { title: "Tratamentos que Coordeno", url: "/coordenador-tratamentos", icon: Heart, roles: ["coordenador_de_tratamento"] },
-      { title: "Agenda do Tratamento", url: "/coordenador-agenda", icon: Calendar, roles: ["coordenador_de_tratamento"] },
+      { title: "Lista de Espera", url: "/lista-espera", icon: ClipboardCheck, roles: ["admin", "coordenador_de_tratamento"] },
+      { title: "Tratamentos que Coordeno", url: "/coordenador-tratamentos", icon: Heart, roles: ["admin", "coordenador_de_tratamento"] },
+      { title: "Agenda do Tratamento", url: "/coordenador-agenda", icon: Calendar, roles: ["admin", "coordenador_de_tratamento"] },
     ],
   },
   {
