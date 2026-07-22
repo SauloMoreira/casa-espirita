@@ -13,7 +13,8 @@ import type { PromotionStatus, AdminPromotionRole } from "@/lib/adminPromotion";
 export type OperationalAccessRole =
   | "entrevistador"
   | "tarefeiro"
-  | "coordenador_de_tratamento";
+  | "coordenador_de_tratamento"
+  | "agente_acao_social";
 
 /** Retorno de `solicitar_promocao_admin`. */
 export interface PromocaoResult {
