@@ -66,18 +66,20 @@ const STATUS_VARIANT: Record<PromotionStatus, "default" | "secondary" | "destruc
 };
 
 // ── Acessos operacionais (concessão direta e auditada) ──────────────────────
-type OperationalRole = "entrevistador" | "tarefeiro" | "coordenador_de_tratamento";
+type OperationalRole = "entrevistador" | "tarefeiro" | "coordenador_de_tratamento" | "agente_acao_social";
 
 const OPERATIONAL_ROLES: OperationalRole[] = [
   "entrevistador",
   "tarefeiro",
   "coordenador_de_tratamento",
+  "agente_acao_social",
 ];
 
 const OPERATIONAL_ROLE_LABELS: Record<OperationalRole, string> = {
   entrevistador: "Entrevistador",
   tarefeiro: "Tarefeiro",
   coordenador_de_tratamento: "Coordenador de Tratamento",
+  agente_acao_social: "Agente de Ação Social",
 };
 
 const isOperationalRole = (r: string): r is OperationalRole =>
