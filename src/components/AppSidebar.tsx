@@ -164,6 +164,7 @@ export const navGroups: NavGroup[] = [
       { title: "Gestão Institucional", url: "/painel-institucional", icon: LayoutDashboard, roles: ["admin"] },
       { title: "Ação Social", url: "/acao-social", icon: Apple, roles: ["admin"] },
       { title: "Cadastro Ação Social", url: "/cadastro-acao-social", icon: HeartHandshake, roles: ["admin", "agente_acao_social"] },
+      { title: "Entrega de Cesta Básica", url: "/entrega-acao-social", icon: PackageCheck, roles: ["admin", "agente_acao_social", "tarefeiro"] },
       { title: "Campanhas", url: "/campanhas", icon: Megaphone, roles: ["admin"] },
       { title: "Eventos", url: "/eventos", icon: CalendarDays, roles: ["admin"] },
       { title: "Comunicação", url: "/comunicacao-institucional", icon: Send, roles: ["admin"] },
