@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, HandHeart, Pencil, KeyRound, ArrowUpDown } from "lucide-react";
+import { Plus, Search, HandHeart, Pencil, KeyRound, ArrowUpDown, ClipboardPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { AddressFields } from "@/components/AddressFields";
@@ -101,6 +101,14 @@ export default function Assistidos() {
   const [acessoAssistido, setAcessoAssistido] = useState<Assistido | null>(null);
   const [resetAssistido, setResetAssistido] = useState<Assistido | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [tratamentoOpen, setTratamentoOpen] = useState(false);
+  const [tratamentoAssistido, setTratamentoAssistido] = useState<Assistido | null>(null);
+  const [tiposTratamento, setTiposTratamento] = useState<{ id: string; nome: string }[]>([]);
+  const [vinculosAtuais, setVinculosAtuais] = useState<any[]>([]);
+  const [novoTratamentoId, setNovoTratamentoId] = useState("");
+  const [novaQuantidade, setNovaQuantidade] = useState("1");
+  const [salvandoTratamento, setSalvandoTratamento] = useState(false);
+
   const { user, role } = useAuth();
   const { toast } = useToast();
 
@@ -261,6 +269,46 @@ export default function Assistidos() {
   };
 
   const openNew = () => { setEditId(null); setForm(emptyForm); setErrors({}); setOpen(true); };
+
+  const abrirTratamentos = async (a: Assistido) => {
+    setTratamentoAssistido(a);
+    setNovoTratamentoId("");
+    setNovaQuantidade("1");
+    const [{ data: tipos }, { data: vinculos }] = await Promise.all([
+      supabase.from("tipos_tratamento").select("id, nome").order("nome"),
+      supabase
+        .from("assistido_tratamentos")
+        .select("id, status, quantidade_total, quantidade_realizada, origem, tipos_tratamento(nome)")
+        .eq("assistido_id", a.id)
+        .order("created_at", { ascending: false }),
+    ]);
+    setTiposTratamento((tipos as any) || []);
+    setVinculosAtuais((vinculos as any) || []);
+    setTratamentoOpen(true);
+  };
+
+  const adicionarTratamentoManual = async () => {
+    if (!tratamentoAssistido || !novoTratamentoId) return;
+    setSalvandoTratamento(true);
+    const { error } = await supabase.from("assistido_tratamentos").insert({
+      assistido_id: tratamentoAssistido.id,
+      tratamento_id: novoTratamentoId,
+      entrevista_id: null,
+      origem: "manual",
+      status: "aguardando_agendamento",
+      quantidade_total: Number(novaQuantidade) || 1,
+      created_by: user?.id,
+    } as any);
+    setSalvandoTratamento(false);
+    if (error) {
+      toast({ title: "Erro ao adicionar tratamento", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Tratamento adicionado" });
+    abrirTratamentos(tratamentoAssistido);
+  };
+
+
 
   // Busca e filtro de status são aplicados server-side (paginação real).
   const filtered = assistidos;
@@ -452,10 +500,16 @@ export default function Assistidos() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(a)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" title="Tratamentos" onClick={() => abrirTratamentos(a)}>
+                            <ClipboardPlus className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(a)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
+
                     </TableRow>
                   ))}
                 </TableBody>
@@ -497,6 +551,57 @@ export default function Assistidos() {
           targetUserEmail={resetAssistido.email}
         />
       )}
+
+      <Dialog open={tratamentoOpen} onOpenChange={setTratamentoOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tratamentos de {tratamentoAssistido?.nome}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              {vinculosAtuais.length === 0 && (
+                <p className="text-sm text-muted-foreground">Nenhum tratamento vinculado ainda.</p>
+              )}
+              {vinculosAtuais.map((v) => (
+                <div key={v.id} className="rounded-lg border p-3">
+                  <p className="text-sm font-medium">{v.tipos_tratamento?.nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {v.status} · {v.quantidade_realizada}/{v.quantidade_total} sessões
+                    {v.origem === "manual" && " · adicionado manualmente"}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 border-t pt-4">
+              <p className="text-sm font-medium">Adicionar novo tratamento (sem nova entrevista)</p>
+              <Select value={novoTratamentoId} onValueChange={setNovoTratamentoId}>
+                <SelectTrigger><SelectValue placeholder="Selecione um tratamento" /></SelectTrigger>
+                <SelectContent>
+                  {tiposTratamento.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                min={1}
+                value={novaQuantidade}
+                onChange={(e) => setNovaQuantidade(e.target.value)}
+                placeholder="Quantidade de sessões"
+              />
+              <Button
+                onClick={adicionarTratamentoManual}
+                disabled={salvandoTratamento || !novoTratamentoId}
+                className="w-full"
+              >
+                {salvandoTratamento ? "Adicionando..." : "Adicionar tratamento"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
