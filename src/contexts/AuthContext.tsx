@@ -174,12 +174,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isMaster = roles.includes("administrador_master");
 
-  const visibleRoles: AppRole[] = (() => {
-    if (roles.includes("admin") || roles.includes("administrador_master")) {
-      return roles.includes("assistido") ? ["admin", "assistido"] : ["admin"];
-    }
-    return roles.length > 0 ? roles : ["assistido"];
-  })();
+  // União de todos os papéis que a pessoa realmente tem — sem tratamento
+  // especial pro admin. Se a pessoa é admin E coordenador de tratamento
+  // (ex: administra a casa e também coordena um tratamento específico),
+  // ela vê a soma das duas visões, não só a de admin.
+  const visibleRoles: AppRole[] = roles.length > 0 ? roles : ["assistido"];
 
   return (
     <AuthContext.Provider value={{ session, user, role, roles, visibleRoles, isMaster, profile, loading, rolesResolved, mfaPending, refreshMfa, signIn, signOut }}>
