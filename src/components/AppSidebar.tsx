@@ -34,6 +34,7 @@ import {
   LifeBuoy,
   Apple,
   HeartHandshake,
+  PackageCheck,
   Megaphone,
   CalendarDays,
   Send,
