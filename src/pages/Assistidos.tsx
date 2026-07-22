@@ -58,6 +58,21 @@ const STATUS_OPTIONS = [
 
 const statusLabel = (s: string) => STATUS_OPTIONS.find((o) => o.value === s)?.label || s;
 
+function calcularIdade(dataNascimentoStr: string): number {
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimentoStr);
+
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+
+  const aniversarioJaPassouEsteAno =
+    hoje.getMonth() > nascimento.getMonth() ||
+    (hoje.getMonth() === nascimento.getMonth() && hoje.getDate() >= nascimento.getDate());
+
+  if (!aniversarioJaPassouEsteAno) idade--;
+
+  return idade;
+}
+
 const emptyForm = {
   nome: "", cpf: "", celular: "", email: "", data_nascimento: "",
   responsavel_nome: "", responsavel_cpf: "", responsavel_celular: "",
@@ -303,7 +318,7 @@ export default function Assistidos() {
                 </div>
               </div>
 
-              {form.data_nascimento && (new Date().getFullYear() - new Date(form.data_nascimento).getFullYear()) < 18 && (
+              {form.data_nascimento && calcularIdade(form.data_nascimento) < 18 && (
                 <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
                   <p className="text-sm font-medium text-amber-800">Assistido menor de idade — dados do responsável</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
