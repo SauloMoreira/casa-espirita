@@ -318,7 +318,7 @@ export default function Assistidos() {
                 </div>
               </div>
 
-              {form.data_nascimento && (new Date().getFullYear() - new Date(form.data_nascimento).getFullYear()) < 18 && (
+              {form.data_nascimento && calcularIdade(form.data_nascimento) < 18 && (
                 <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
                   <p className="text-sm font-medium text-amber-800">Assistido menor de idade — dados do responsável</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
