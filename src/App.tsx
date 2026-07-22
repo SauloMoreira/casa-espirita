@@ -62,6 +62,7 @@ const FuncoesVoluntariado = lazy(() => import("./pages/FuncoesVoluntariado"));
 const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
 const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
 const AcaoSocial = lazy(() => import("./pages/AcaoSocial"));
+const CadastroAcaoSocial = lazy(() => import("./pages/CadastroAcaoSocial"));
 const Campanhas = lazy(() => import("./pages/Campanhas"));
 const Eventos = lazy(() => import("./pages/Eventos"));
 const ComunicacaoInstitucional = lazy(() => import("./pages/ComunicacaoInstitucional"));
@@ -148,6 +149,7 @@ const App = () => (
                   <Route path={ROUTES.funcoesVoluntariado} element={<ProtectedRoute allowedRoles={["admin"]}><FuncoesVoluntariado /></ProtectedRoute>} />
                   <Route path={ROUTES.sessoesPublicas} element={<ProtectedRoute allowedRoles={["admin", "tarefeiro"]}>{guard(<SessoesPublicas />, "Sessões Públicas")}</ProtectedRoute>} />
                   <Route path={ROUTES.acaoSocial} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<AcaoSocial />, "Ação Social")}</ProtectedRoute>} />
+                  <Route path={ROUTES.cadastroAcaoSocial} element={<ProtectedRoute allowedRoles={["admin", "agente_acao_social"]}>{guard(<CadastroAcaoSocial />, "Cadastro Ação Social")}</ProtectedRoute>} />
                   <Route path={ROUTES.campanhas} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Campanhas />, "Campanhas")}</ProtectedRoute>} />
                   <Route path={ROUTES.eventos} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<Eventos />, "Eventos")}</ProtectedRoute>} />
                  <Route path={ROUTES.comunicacaoInstitucional} element={<ProtectedRoute allowedRoles={["admin"]}>{guard(<ComunicacaoInstitucional />, "Comunicação Institucional")}</ProtectedRoute>} />

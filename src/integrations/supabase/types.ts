@@ -59,6 +59,168 @@ export type Database = {
         }
         Relationships: []
       }
+      acao_social_beneficiarios: {
+        Row: {
+          assistido_id: string | null
+          ativo: boolean
+          bairro: string | null
+          beneficio_desde: string
+          bens: string | null
+          celular: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          data_nascimento: string | null
+          estado: string | null
+          foto_url: string | null
+          gasto_agua: number | null
+          gasto_alimentacao: number | null
+          gasto_gas: number | null
+          gasto_luz: number | null
+          id: string
+          logradouro: string | null
+          motivo_prorrogacao: string | null
+          nome: string
+          nova_data_limite: string | null
+          numero: string | null
+          observacoes: string | null
+          prorrogado: boolean
+          renda_familiar: number | null
+          rg: string | null
+          situacao_moradia: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assistido_id?: string | null
+          ativo?: boolean
+          bairro?: string | null
+          beneficio_desde?: string
+          bens?: string | null
+          celular?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_nascimento?: string | null
+          estado?: string | null
+          foto_url?: string | null
+          gasto_agua?: number | null
+          gasto_alimentacao?: number | null
+          gasto_gas?: number | null
+          gasto_luz?: number | null
+          id?: string
+          logradouro?: string | null
+          motivo_prorrogacao?: string | null
+          nome: string
+          nova_data_limite?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          prorrogado?: boolean
+          renda_familiar?: number | null
+          rg?: string | null
+          situacao_moradia?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assistido_id?: string | null
+          ativo?: boolean
+          bairro?: string | null
+          beneficio_desde?: string
+          bens?: string | null
+          celular?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_nascimento?: string | null
+          estado?: string | null
+          foto_url?: string | null
+          gasto_agua?: number | null
+          gasto_alimentacao?: number | null
+          gasto_gas?: number | null
+          gasto_luz?: number | null
+          id?: string
+          logradouro?: string | null
+          motivo_prorrogacao?: string | null
+          nome?: string
+          nova_data_limite?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          prorrogado?: boolean
+          renda_familiar?: number | null
+          rg?: string | null
+          situacao_moradia?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acao_social_beneficiarios_assistido_id_fkey"
+            columns: ["assistido_id"]
+            isOneToOne: false
+            referencedRelation: "assistidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acao_social_beneficiarios_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "acao_social_beneficiarios_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      acao_social_cesta_aviso_config: {
+        Row: {
+          ativo: boolean
+          dia_inicio_aviso: number
+          dias_duracao_aviso: number
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          dia_inicio_aviso?: number
+          dias_duracao_aviso?: number
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          dia_inicio_aviso?: number
+          dias_duracao_aviso?: number
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acao_social_cesta_aviso_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       acao_social_config: {
         Row: {
           created_at: string
@@ -91,6 +253,147 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      acao_social_documentos: {
+        Row: {
+          beneficiario_id: string
+          content_type: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          nome_arquivo: string
+          parente_id: string | null
+          storage_path: string
+          tipo_documento: string
+        }
+        Insert: {
+          beneficiario_id: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo: string
+          parente_id?: string | null
+          storage_path: string
+          tipo_documento: string
+        }
+        Update: {
+          beneficiario_id?: string
+          content_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome_arquivo?: string
+          parente_id?: string | null
+          storage_path?: string
+          tipo_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acao_social_documentos_beneficiario_id_fkey"
+            columns: ["beneficiario_id"]
+            isOneToOne: false
+            referencedRelation: "acao_social_beneficiarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acao_social_documentos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "acao_social_documentos_parente_id_fkey"
+            columns: ["parente_id"]
+            isOneToOne: false
+            referencedRelation: "acao_social_parentes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acao_social_entregas: {
+        Row: {
+          beneficiario_id: string
+          competencia: string
+          created_at: string
+          entregue: boolean
+          entregue_em: string | null
+          entregue_por: string | null
+          id: string
+          observacao: string | null
+        }
+        Insert: {
+          beneficiario_id: string
+          competencia: string
+          created_at?: string
+          entregue?: boolean
+          entregue_em?: string | null
+          entregue_por?: string | null
+          id?: string
+          observacao?: string | null
+        }
+        Update: {
+          beneficiario_id?: string
+          competencia?: string
+          created_at?: string
+          entregue?: boolean
+          entregue_em?: string | null
+          entregue_por?: string | null
+          id?: string
+          observacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acao_social_entregas_beneficiario_id_fkey"
+            columns: ["beneficiario_id"]
+            isOneToOne: false
+            referencedRelation: "acao_social_beneficiarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acao_social_entregas_entregue_por_fkey"
+            columns: ["entregue_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      acao_social_parentes: {
+        Row: {
+          beneficiario_id: string
+          created_at: string
+          data_nascimento: string | null
+          id: string
+          nome: string
+          tipo: string
+        }
+        Insert: {
+          beneficiario_id: string
+          created_at?: string
+          data_nascimento?: string | null
+          id?: string
+          nome: string
+          tipo: string
+        }
+        Update: {
+          beneficiario_id?: string
+          created_at?: string
+          data_nascimento?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acao_social_parentes_beneficiario_id_fkey"
+            columns: ["beneficiario_id"]
+            isOneToOne: false
+            referencedRelation: "acao_social_beneficiarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_promotion_approvals: {
         Row: {
@@ -3445,6 +3748,7 @@ export type Database = {
         | "assistido"
         | "coordenador_de_tratamento"
         | "administrador_master"
+        | "agente_acao_social"
       conversa_status: "ativa" | "encerrada"
       handoff_status: "aberto" | "em_atendimento" | "fechado"
       notif_canal: "whatsapp"
@@ -3608,6 +3912,7 @@ export const Constants = {
         "assistido",
         "coordenador_de_tratamento",
         "administrador_master",
+        "agente_acao_social",
       ],
       conversa_status: ["ativa", "encerrada"],
       handoff_status: ["aberto", "em_atendimento", "fechado"],

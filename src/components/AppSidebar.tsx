@@ -33,6 +33,7 @@ import {
   KeyRound,
   LifeBuoy,
   Apple,
+  HeartHandshake,
   Megaphone,
   CalendarDays,
   Send,
@@ -161,6 +162,7 @@ export const navGroups: NavGroup[] = [
       { title: "Instituição", url: "/instituicao", icon: Building2, roles: ["admin"] },
       { title: "Gestão Institucional", url: "/painel-institucional", icon: LayoutDashboard, roles: ["admin"] },
       { title: "Ação Social", url: "/acao-social", icon: Apple, roles: ["admin"] },
+      { title: "Cadastro Ação Social", url: "/cadastro-acao-social", icon: HeartHandshake, roles: ["admin", "agente_acao_social"] },
       { title: "Campanhas", url: "/campanhas", icon: Megaphone, roles: ["admin"] },
       { title: "Eventos", url: "/eventos", icon: CalendarDays, roles: ["admin"] },
       { title: "Comunicação", url: "/comunicacao-institucional", icon: Send, roles: ["admin"] },
@@ -194,6 +196,7 @@ const roleLabels: Record<AppRole, string> = {
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
   coordenador_de_tratamento: "Coordenador",
+  agente_acao_social: "Agente de Ação Social",
 };
 
 export function AppSidebar() {
