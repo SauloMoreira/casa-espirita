@@ -42,6 +42,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   tarefeiro: "Tarefeiro",
   assistido: "Assistido",
   coordenador_de_tratamento: "Coordenador de Tratamento",
+  agente_acao_social: "Agente de Ação Social",
 };
 
 /**
