@@ -62,6 +62,7 @@ const FuncoesVoluntariado = lazy(() => import("./pages/FuncoesVoluntariado"));
 const CentralAjuda = lazy(() => import("./pages/CentralAjuda"));
 const SessoesPublicas = lazy(() => import("./pages/SessoesPublicas"));
 const AcaoSocial = lazy(() => import("./pages/AcaoSocial"));
+const CadastroAcaoSocial = lazy(() => import("./pages/CadastroAcaoSocial"));
 const Campanhas = lazy(() => import("./pages/Campanhas"));
 const Eventos = lazy(() => import("./pages/Eventos"));
 const ComunicacaoInstitucional = lazy(() => import("./pages/ComunicacaoInstitucional"));
