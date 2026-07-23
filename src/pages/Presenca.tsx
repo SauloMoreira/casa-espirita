@@ -82,7 +82,9 @@ export default function Presenca() {
     const vinculoMap = Object.fromEntries((vinculos || []).map((v) => [v.id, v]));
     const assistMap = Object.fromEntries((assistidos || []).map((a) => [a.id, a.nome]));
     const gateMap = new Set((assistidos || []).filter((a) => a.usa_agenda_plano === true).map((a) => a.id));
-    const presencaSet = new Set((presencas || []).map((p) => p.assistido_tratamento_id));
+    const presencaMap = new Map<string, "presente" | "ausente">(
+      (presencas || []).map((p) => [p.assistido_tratamento_id, p.status_presenca as "presente" | "ausente"]),
+    );
     const planoSet = new Set((planoRows || []).map((p) => p.assistido_tratamento_id));
 
     // Filter by tarefeiro if needed
