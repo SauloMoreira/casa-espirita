@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardCheck, Calendar, Check, X, Heart, Search } from "lucide-react";
+import { ClipboardCheck, Calendar, Check, X, Heart, Search, Undo2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { withRetry, isTransientError } from "@/lib/resilience";
-import { registrarPresencaRoteada } from "@/services/agendaPlano/orquestracao";
+import { registrarPresencaRoteada, desfazerPresencaRoteada } from "@/services/agendaPlano/orquestracao";
 
 /** Normaliza texto para busca (sem acentos, minúsculo). */
 const norm = (s: string) =>
