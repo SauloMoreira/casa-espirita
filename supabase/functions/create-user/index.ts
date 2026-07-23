@@ -129,8 +129,9 @@ Deno.serve(async (req) => {
         user_id: userId,
       }).eq("id", assistido_id);
       if (linkErr) {
-        return await rollback("não foi possível vincular o assistido");
+        return await rollback("não foi possível vincular o assistido", linkErr.message);
       }
+
     }
 
     log.info("user_created", { by: caller.id, userId, role });
