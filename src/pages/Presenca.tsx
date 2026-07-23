@@ -70,7 +70,7 @@ export default function Presenca() {
         .in("status", ["aguardando_inicio", "em_andamento", "liberado"]),
       supabase.from("assistidos").select("id, nome, usa_agenda_plano").in("id", assistidoIds),
       supabase.from("presencas_tratamentos")
-        .select("assistido_tratamento_id")
+        .select("assistido_tratamento_id, status_presenca")
         .in("assistido_tratamento_id", atIds)
         .eq("data", data),
       supabase.from("plano_tratamento_sessoes")
