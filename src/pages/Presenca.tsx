@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardCheck, Calendar, Check, X, Heart, Search } from "lucide-react";
+import { ClipboardCheck, Calendar, Check, X, Heart, Search, Undo2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { withRetry, isTransientError } from "@/lib/resilience";
-import { registrarPresencaRoteada } from "@/services/agendaPlano/orquestracao";
+import { registrarPresencaRoteada, desfazerPresencaRoteada } from "@/services/agendaPlano/orquestracao";
 
 /** Normaliza texto para busca (sem acentos, minúsculo). */
 const norm = (s: string) =>
@@ -29,6 +29,7 @@ interface TratamentoDoDia {
   quantidade_faltante: number | null;
   status: string;
   presenca_registrada: boolean;
+  status_presenca?: "presente" | "ausente" | null;
   tem_plano: boolean;
   usa_novo_modelo: boolean;
 }
@@ -69,7 +70,7 @@ export default function Presenca() {
         .in("status", ["aguardando_inicio", "em_andamento", "liberado"]),
       supabase.from("assistidos").select("id, nome, usa_agenda_plano").in("id", assistidoIds),
       supabase.from("presencas_tratamentos")
-        .select("assistido_tratamento_id")
+        .select("assistido_tratamento_id, status_presenca")
         .in("assistido_tratamento_id", atIds)
         .eq("data", data),
       supabase.from("plano_tratamento_sessoes")
@@ -81,7 +82,9 @@ export default function Presenca() {
     const vinculoMap = Object.fromEntries((vinculos || []).map((v) => [v.id, v]));
     const assistMap = Object.fromEntries((assistidos || []).map((a) => [a.id, a.nome]));
     const gateMap = new Set((assistidos || []).filter((a) => a.usa_agenda_plano === true).map((a) => a.id));
-    const presencaSet = new Set((presencas || []).map((p) => p.assistido_tratamento_id));
+    const presencaMap = new Map<string, "presente" | "ausente">(
+      (presencas || []).map((p) => [p.assistido_tratamento_id, p.status_presenca as "presente" | "ausente"]),
+    );
     const planoSet = new Set((planoRows || []).map((p) => p.assistido_tratamento_id));
 
     // Filter by tarefeiro if needed
@@ -106,7 +109,8 @@ export default function Presenca() {
           quantidade_realizada: vinculo?.quantidade_realizada || 0,
           quantidade_faltante: vinculo?.quantidade_faltante ?? null,
           status: vinculo?.status || "",
-          presenca_registrada: presencaSet.has(s.assistido_tratamento_id),
+          presenca_registrada: presencaMap.has(s.assistido_tratamento_id),
+          status_presenca: presencaMap.get(s.assistido_tratamento_id) ?? null,
           tem_plano: planoSet.has(s.assistido_tratamento_id),
           usa_novo_modelo: gateMap.has(s.assistido_id),
         };
@@ -162,6 +166,30 @@ export default function Presenca() {
       toast({
         title: "Falha ao registrar",
         description: e?.message ?? "Não foi possível registrar. Verifique a internet e tente novamente.",
+        variant: "destructive",
+      });
+    }
+    setLoadingId(null);
+  };
+
+  const handleDesfazer = async (item: TratamentoDoDia) => {
+    if (!item.status_presenca) return;
+    const atId = item.assistido_tratamento_id;
+    setLoadingId(atId);
+    try {
+      await desfazerPresencaRoteada({
+        vinculoId: atId,
+        data,
+        statusPresenca: item.status_presenca,
+        temPlano: item.tem_plano,
+        usaNovoModelo: item.usa_novo_modelo,
+      });
+      toast({ title: "Registro desfeito" });
+      fetchData();
+    } catch (e: any) {
+      toast({
+        title: "Não foi possível desfazer",
+        description: e?.message ?? "Erro ao desfazer registro.",
         variant: "destructive",
       });
     }
@@ -257,7 +285,18 @@ export default function Presenca() {
                         </p>
                       </div>
                       {item.presenca_registrada && (
-                        <Badge variant="secondary" className="shrink-0 text-xs">Registrada</Badge>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant={item.status_presenca === "presente" ? "default" : "secondary"} className="text-xs">
+                            {item.status_presenca === "presente" ? "Presente" : "Ausente"}
+                          </Badge>
+                          <Button
+                            size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                            disabled={loadingId === item.assistido_tratamento_id}
+                            onClick={() => handleDesfazer(item)}
+                          >
+                            <Undo2 className="h-3 w-3" /> Desfazer
+                          </Button>
+                        </div>
                       )}
                     </div>
                     {!item.presenca_registrada && (
@@ -309,7 +348,18 @@ export default function Presenca() {
                         </TableCell>
                         <TableCell className="text-center">
                           {item.presenca_registrada ? (
-                            <Badge variant="secondary" className="text-xs">Registrada</Badge>
+                            <div className="flex items-center gap-2 justify-center">
+                              <Badge variant={item.status_presenca === "presente" ? "default" : "secondary"} className="text-xs">
+                                {item.status_presenca === "presente" ? "Presente" : "Ausente"}
+                              </Badge>
+                              <Button
+                                size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                                disabled={loadingId === item.assistido_tratamento_id}
+                                onClick={() => handleDesfazer(item)}
+                              >
+                                <Undo2 className="h-3 w-3" /> Desfazer
+                              </Button>
+                            </div>
                           ) : (
                             <div className="flex gap-1 justify-center">
                               <Button

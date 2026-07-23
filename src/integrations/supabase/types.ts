@@ -3264,6 +3264,10 @@ export type Database = {
         Args: { p_decision: string; p_motivo?: string; p_request_id: string }
         Returns: Json
       }
+      desfazer_presenca_legado: {
+        Args: { p_data: string; p_vinculo_id: string }
+        Returns: Json
+      }
       entrevista_assistido_belongs_to_coordinator: {
         Args: { _assistido_id: string; _coordinator_id: string }
         Returns: boolean
@@ -3642,6 +3646,14 @@ export type Database = {
       }
       pts_converter_assistido: {
         Args: { p_assistido_id: string; p_planos: Json }
+        Returns: Json
+      }
+      pts_desfazer_ausencia: {
+        Args: { p_data: string; p_vinculo_id: string }
+        Returns: Json
+      }
+      pts_desfazer_presenca: {
+        Args: { p_data: string; p_vinculo_id: string }
         Returns: Json
       }
       pts_homologacao_auditar: {

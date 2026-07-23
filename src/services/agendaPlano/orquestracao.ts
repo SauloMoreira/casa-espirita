@@ -495,6 +495,35 @@ export async function registrarPresencaRoteada(
   return { rota: "legado", usaNovoModelo, temPlano, remarcacaoAplicavel: false };
 }
 
+/**
+ * Desfaz um registro de presença/ausência feito hoje. Roteia entre a rota
+ * "com plano" (pts_desfazer_*) e a rota legado (desfazer_presenca_legado),
+ * revalidando o estado real do vínculo antes de decidir.
+ */
+export async function desfazerPresencaRoteada(params: {
+  vinculoId: string;
+  data: string;
+  statusPresenca: "presente" | "ausente";
+  usaNovoModelo?: boolean;
+  temPlano?: boolean;
+}): Promise<void> {
+  const { vinculoId, data, statusPresenca } = params;
+  const usaNovoModelo =
+    params.usaNovoModelo === false ? false : await vinculoUsaNovoModelo(vinculoId);
+  const temPlano =
+    params.temPlano === false ? false : await vinculoTemPlano(vinculoId);
+  const ehNovoModelo = usaNovoModelo === true && temPlano === true;
+
+  if (ehNovoModelo) {
+    const rpc = statusPresenca === "presente" ? "pts_desfazer_presenca" : "pts_desfazer_ausencia";
+    const { error } = await supabase.rpc(rpc, { p_vinculo_id: vinculoId, p_data: data });
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.rpc("desfazer_presenca_legado", { p_vinculo_id: vinculoId, p_data: data });
+    if (error) throw new Error(error.message);
+  }
+}
+
 
 // HOMOLOGAÇÃO CONTROLADA (painel admin)
 // ---------------------------------------------------------------------------
