@@ -348,7 +348,18 @@ export default function Presenca() {
                         </TableCell>
                         <TableCell className="text-center">
                           {item.presenca_registrada ? (
-                            <Badge variant="secondary" className="text-xs">Registrada</Badge>
+                            <div className="flex items-center gap-2 justify-center">
+                              <Badge variant={item.status_presenca === "presente" ? "default" : "secondary"} className="text-xs">
+                                {item.status_presenca === "presente" ? "Presente" : "Ausente"}
+                              </Badge>
+                              <Button
+                                size="sm" variant="ghost" className="h-7 text-xs gap-1"
+                                disabled={loadingId === item.assistido_tratamento_id}
+                                onClick={() => handleDesfazer(item)}
+                              >
+                                <Undo2 className="h-3 w-3" /> Desfazer
+                              </Button>
+                            </div>
                           ) : (
                             <div className="flex gap-1 justify-center">
                               <Button
