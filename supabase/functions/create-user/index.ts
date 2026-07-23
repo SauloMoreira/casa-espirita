@@ -86,11 +86,11 @@ Deno.serve(async (req) => {
     const userId = newUser.user.id;
 
     // Rollback helper: if any post-creation step fails, remove the orphan auth user.
-    const rollback = async (reason: string) => {
-      log.error("create_rolled_back", { reason, userId });
+    const rollback = async (reason: string, detail?: string) => {
+      log.error("create_rolled_back", { reason, detail, userId });
       await adminClient.auth.admin.deleteUser(userId).catch(() => {});
       return new Response(
-        JSON.stringify({ error: `Falha ao criar usuário: ${reason}. Operação revertida.` }),
+        JSON.stringify({ error: `Falha ao criar usuário: ${reason}${detail ? ` (${detail})` : ""}. Operação revertida.` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     };
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     // Insert role
     const { error: roleErr } = await adminClient.from("user_roles").insert({ user_id: userId, role });
     if (roleErr) {
-      return await rollback("não foi possível gravar o papel");
+      return await rollback("não foi possível gravar o papel", roleErr.message);
     }
 
     // Insert profile
@@ -109,9 +109,10 @@ Deno.serve(async (req) => {
         created_by: caller.id,
       });
       if (profileErr) {
-        return await rollback("não foi possível gravar o perfil");
+        return await rollback("não foi possível gravar o perfil", profileErr.message);
       }
     }
+
 
     // Link assistido to user if assistido_id provided.
     // Allowlist the columns that may be updated to prevent arbitrary field overwrites.
