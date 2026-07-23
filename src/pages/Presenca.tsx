@@ -172,6 +172,30 @@ export default function Presenca() {
     setLoadingId(null);
   };
 
+  const handleDesfazer = async (item: TratamentoDoDia) => {
+    if (!item.status_presenca) return;
+    const atId = item.assistido_tratamento_id;
+    setLoadingId(atId);
+    try {
+      await desfazerPresencaRoteada({
+        vinculoId: atId,
+        data,
+        statusPresenca: item.status_presenca,
+        temPlano: item.tem_plano,
+        usaNovoModelo: item.usa_novo_modelo,
+      });
+      toast({ title: "Registro desfeito" });
+      fetchData();
+    } catch (e: any) {
+      toast({
+        title: "Não foi possível desfazer",
+        description: e?.message ?? "Erro ao desfazer registro.",
+        variant: "destructive",
+      });
+    }
+    setLoadingId(null);
+  };
+
   const tratamentosUnicos = [...new Set(items.map((i) => i.tratamento_nome))];
   const porTratamento = tratamentoFilter === "todos" ? items : items.filter((i) => i.tratamento_nome === tratamentoFilter);
   const buscaNorm = norm(busca);
