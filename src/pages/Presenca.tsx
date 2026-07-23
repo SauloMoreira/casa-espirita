@@ -29,6 +29,7 @@ interface TratamentoDoDia {
   quantidade_faltante: number | null;
   status: string;
   presenca_registrada: boolean;
+  status_presenca?: "presente" | "ausente" | null;
   tem_plano: boolean;
   usa_novo_modelo: boolean;
 }
