@@ -1301,6 +1301,7 @@ export type Database = {
           chave: string
           descricao: string | null
           id: string
+          sensivel: boolean
           updated_at: string
           updated_by: string | null
           valor: string
@@ -1309,6 +1310,7 @@ export type Database = {
           chave: string
           descricao?: string | null
           id?: string
+          sensivel?: boolean
           updated_at?: string
           updated_by?: string | null
           valor: string
@@ -1317,6 +1319,7 @@ export type Database = {
           chave?: string
           descricao?: string | null
           id?: string
+          sensivel?: boolean
           updated_at?: string
           updated_by?: string | null
           valor?: string
