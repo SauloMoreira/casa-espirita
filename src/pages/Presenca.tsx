@@ -109,7 +109,8 @@ export default function Presenca() {
           quantidade_realizada: vinculo?.quantidade_realizada || 0,
           quantidade_faltante: vinculo?.quantidade_faltante ?? null,
           status: vinculo?.status || "",
-          presenca_registrada: presencaSet.has(s.assistido_tratamento_id),
+          presenca_registrada: presencaMap.has(s.assistido_tratamento_id),
+          status_presenca: presencaMap.get(s.assistido_tratamento_id) ?? null,
           tem_plano: planoSet.has(s.assistido_tratamento_id),
           usa_novo_modelo: gateMap.has(s.assistido_id),
         };
