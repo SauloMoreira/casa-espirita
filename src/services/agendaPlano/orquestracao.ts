@@ -516,10 +516,10 @@ export async function desfazerPresencaRoteada(params: {
 
   if (ehNovoModelo) {
     const rpc = statusPresenca === "presente" ? "pts_desfazer_presenca" : "pts_desfazer_ausencia";
-    const { error } = await supabase.rpc(rpc as never, { p_vinculo_id: vinculoId, p_data: data } as never);
+    const { error } = await supabase.rpc(rpc, { p_vinculo_id: vinculoId, p_data: data });
     if (error) throw new Error(error.message);
   } else {
-    const { error } = await supabase.rpc("desfazer_presenca_legado" as never, { p_vinculo_id: vinculoId, p_data: data } as never);
+    const { error } = await supabase.rpc("desfazer_presenca_legado", { p_vinculo_id: vinculoId, p_data: data });
     if (error) throw new Error(error.message);
   }
 }
