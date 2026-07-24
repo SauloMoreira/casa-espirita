@@ -254,7 +254,7 @@ export default function CadastroAcaoSocial() {
     if (q.length < 2) return;
     const { data } = await supabase
       .from("assistidos")
-      .select("id, nome, cpf, celular, cep, logradouro, numero, complemento, bairro, cidade, estado, data_nascimento, rg")
+      .select("id, nome, cpf, celular, cep, logradouro, numero, complemento, bairro, cidade, estado, data_nascimento")
       .or(`nome.ilike.%${q}%,cpf.ilike.%${q}%`)
       .limit(10);
     setResultadosAssistido((data as any) || []);
