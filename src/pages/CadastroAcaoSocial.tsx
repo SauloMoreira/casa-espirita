@@ -382,8 +382,8 @@ export default function CadastroAcaoSocial() {
         toast({ title: "Erro ao carregar parentes", description: exErr.message, variant: "destructive" });
         return;
       }
-      const idsExistentes = new Set(((existentes as any) || []).map((r: any) => r.id as string));
-      const idsMantidos = new Set(
+      const idsExistentes = new Set<string>(((existentes as any) || []).map((r: any) => r.id as string));
+      const idsMantidos = new Set<string>(
         parentesValidos.filter((p) => p.id && idsExistentes.has(p.id)).map((p) => p.id as string),
       );
 
