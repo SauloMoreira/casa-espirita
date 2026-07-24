@@ -26,6 +26,7 @@ import { isValidCPF, isValidEmail, isValidPhone, maskCPF, maskPhone } from "@/li
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { DeleteUserDialog } from "@/components/DeleteUserDialog";
 import { UserRolesBadges } from "@/components/UserRolesBadges";
+import { extrairErroFuncao } from "@/lib/functionErrors";
 
 
 
@@ -211,7 +212,12 @@ export default function Usuarios() {
           },
         },
       });
-      if (fnError) throw fnError;
+      if (fnError) {
+        const msg = await extrairErroFuncao(fnError, "Erro ao criar usuário");
+        toast({ title: "Erro", description: msg, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
       if (fnData?.error) throw new Error(fnData.error);
       toast({ title: "Usuário criado com sucesso" });
       setOpen(false);

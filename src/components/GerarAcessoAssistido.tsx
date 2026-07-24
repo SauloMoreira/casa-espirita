@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { isValidEmail, isValidPhone, maskPhone } from "@/lib/validators";
+import { extrairErroFuncao } from "@/lib/functionErrors";
 import { KeyRound, Eye, EyeOff, Copy, Check } from "lucide-react";
 
 interface Props {
@@ -102,7 +103,15 @@ export function GerarAcessoAssistido({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const msg = await extrairErroFuncao(error, "Erro ao criar acesso");
+        if (msg.includes("already been registered") || msg.includes("already registered")) {
+          setErrors({ email: "Este e-mail já possui uma conta no sistema" });
+        }
+        toast({ title: "Erro ao criar acesso", description: msg, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
       if (data?.error) throw new Error(data.error);
 
       setCreated(true);
