@@ -369,23 +369,72 @@ export default function CadastroAcaoSocial() {
     }
 
     if (beneficiarioId) {
-      await supabase.from("acao_social_parentes").delete().eq("beneficiario_id", beneficiarioId);
-      if (form.parentes.length > 0) {
-        const rows = form.parentes
-          .filter((p) => p.nome.trim())
-          .map((p) => ({
-            beneficiario_id: beneficiarioId,
-            nome: p.nome.trim(),
-            tipo: p.tipo,
-            data_nascimento: p.data_nascimento || null,
-          }));
-        if (rows.length) {
-          const { error: perr } = await supabase.from("acao_social_parentes").insert(rows);
-          if (perr) {
+      // Diff-based save: preserva ids existentes (mantém documentos vinculados),
+      // insere só novos e deleta só os removidos da tela.
+      const parentesValidos = form.parentes.filter((p) => p.nome.trim());
+
+      const { data: existentes, error: exErr } = await supabase
+        .from("acao_social_parentes")
+        .select("id")
+        .eq("beneficiario_id", beneficiarioId);
+      if (exErr) {
+        setSalvando(false);
+        toast({ title: "Erro ao carregar parentes", description: exErr.message, variant: "destructive" });
+        return;
+      }
+      const idsExistentes = new Set<string>(((existentes as any) || []).map((r: any) => r.id as string));
+      const idsMantidos = new Set<string>(
+        parentesValidos.filter((p) => p.id && idsExistentes.has(p.id)).map((p) => p.id as string),
+      );
+
+      // UPDATE dos que já têm id
+      for (const p of parentesValidos) {
+        if (p.id && idsExistentes.has(p.id)) {
+          const { error: uerr } = await supabase
+            .from("acao_social_parentes")
+            .update({
+              nome: p.nome.trim(),
+              tipo: p.tipo,
+              data_nascimento: p.data_nascimento || null,
+            })
+            .eq("id", p.id);
+          if (uerr) {
             setSalvando(false);
-            toast({ title: "Erro ao salvar parentes", description: perr.message, variant: "destructive" });
+            toast({ title: "Erro ao atualizar parente", description: uerr.message, variant: "destructive" });
             return;
           }
+        }
+      }
+
+      // INSERT dos novos (sem id, ou com id que não existe mais no banco)
+      const novos = parentesValidos
+        .filter((p) => !p.id || !idsExistentes.has(p.id))
+        .map((p) => ({
+          beneficiario_id: beneficiarioId,
+          nome: p.nome.trim(),
+          tipo: p.tipo,
+          data_nascimento: p.data_nascimento || null,
+        }));
+      if (novos.length) {
+        const { error: ierr } = await supabase.from("acao_social_parentes").insert(novos);
+        if (ierr) {
+          setSalvando(false);
+          toast({ title: "Erro ao inserir parentes", description: ierr.message, variant: "destructive" });
+          return;
+        }
+      }
+
+      // DELETE apenas os removidos da tela
+      const idsParaRemover = Array.from(idsExistentes).filter((id) => !idsMantidos.has(id));
+      if (idsParaRemover.length) {
+        const { error: derr } = await supabase
+          .from("acao_social_parentes")
+          .delete()
+          .in("id", idsParaRemover);
+        if (derr) {
+          setSalvando(false);
+          toast({ title: "Erro ao remover parentes", description: derr.message, variant: "destructive" });
+          return;
         }
       }
     }
