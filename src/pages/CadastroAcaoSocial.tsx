@@ -266,7 +266,6 @@ export default function CadastroAcaoSocial() {
       assistido_id: a.id,
       nome: a.nome ?? f.nome,
       cpf: a.cpf ?? f.cpf,
-      rg: a.rg ?? f.rg,
       celular: a.celular ?? f.celular,
       data_nascimento: a.data_nascimento ?? f.data_nascimento,
       endereco: {
