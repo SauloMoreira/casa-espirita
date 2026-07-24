@@ -27,7 +27,8 @@ export default function MinhaAgenda() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: assistido } = await supabase.from("assistidos").select("id").eq("user_id", user!.id).maybeSingle();
+      const { data: meuAssistidoId } = await supabase.rpc("meu_assistido_id");
+      const assistido = meuAssistidoId ? { id: meuAssistidoId as string } : null;
       if (!assistido) { setLoading(false); return; }
 
       const hoje = new Date().toISOString().split("T")[0];
